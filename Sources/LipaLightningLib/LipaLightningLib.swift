@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_55f3_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_4ef5_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_55f3_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_4ef5_rustbuffer_free(self, $0) }
     }
 }
 
@@ -281,15 +281,75 @@ private func makeRustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) 
 // Public interface members begin here.
 
 
-fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
-    typealias FfiType = Int32
-    typealias SwiftType = Int32
+fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
+    typealias FfiType = UInt8
+    typealias SwiftType = UInt8
 
-    static func read(from buf: Reader) throws -> Int32 {
+    static func read(from buf: Reader) throws -> UInt8 {
         return try lift(buf.readInt())
     }
 
-    static func write(_ value: Int32, into buf: Writer) {
+    static func write(_ value: UInt8, into buf: Writer) {
+        buf.writeInt(lower(value))
+    }
+}
+
+fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
+    typealias FfiType = UInt16
+    typealias SwiftType = UInt16
+
+    static func read(from buf: Reader) throws -> UInt16 {
+        return try lift(buf.readInt())
+    }
+
+    static func write(_ value: SwiftType, into buf: Writer) {
+        buf.writeInt(lower(value))
+    }
+}
+
+fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
+    typealias FfiType = UInt32
+    typealias SwiftType = UInt32
+
+    static func read(from buf: Reader) throws -> UInt32 {
+        return try lift(buf.readInt())
+    }
+
+    static func write(_ value: SwiftType, into buf: Writer) {
+        buf.writeInt(lower(value))
+    }
+}
+
+fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
+    typealias FfiType = UInt64
+    typealias SwiftType = UInt64
+
+    static func read(from buf: Reader) throws -> UInt64 {
+        return try lift(buf.readInt())
+    }
+
+    static func write(_ value: SwiftType, into buf: Writer) {
+        buf.writeInt(lower(value))
+    }
+}
+
+fileprivate struct FfiConverterBool : FfiConverter {
+    typealias FfiType = Int8
+    typealias SwiftType = Bool
+
+    static func lift(_ value: Int8) throws -> Bool {
+        return value != 0
+    }
+
+    static func lower(_ value: Bool) -> Int8 {
+        return value ? 1 : 0
+    }
+
+    static func read(from buf: Reader) throws -> Bool {
+        return try lift(buf.readInt())
+    }
+
+    static func write(_ value: Bool, into buf: Writer) {
         buf.writeInt(lower(value))
     }
 }
@@ -332,19 +392,846 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
-public func add(a: Int32, b: Int32)  -> Int32 {
-    return try! FfiConverterInt32.lift(
-        try!
+
+public protocol LipaLightningProtocol {
+    func stop() 
+    func getMyNodeId()  -> [UInt8]
+    func getNodeInfo()  -> LipaNodeInfo
+    func connectOpenChannel(nodeId: [UInt8], nodeAddress: String, channelValueSat: UInt64) throws
+    func sendPayment(invoiceStr: String) throws
+    func sendSpontaneousPayment(amoutMsat: UInt64, nodeId: [UInt8]) throws
+    func createInvoice(amountMsat: UInt64, expirySecs: UInt32) throws -> String
+    
+}
+
+public class LipaLightning: LipaLightningProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+    public convenience init(config: LipaLightningConfig, persistCallback: PersistCallback)  {
+        self.init(unsafeFromRawPointer: try!
     
     rustCall() {
     
-    lipalightninglib_55f3_add(
-        FfiConverterInt32.lower(a), 
-        FfiConverterInt32.lower(b), $0)
-}
+    lipalightninglib_4ef5_LipaLightning_new(
+        FfiConverterTypeLipaLightningConfig.lower(config), 
+        FfiConverterCallbackInterfacePersistCallback.lower(persistCallback), $0)
+})
+    }
+
+    deinit {
+        try! rustCall { ffi_lipalightninglib_4ef5_LipaLightning_object_free(pointer, $0) }
+    }
+
+    
+
+    
+    public func stop()  {
+        try!
+    rustCall() {
+    
+    lipalightninglib_4ef5_LipaLightning_stop(self.pointer, $0
     )
 }
+    }
+    public func getMyNodeId()  -> [UInt8] {
+        return try! FfiConverterSequenceUInt8.lift(
+            try!
+    rustCall() {
+    
+    lipalightninglib_4ef5_LipaLightning_get_my_node_id(self.pointer, $0
+    )
+}
+        )
+    }
+    public func getNodeInfo()  -> LipaNodeInfo {
+        return try! FfiConverterTypeLipaNodeInfo.lift(
+            try!
+    rustCall() {
+    
+    lipalightninglib_4ef5_LipaLightning_get_node_info(self.pointer, $0
+    )
+}
+        )
+    }
+    public func connectOpenChannel(nodeId: [UInt8], nodeAddress: String, channelValueSat: UInt64) throws {
+        try
+    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
+    lipalightninglib_4ef5_LipaLightning_connect_open_channel(self.pointer, 
+        FfiConverterSequenceUInt8.lower(nodeId), 
+        FfiConverterString.lower(nodeAddress), 
+        FfiConverterUInt64.lower(channelValueSat), $0
+    )
+}
+    }
+    public func sendPayment(invoiceStr: String) throws {
+        try
+    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
+    lipalightninglib_4ef5_LipaLightning_send_payment(self.pointer, 
+        FfiConverterString.lower(invoiceStr), $0
+    )
+}
+    }
+    public func sendSpontaneousPayment(amoutMsat: UInt64, nodeId: [UInt8]) throws {
+        try
+    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
+    lipalightninglib_4ef5_LipaLightning_send_spontaneous_payment(self.pointer, 
+        FfiConverterUInt64.lower(amoutMsat), 
+        FfiConverterSequenceUInt8.lower(nodeId), $0
+    )
+}
+    }
+    public func createInvoice(amountMsat: UInt64, expirySecs: UInt32) throws -> String {
+        return try FfiConverterString.lift(
+            try
+    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
+    lipalightninglib_4ef5_LipaLightning_create_invoice(self.pointer, 
+        FfiConverterUInt64.lower(amountMsat), 
+        FfiConverterUInt32.lower(expirySecs), $0
+    )
+}
+        )
+    }
+    
+}
 
+
+fileprivate struct FfiConverterTypeLipaLightning: FfiConverter {
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = LipaLightning
+
+    static func read(from buf: Reader) throws -> LipaLightning {
+        let v: UInt64 = try buf.readInt()
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    static func write(_ value: LipaLightning, into buf: Writer) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LipaLightning {
+        return LipaLightning(unsafeFromRawPointer: pointer)
+    }
+
+    static func lower(_ value: LipaLightning) -> UnsafeMutableRawPointer {
+        return value.pointer
+    }
+}
+
+
+public struct LipaLightningConfig {
+    public var seed: [UInt8]
+    public var bitcoindRpcUsername: String
+    public var bitcoindRpcPassword: String
+    public var bitcoindRpcPort: UInt16
+    public var bitcoindRpcHost: String
+    public var ldkPeerListeningPort: UInt16
+    public var network: Network
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(seed: [UInt8], bitcoindRpcUsername: String, bitcoindRpcPassword: String, bitcoindRpcPort: UInt16, bitcoindRpcHost: String, ldkPeerListeningPort: UInt16, network: Network) {
+        self.seed = seed
+        self.bitcoindRpcUsername = bitcoindRpcUsername
+        self.bitcoindRpcPassword = bitcoindRpcPassword
+        self.bitcoindRpcPort = bitcoindRpcPort
+        self.bitcoindRpcHost = bitcoindRpcHost
+        self.ldkPeerListeningPort = ldkPeerListeningPort
+        self.network = network
+    }
+}
+
+
+extension LipaLightningConfig: Equatable, Hashable {
+    public static func ==(lhs: LipaLightningConfig, rhs: LipaLightningConfig) -> Bool {
+        if lhs.seed != rhs.seed {
+            return false
+        }
+        if lhs.bitcoindRpcUsername != rhs.bitcoindRpcUsername {
+            return false
+        }
+        if lhs.bitcoindRpcPassword != rhs.bitcoindRpcPassword {
+            return false
+        }
+        if lhs.bitcoindRpcPort != rhs.bitcoindRpcPort {
+            return false
+        }
+        if lhs.bitcoindRpcHost != rhs.bitcoindRpcHost {
+            return false
+        }
+        if lhs.ldkPeerListeningPort != rhs.ldkPeerListeningPort {
+            return false
+        }
+        if lhs.network != rhs.network {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(seed)
+        hasher.combine(bitcoindRpcUsername)
+        hasher.combine(bitcoindRpcPassword)
+        hasher.combine(bitcoindRpcPort)
+        hasher.combine(bitcoindRpcHost)
+        hasher.combine(ldkPeerListeningPort)
+        hasher.combine(network)
+    }
+}
+
+
+fileprivate struct FfiConverterTypeLipaLightningConfig: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> LipaLightningConfig {
+        return try LipaLightningConfig(
+            seed: FfiConverterSequenceUInt8.read(from: buf), 
+            bitcoindRpcUsername: FfiConverterString.read(from: buf), 
+            bitcoindRpcPassword: FfiConverterString.read(from: buf), 
+            bitcoindRpcPort: FfiConverterUInt16.read(from: buf), 
+            bitcoindRpcHost: FfiConverterString.read(from: buf), 
+            ldkPeerListeningPort: FfiConverterUInt16.read(from: buf), 
+            network: FfiConverterTypeNetwork.read(from: buf)
+        )
+    }
+
+    fileprivate static func write(_ value: LipaLightningConfig, into buf: Writer) {
+        FfiConverterSequenceUInt8.write(value.seed, into: buf)
+        FfiConverterString.write(value.bitcoindRpcUsername, into: buf)
+        FfiConverterString.write(value.bitcoindRpcPassword, into: buf)
+        FfiConverterUInt16.write(value.bitcoindRpcPort, into: buf)
+        FfiConverterString.write(value.bitcoindRpcHost, into: buf)
+        FfiConverterUInt16.write(value.ldkPeerListeningPort, into: buf)
+        FfiConverterTypeNetwork.write(value.network, into: buf)
+    }
+}
+
+
+public struct LipaNodeInfo {
+    public var nodePubkey: [UInt8]
+    public var numChannels: UInt64
+    public var numUsableChannels: UInt64
+    public var localBalanceMsat: UInt64
+    public var numPeers: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(nodePubkey: [UInt8], numChannels: UInt64, numUsableChannels: UInt64, localBalanceMsat: UInt64, numPeers: UInt64) {
+        self.nodePubkey = nodePubkey
+        self.numChannels = numChannels
+        self.numUsableChannels = numUsableChannels
+        self.localBalanceMsat = localBalanceMsat
+        self.numPeers = numPeers
+    }
+}
+
+
+extension LipaNodeInfo: Equatable, Hashable {
+    public static func ==(lhs: LipaNodeInfo, rhs: LipaNodeInfo) -> Bool {
+        if lhs.nodePubkey != rhs.nodePubkey {
+            return false
+        }
+        if lhs.numChannels != rhs.numChannels {
+            return false
+        }
+        if lhs.numUsableChannels != rhs.numUsableChannels {
+            return false
+        }
+        if lhs.localBalanceMsat != rhs.localBalanceMsat {
+            return false
+        }
+        if lhs.numPeers != rhs.numPeers {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(nodePubkey)
+        hasher.combine(numChannels)
+        hasher.combine(numUsableChannels)
+        hasher.combine(localBalanceMsat)
+        hasher.combine(numPeers)
+    }
+}
+
+
+fileprivate struct FfiConverterTypeLipaNodeInfo: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> LipaNodeInfo {
+        return try LipaNodeInfo(
+            nodePubkey: FfiConverterSequenceUInt8.read(from: buf), 
+            numChannels: FfiConverterUInt64.read(from: buf), 
+            numUsableChannels: FfiConverterUInt64.read(from: buf), 
+            localBalanceMsat: FfiConverterUInt64.read(from: buf), 
+            numPeers: FfiConverterUInt64.read(from: buf)
+        )
+    }
+
+    fileprivate static func write(_ value: LipaNodeInfo, into buf: Writer) {
+        FfiConverterSequenceUInt8.write(value.nodePubkey, into: buf)
+        FfiConverterUInt64.write(value.numChannels, into: buf)
+        FfiConverterUInt64.write(value.numUsableChannels, into: buf)
+        FfiConverterUInt64.write(value.localBalanceMsat, into: buf)
+        FfiConverterUInt64.write(value.numPeers, into: buf)
+    }
+}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum LogLevel {
+    
+    case error
+    case warn
+    case info
+    case debug
+    case trace
+}
+
+fileprivate struct FfiConverterTypeLogLevel: FfiConverterRustBuffer {
+    typealias SwiftType = LogLevel
+
+    static func read(from buf: Reader) throws -> LogLevel {
+        let variant: Int32 = try buf.readInt()
+        switch variant {
+        
+        case 1: return .error
+        
+        case 2: return .warn
+        
+        case 3: return .info
+        
+        case 4: return .debug
+        
+        case 5: return .trace
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    static func write(_ value: LogLevel, into buf: Writer) {
+        switch value {
+        
+        
+        case .error:
+            buf.writeInt(Int32(1))
+        
+        
+        case .warn:
+            buf.writeInt(Int32(2))
+        
+        
+        case .info:
+            buf.writeInt(Int32(3))
+        
+        
+        case .debug:
+            buf.writeInt(Int32(4))
+        
+        
+        case .trace:
+            buf.writeInt(Int32(5))
+        
+        }
+    }
+}
+
+
+extension LogLevel: Equatable, Hashable {}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum Network {
+    
+    case bitcoin
+    case testnet
+    case signet
+    case regtest
+}
+
+fileprivate struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
+    typealias SwiftType = Network
+
+    static func read(from buf: Reader) throws -> Network {
+        let variant: Int32 = try buf.readInt()
+        switch variant {
+        
+        case 1: return .bitcoin
+        
+        case 2: return .testnet
+        
+        case 3: return .signet
+        
+        case 4: return .regtest
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    static func write(_ value: Network, into buf: Writer) {
+        switch value {
+        
+        
+        case .bitcoin:
+            buf.writeInt(Int32(1))
+        
+        
+        case .testnet:
+            buf.writeInt(Int32(2))
+        
+        
+        case .signet:
+            buf.writeInt(Int32(3))
+        
+        
+        case .regtest:
+            buf.writeInt(Int32(4))
+        
+        }
+    }
+}
+
+
+extension Network: Equatable, Hashable {}
+
+
+
+public enum LipaLightningError {
+
+    
+    
+    // Simple error enums only carry a message
+    case Placeholder(message: String)
+    
+    // Simple error enums only carry a message
+    case PeerConnection(message: String)
+    
+    // Simple error enums only carry a message
+    case ChannelOpen(message: String)
+    
+    // Simple error enums only carry a message
+    case InvoiceParsing(message: String)
+    
+    // Simple error enums only carry a message
+    case InvoiceInvalid(message: String)
+    
+    // Simple error enums only carry a message
+    case Routing(message: String)
+    
+    // Simple error enums only carry a message
+    case PaymentFail(message: String)
+    
+    // Simple error enums only carry a message
+    case InternalError(message: String)
+    
+    // Simple error enums only carry a message
+    case PubkeyParsing(message: String)
+    
+    // Simple error enums only carry a message
+    case InvalidPayee(message: String)
+    
+    // Simple error enums only carry a message
+    case InvoiceCreation(message: String)
+    
+}
+
+fileprivate struct FfiConverterTypeLipaLightningError: FfiConverterRustBuffer {
+    typealias SwiftType = LipaLightningError
+
+    static func read(from buf: Reader) throws -> LipaLightningError {
+        let variant: Int32 = try buf.readInt()
+        switch variant {
+
+        
+
+        
+        case 1: return .Placeholder(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 2: return .PeerConnection(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 3: return .ChannelOpen(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 4: return .InvoiceParsing(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 5: return .InvoiceInvalid(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 6: return .Routing(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 7: return .PaymentFail(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 8: return .InternalError(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 9: return .PubkeyParsing(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 10: return .InvalidPayee(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 11: return .InvoiceCreation(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    static func write(_ value: LipaLightningError, into buf: Writer) {
+        switch value {
+
+        
+
+        
+        case let .Placeholder(message):
+            buf.writeInt(Int32(1))
+            FfiConverterString.write(message, into: buf)
+        case let .PeerConnection(message):
+            buf.writeInt(Int32(2))
+            FfiConverterString.write(message, into: buf)
+        case let .ChannelOpen(message):
+            buf.writeInt(Int32(3))
+            FfiConverterString.write(message, into: buf)
+        case let .InvoiceParsing(message):
+            buf.writeInt(Int32(4))
+            FfiConverterString.write(message, into: buf)
+        case let .InvoiceInvalid(message):
+            buf.writeInt(Int32(5))
+            FfiConverterString.write(message, into: buf)
+        case let .Routing(message):
+            buf.writeInt(Int32(6))
+            FfiConverterString.write(message, into: buf)
+        case let .PaymentFail(message):
+            buf.writeInt(Int32(7))
+            FfiConverterString.write(message, into: buf)
+        case let .InternalError(message):
+            buf.writeInt(Int32(8))
+            FfiConverterString.write(message, into: buf)
+        case let .PubkeyParsing(message):
+            buf.writeInt(Int32(9))
+            FfiConverterString.write(message, into: buf)
+        case let .InvalidPayee(message):
+            buf.writeInt(Int32(10))
+            FfiConverterString.write(message, into: buf)
+        case let .InvoiceCreation(message):
+            buf.writeInt(Int32(11))
+            FfiConverterString.write(message, into: buf)
+
+        
+        }
+    }
+}
+
+
+extension LipaLightningError: Equatable, Hashable {}
+
+extension LipaLightningError: Error { }
+
+fileprivate extension NSLock {
+    func withLock<T>(f: () throws -> T) rethrows -> T {
+        self.lock()
+        defer { self.unlock() }
+        return try f()
+    }
+}
+
+fileprivate typealias Handle = UInt64
+fileprivate class ConcurrentHandleMap<T> {
+    private var leftMap: [Handle: T] = [:]
+    private var counter: [Handle: UInt64] = [:]
+    private var rightMap: [ObjectIdentifier: Handle] = [:]
+
+    private let lock = NSLock()
+    private var currentHandle: Handle = 0
+    private let stride: Handle = 1
+
+    func insert(obj: T) -> Handle {
+        lock.withLock {
+            let id = ObjectIdentifier(obj as AnyObject)
+            let handle = rightMap[id] ?? {
+                currentHandle += stride
+                let handle = currentHandle
+                leftMap[handle] = obj
+                rightMap[id] = handle
+                return handle
+            }()
+            counter[handle] = (counter[handle] ?? 0) + 1
+            return handle
+        }
+    }
+
+    func get(handle: Handle) -> T? {
+        lock.withLock {
+            leftMap[handle]
+        }
+    }
+
+    func delete(handle: Handle) {
+        remove(handle: handle)
+    }
+
+    @discardableResult
+    func remove(handle: Handle) -> T? {
+        lock.withLock {
+            defer { counter[handle] = (counter[handle] ?? 1) - 1 }
+            guard counter[handle] == 1 else { return leftMap[handle] }
+            let obj = leftMap.removeValue(forKey: handle)
+            if let obj = obj {
+                rightMap.removeValue(forKey: ObjectIdentifier(obj as AnyObject))
+            }
+            return obj
+        }
+    }
+}
+
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+
+// Declaration and FfiConverters for PersistCallback Callback Interface
+
+public protocol PersistCallback : AnyObject {
+    func exists(path: String)  -> Bool
+    func readDir(path: String)  -> [String]
+    func writeToFile(path: String, data: [UInt8])  -> Bool
+    func read(path: String)  -> [UInt8]
+    
+}
+
+// The ForeignCallback that is passed to Rust.
+fileprivate let foreignCallbackCallbackInterfacePersistCallback : ForeignCallback =
+    { (handle: Handle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
+        func invokeExists(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.exists(
+                    path:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterBool.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokeReadDir(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.readDir(
+                    path:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterSequenceString.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokeWriteToFile(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.writeToFile(
+                    path:  try FfiConverterString.read(from: reader), 
+                    data:  try FfiConverterSequenceUInt8.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterBool.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokeRead(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.read(
+                    path:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterSequenceUInt8.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    
+
+        let cb = try! FfiConverterCallbackInterfacePersistCallback.lift(handle)
+        switch method {
+            case IDX_CALLBACK_FREE:
+                FfiConverterCallbackInterfacePersistCallback.drop(handle: handle)
+                // No return value.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 0
+            case 1:
+                let buffer = try! invokeExists(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 2:
+                let buffer = try! invokeReadDir(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 3:
+                let buffer = try! invokeWriteToFile(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 4:
+                let buffer = try! invokeRead(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            
+            // This should never happen, because an out of bounds method index won't
+            // ever be used. Once we can catch errors, we should return an InternalError.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+            default:
+                // An unexpected error happened.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return -1
+        }
+    }
+
+// FFIConverter protocol for callback interfaces
+fileprivate struct FfiConverterCallbackInterfacePersistCallback {
+    // Initialize our callback method with the scaffolding code
+    private static var callbackInitialized = false
+    private static func initCallback() {
+        try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
+                ffi_lipalightninglib_4ef5_PersistCallback_init_callback(foreignCallbackCallbackInterfacePersistCallback, err)
+        }
+    }
+    private static func ensureCallbackinitialized() {
+        if !callbackInitialized {
+            initCallback()
+            callbackInitialized = true
+        }
+    }
+
+    static func drop(handle: Handle) {
+        handleMap.remove(handle: handle)
+    }
+
+    private static var handleMap = ConcurrentHandleMap<PersistCallback>()
+}
+
+extension FfiConverterCallbackInterfacePersistCallback : FfiConverter {
+    typealias SwiftType = PersistCallback
+    // We can use Handle as the FFIType because it's a typealias to UInt64
+    typealias FfiType = Handle
+
+    static func lift(_ handle: Handle) throws -> SwiftType {
+        ensureCallbackinitialized();
+        guard let callback = handleMap.get(handle: handle) else {
+            throw UniffiInternalError.unexpectedStaleHandle
+        }
+        return callback
+    }
+
+    static func read(from buf: Reader) throws -> SwiftType {
+        ensureCallbackinitialized();
+        let handle: Handle = try buf.readInt()
+        return try lift(handle)
+    }
+
+    static func lower(_ v: SwiftType) -> Handle {
+        ensureCallbackinitialized();
+        return handleMap.insert(obj: v)
+    }
+
+    static func write(_ v: SwiftType, into buf: Writer) {
+        ensureCallbackinitialized();
+        buf.writeInt(lower(v))
+    }
+}
+
+fileprivate struct FfiConverterSequenceUInt8: FfiConverterRustBuffer {
+    typealias SwiftType = [UInt8]
+
+    static func write(_ value: [UInt8], into buf: Writer) {
+        let len = Int32(value.count)
+        buf.writeInt(len)
+        for item in value {
+            FfiConverterUInt8.write(item, into: buf)
+        }
+    }
+
+    static func read(from buf: Reader) throws -> [UInt8] {
+        let len: Int32 = try buf.readInt()
+        var seq = [UInt8]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterUInt8.read(from: buf))
+        }
+        return seq
+    }
+}
+
+fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]
+
+    static func write(_ value: [String], into buf: Writer) {
+        let len = Int32(value.count)
+        buf.writeInt(len)
+        for item in value {
+            FfiConverterString.write(item, into: buf)
+        }
+    }
+
+    static func read(from buf: Reader) throws -> [String] {
+        let len: Int32 = try buf.readInt()
+        var seq = [String]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterString.read(from: buf))
+        }
+        return seq
+    }
+}
+
+public func initNativeLoggerOnce(minLevel: LogLevel)  {
+    try!
+    
+    rustCall() {
+    
+    lipalightninglib_4ef5_init_native_logger_once(
+        FfiConverterTypeLogLevel.lower(minLevel), $0)
+}
+}
 
 
 /**
