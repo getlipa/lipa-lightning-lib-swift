@@ -1,0 +1,6 @@
+framework module lipalightninglibFFI {
+  umbrella header "lipalightninglibFFI-umbrella.h"
+
+  export *
+  module * { export * }
+}
