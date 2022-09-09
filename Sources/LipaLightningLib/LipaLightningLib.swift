@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_4ef5_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_da8c_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_4ef5_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_da8c_rustbuffer_free(self, $0) }
     }
 }
 
@@ -418,14 +418,14 @@ public class LipaLightning: LipaLightningProtocol {
     
     rustCall() {
     
-    lipalightninglib_4ef5_LipaLightning_new(
+    lipalightninglib_da8c_LipaLightning_new(
         FfiConverterTypeLipaLightningConfig.lower(config), 
         FfiConverterCallbackInterfacePersistCallback.lower(persistCallback), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_lipalightninglib_4ef5_LipaLightning_object_free(pointer, $0) }
+        try! rustCall { ffi_lipalightninglib_da8c_LipaLightning_object_free(pointer, $0) }
     }
 
     
@@ -435,7 +435,7 @@ public class LipaLightning: LipaLightningProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_4ef5_LipaLightning_stop(self.pointer, $0
+    lipalightninglib_da8c_LipaLightning_stop(self.pointer, $0
     )
 }
     }
@@ -444,7 +444,7 @@ public class LipaLightning: LipaLightningProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_4ef5_LipaLightning_get_my_node_id(self.pointer, $0
+    lipalightninglib_da8c_LipaLightning_get_my_node_id(self.pointer, $0
     )
 }
         )
@@ -454,7 +454,7 @@ public class LipaLightning: LipaLightningProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_4ef5_LipaLightning_get_node_info(self.pointer, $0
+    lipalightninglib_da8c_LipaLightning_get_node_info(self.pointer, $0
     )
 }
         )
@@ -462,7 +462,7 @@ public class LipaLightning: LipaLightningProtocol {
     public func connectOpenChannel(nodeId: [UInt8], nodeAddress: String, channelValueSat: UInt64) throws {
         try
     rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_4ef5_LipaLightning_connect_open_channel(self.pointer, 
+    lipalightninglib_da8c_LipaLightning_connect_open_channel(self.pointer, 
         FfiConverterSequenceUInt8.lower(nodeId), 
         FfiConverterString.lower(nodeAddress), 
         FfiConverterUInt64.lower(channelValueSat), $0
@@ -472,7 +472,7 @@ public class LipaLightning: LipaLightningProtocol {
     public func sendPayment(invoiceStr: String) throws {
         try
     rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_4ef5_LipaLightning_send_payment(self.pointer, 
+    lipalightninglib_da8c_LipaLightning_send_payment(self.pointer, 
         FfiConverterString.lower(invoiceStr), $0
     )
 }
@@ -480,7 +480,7 @@ public class LipaLightning: LipaLightningProtocol {
     public func sendSpontaneousPayment(amoutMsat: UInt64, nodeId: [UInt8]) throws {
         try
     rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_4ef5_LipaLightning_send_spontaneous_payment(self.pointer, 
+    lipalightninglib_da8c_LipaLightning_send_spontaneous_payment(self.pointer, 
         FfiConverterUInt64.lower(amoutMsat), 
         FfiConverterSequenceUInt8.lower(nodeId), $0
     )
@@ -490,7 +490,7 @@ public class LipaLightning: LipaLightningProtocol {
         return try FfiConverterString.lift(
             try
     rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_4ef5_LipaLightning_create_invoice(self.pointer, 
+    lipalightninglib_da8c_LipaLightning_create_invoice(self.pointer, 
         FfiConverterUInt64.lower(amountMsat), 
         FfiConverterUInt32.lower(expirySecs), $0
     )
@@ -1132,7 +1132,7 @@ fileprivate struct FfiConverterCallbackInterfacePersistCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_4ef5_PersistCallback_init_callback(foreignCallbackCallbackInterfacePersistCallback, err)
+                ffi_lipalightninglib_da8c_PersistCallback_init_callback(foreignCallbackCallbackInterfacePersistCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -1151,6 +1151,194 @@ fileprivate struct FfiConverterCallbackInterfacePersistCallback {
 
 extension FfiConverterCallbackInterfacePersistCallback : FfiConverter {
     typealias SwiftType = PersistCallback
+    // We can use Handle as the FFIType because it's a typealias to UInt64
+    typealias FfiType = Handle
+
+    static func lift(_ handle: Handle) throws -> SwiftType {
+        ensureCallbackinitialized();
+        guard let callback = handleMap.get(handle: handle) else {
+            throw UniffiInternalError.unexpectedStaleHandle
+        }
+        return callback
+    }
+
+    static func read(from buf: Reader) throws -> SwiftType {
+        ensureCallbackinitialized();
+        let handle: Handle = try buf.readInt()
+        return try lift(handle)
+    }
+
+    static func lower(_ v: SwiftType) -> Handle {
+        ensureCallbackinitialized();
+        return handleMap.insert(obj: v)
+    }
+
+    static func write(_ v: SwiftType, into buf: Writer) {
+        ensureCallbackinitialized();
+        buf.writeInt(lower(v))
+    }
+}
+
+
+
+// Declaration and FfiConverters for RedundantStorageCallback Callback Interface
+
+public protocol RedundantStorageCallback : AnyObject {
+    func objectExists(bucket: String, key: String)  -> Bool
+    func getObject(bucket: String, key: String)  -> [UInt8]
+    func checkHealth(bucket: String)  -> Bool
+    func putObject(bucket: String, key: String, value: [UInt8])  -> Bool
+    func listObjects(bucket: String)  -> [String]
+    
+}
+
+// The ForeignCallback that is passed to Rust.
+fileprivate let foreignCallbackCallbackInterfaceRedundantStorageCallback : ForeignCallback =
+    { (handle: Handle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
+        func invokeObjectExists(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.objectExists(
+                    bucket:  try FfiConverterString.read(from: reader), 
+                    key:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterBool.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokeGetObject(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.getObject(
+                    bucket:  try FfiConverterString.read(from: reader), 
+                    key:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterSequenceUInt8.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokeCheckHealth(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.checkHealth(
+                    bucket:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterBool.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokePutObject(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.putObject(
+                    bucket:  try FfiConverterString.read(from: reader), 
+                    key:  try FfiConverterString.read(from: reader), 
+                    value:  try FfiConverterSequenceUInt8.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterBool.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    func invokeListObjects(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.listObjects(
+                    bucket:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterSequenceString.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+    }
+    
+
+        let cb = try! FfiConverterCallbackInterfaceRedundantStorageCallback.lift(handle)
+        switch method {
+            case IDX_CALLBACK_FREE:
+                FfiConverterCallbackInterfaceRedundantStorageCallback.drop(handle: handle)
+                // No return value.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 0
+            case 1:
+                let buffer = try! invokeObjectExists(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 2:
+                let buffer = try! invokeGetObject(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 3:
+                let buffer = try! invokeCheckHealth(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 4:
+                let buffer = try! invokePutObject(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            case 5:
+                let buffer = try! invokeListObjects(cb, args)
+                out_buf.pointee = buffer
+                // Value written to out buffer.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return 1
+            
+            // This should never happen, because an out of bounds method index won't
+            // ever be used. Once we can catch errors, we should return an InternalError.
+            // https://github.com/mozilla/uniffi-rs/issues/351
+            default:
+                // An unexpected error happened.
+                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                return -1
+        }
+    }
+
+// FFIConverter protocol for callback interfaces
+fileprivate struct FfiConverterCallbackInterfaceRedundantStorageCallback {
+    // Initialize our callback method with the scaffolding code
+    private static var callbackInitialized = false
+    private static func initCallback() {
+        try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
+                ffi_lipalightninglib_da8c_RedundantStorageCallback_init_callback(foreignCallbackCallbackInterfaceRedundantStorageCallback, err)
+        }
+    }
+    private static func ensureCallbackinitialized() {
+        if !callbackInitialized {
+            initCallback()
+            callbackInitialized = true
+        }
+    }
+
+    static func drop(handle: Handle) {
+        handleMap.remove(handle: handle)
+    }
+
+    private static var handleMap = ConcurrentHandleMap<RedundantStorageCallback>()
+}
+
+extension FfiConverterCallbackInterfaceRedundantStorageCallback : FfiConverter {
+    typealias SwiftType = RedundantStorageCallback
     // We can use Handle as the FFIType because it's a typealias to UInt64
     typealias FfiType = Handle
 
@@ -1228,7 +1416,7 @@ public func initNativeLoggerOnce(minLevel: LogLevel)  {
     
     rustCall() {
     
-    lipalightninglib_4ef5_init_native_logger_once(
+    lipalightninglib_da8c_init_native_logger_once(
         FfiConverterTypeLogLevel.lower(minLevel), $0)
 }
 }
