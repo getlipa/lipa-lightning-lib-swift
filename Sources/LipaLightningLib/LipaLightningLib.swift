@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_da8c_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_977e_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_da8c_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_977e_rustbuffer_free(self, $0) }
     }
 }
 
@@ -307,19 +307,6 @@ fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
     }
 }
 
-fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
-    typealias FfiType = UInt32
-    typealias SwiftType = UInt32
-
-    static func read(from buf: Reader) throws -> UInt32 {
-        return try lift(buf.readInt())
-    }
-
-    static func write(_ value: SwiftType, into buf: Writer) {
-        buf.writeInt(lower(value))
-    }
-}
-
 fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     typealias FfiType = UInt64
     typealias SwiftType = UInt64
@@ -393,18 +380,16 @@ fileprivate struct FfiConverterString: FfiConverter {
 }
 
 
-public protocol LipaLightningProtocol {
-    func stop() 
-    func getMyNodeId()  -> [UInt8]
-    func getNodeInfo()  -> LipaNodeInfo
-    func connectOpenChannel(nodeId: [UInt8], nodeAddress: String, channelValueSat: UInt64) throws
-    func sendPayment(invoiceStr: String) throws
-    func sendSpontaneousPayment(amoutMsat: UInt64, nodeId: [UInt8]) throws
-    func createInvoice(amountMsat: UInt64, expirySecs: UInt32) throws -> String
+public protocol LightningNodeProtocol {
+    func `getNodeInfo`()  -> NodeInfo
+    func `queryLspFee`() throws -> LspFee
+    func `connectedToNode`(`node`: NodeAddress)  -> Bool
+    func `createInvoice`(`amountMsat`: UInt64, `description`: String) throws -> String
+    func `syncGraph`() throws
     
 }
 
-public class LipaLightning: LipaLightningProtocol {
+public class LightningNode: LightningNodeProtocol {
     fileprivate let pointer: UnsafeMutableRawPointer
 
     // TODO: We'd like this to be `private` but for Swifty reasons,
@@ -413,99 +398,82 @@ public class LipaLightning: LipaLightningProtocol {
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
-    public convenience init(config: LipaLightningConfig, persistCallback: PersistCallback)  {
-        self.init(unsafeFromRawPointer: try!
+    public convenience init(`config`: Config, `redundantStorageCallback`: RedundantStorageCallback, `lspCallback`: LspCallback) throws {
+        self.init(unsafeFromRawPointer: try
     
-    rustCall() {
+    rustCallWithError(FfiConverterTypeInitializationError.self) {
     
-    lipalightninglib_da8c_LipaLightning_new(
-        FfiConverterTypeLipaLightningConfig.lower(config), 
-        FfiConverterCallbackInterfacePersistCallback.lower(persistCallback), $0)
+    lipalightninglib_977e_LightningNode_new(
+        FfiConverterTypeConfig.lower(`config`), 
+        FfiConverterCallbackInterfaceRedundantStorageCallback.lower(`redundantStorageCallback`), 
+        FfiConverterCallbackInterfaceLspCallback.lower(`lspCallback`), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_lipalightninglib_da8c_LipaLightning_object_free(pointer, $0) }
+        try! rustCall { ffi_lipalightninglib_977e_LightningNode_object_free(pointer, $0) }
     }
 
     
 
     
-    public func stop()  {
-        try!
-    rustCall() {
-    
-    lipalightninglib_da8c_LipaLightning_stop(self.pointer, $0
-    )
-}
-    }
-    public func getMyNodeId()  -> [UInt8] {
-        return try! FfiConverterSequenceUInt8.lift(
+    public func `getNodeInfo`()  -> NodeInfo {
+        return try! FfiConverterTypeNodeInfo.lift(
             try!
     rustCall() {
     
-    lipalightninglib_da8c_LipaLightning_get_my_node_id(self.pointer, $0
+    lipalightninglib_977e_LightningNode_get_node_info(self.pointer, $0
     )
 }
         )
     }
-    public func getNodeInfo()  -> LipaNodeInfo {
-        return try! FfiConverterTypeLipaNodeInfo.lift(
-            try!
-    rustCall() {
-    
-    lipalightninglib_da8c_LipaLightning_get_node_info(self.pointer, $0
+    public func `queryLspFee`() throws -> LspFee {
+        return try FfiConverterTypeLspFee.lift(
+            try
+    rustCallWithError(FfiConverterTypeLipaError.self) {
+    lipalightninglib_977e_LightningNode_query_lsp_fee(self.pointer, $0
     )
 }
         )
     }
-    public func connectOpenChannel(nodeId: [UInt8], nodeAddress: String, channelValueSat: UInt64) throws {
-        try
-    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_da8c_LipaLightning_connect_open_channel(self.pointer, 
-        FfiConverterSequenceUInt8.lower(nodeId), 
-        FfiConverterString.lower(nodeAddress), 
-        FfiConverterUInt64.lower(channelValueSat), $0
+    public func `connectedToNode`(`node`: NodeAddress)  -> Bool {
+        return try! FfiConverterBool.lift(
+            try!
+    rustCall() {
+    
+    lipalightninglib_977e_LightningNode_connected_to_node(self.pointer, 
+        FfiConverterTypeNodeAddress.lower(`node`), $0
     )
 }
+        )
     }
-    public func sendPayment(invoiceStr: String) throws {
-        try
-    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_da8c_LipaLightning_send_payment(self.pointer, 
-        FfiConverterString.lower(invoiceStr), $0
-    )
-}
-    }
-    public func sendSpontaneousPayment(amoutMsat: UInt64, nodeId: [UInt8]) throws {
-        try
-    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_da8c_LipaLightning_send_spontaneous_payment(self.pointer, 
-        FfiConverterUInt64.lower(amoutMsat), 
-        FfiConverterSequenceUInt8.lower(nodeId), $0
-    )
-}
-    }
-    public func createInvoice(amountMsat: UInt64, expirySecs: UInt32) throws -> String {
+    public func `createInvoice`(`amountMsat`: UInt64, `description`: String) throws -> String {
         return try FfiConverterString.lift(
             try
-    rustCallWithError(FfiConverterTypeLipaLightningError.self) {
-    lipalightninglib_da8c_LipaLightning_create_invoice(self.pointer, 
-        FfiConverterUInt64.lower(amountMsat), 
-        FfiConverterUInt32.lower(expirySecs), $0
+    rustCallWithError(FfiConverterTypeLipaError.self) {
+    lipalightninglib_977e_LightningNode_create_invoice(self.pointer, 
+        FfiConverterUInt64.lower(`amountMsat`), 
+        FfiConverterString.lower(`description`), $0
     )
 }
         )
+    }
+    public func `syncGraph`() throws {
+        try
+    rustCallWithError(FfiConverterTypeLipaError.self) {
+    lipalightninglib_977e_LightningNode_sync_graph(self.pointer, $0
+    )
+}
     }
     
 }
 
 
-fileprivate struct FfiConverterTypeLipaLightning: FfiConverter {
+fileprivate struct FfiConverterTypeLightningNode: FfiConverter {
     typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = LipaLightning
+    typealias SwiftType = LightningNode
 
-    static func read(from buf: Reader) throws -> LipaLightning {
+    static func read(from buf: Reader) throws -> LightningNode {
         let v: UInt64 = try buf.readInt()
         // The Rust code won't compile if a pointer won't fit in a UInt64.
         // We have to go via `UInt` because that's the thing that's the size of a pointer.
@@ -516,174 +484,358 @@ fileprivate struct FfiConverterTypeLipaLightning: FfiConverter {
         return try lift(ptr!)
     }
 
-    static func write(_ value: LipaLightning, into buf: Writer) {
+    static func write(_ value: LightningNode, into buf: Writer) {
         // This fiddling is because `Int` is the thing that's the same size as a pointer.
         // The Rust code won't compile if a pointer won't fit in a `UInt64`.
         buf.writeInt(UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
     }
 
-    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LipaLightning {
-        return LipaLightning(unsafeFromRawPointer: pointer)
+    static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningNode {
+        return LightningNode(unsafeFromRawPointer: pointer)
     }
 
-    static func lower(_ value: LipaLightning) -> UnsafeMutableRawPointer {
+    static func lower(_ value: LightningNode) -> UnsafeMutableRawPointer {
         return value.pointer
     }
 }
 
 
-public struct LipaLightningConfig {
-    public var seed: [UInt8]
-    public var bitcoindRpcUsername: String
-    public var bitcoindRpcPassword: String
-    public var bitcoindRpcPort: UInt16
-    public var bitcoindRpcHost: String
-    public var ldkPeerListeningPort: UInt16
-    public var network: Network
+public struct ChannelsInfo {
+    public var `numChannels`: UInt16
+    public var `numUsableChannels`: UInt16
+    public var `localBalanceMsat`: UInt64
+    public var `inboundCapacityMsat`: UInt64
+    public var `outboundCapacityMsat`: UInt64
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(seed: [UInt8], bitcoindRpcUsername: String, bitcoindRpcPassword: String, bitcoindRpcPort: UInt16, bitcoindRpcHost: String, ldkPeerListeningPort: UInt16, network: Network) {
-        self.seed = seed
-        self.bitcoindRpcUsername = bitcoindRpcUsername
-        self.bitcoindRpcPassword = bitcoindRpcPassword
-        self.bitcoindRpcPort = bitcoindRpcPort
-        self.bitcoindRpcHost = bitcoindRpcHost
-        self.ldkPeerListeningPort = ldkPeerListeningPort
-        self.network = network
+    public init(`numChannels`: UInt16, `numUsableChannels`: UInt16, `localBalanceMsat`: UInt64, `inboundCapacityMsat`: UInt64, `outboundCapacityMsat`: UInt64) {
+        self.`numChannels` = `numChannels`
+        self.`numUsableChannels` = `numUsableChannels`
+        self.`localBalanceMsat` = `localBalanceMsat`
+        self.`inboundCapacityMsat` = `inboundCapacityMsat`
+        self.`outboundCapacityMsat` = `outboundCapacityMsat`
     }
 }
 
 
-extension LipaLightningConfig: Equatable, Hashable {
-    public static func ==(lhs: LipaLightningConfig, rhs: LipaLightningConfig) -> Bool {
-        if lhs.seed != rhs.seed {
+extension ChannelsInfo: Equatable, Hashable {
+    public static func ==(lhs: ChannelsInfo, rhs: ChannelsInfo) -> Bool {
+        if lhs.`numChannels` != rhs.`numChannels` {
             return false
         }
-        if lhs.bitcoindRpcUsername != rhs.bitcoindRpcUsername {
+        if lhs.`numUsableChannels` != rhs.`numUsableChannels` {
             return false
         }
-        if lhs.bitcoindRpcPassword != rhs.bitcoindRpcPassword {
+        if lhs.`localBalanceMsat` != rhs.`localBalanceMsat` {
             return false
         }
-        if lhs.bitcoindRpcPort != rhs.bitcoindRpcPort {
+        if lhs.`inboundCapacityMsat` != rhs.`inboundCapacityMsat` {
             return false
         }
-        if lhs.bitcoindRpcHost != rhs.bitcoindRpcHost {
-            return false
-        }
-        if lhs.ldkPeerListeningPort != rhs.ldkPeerListeningPort {
-            return false
-        }
-        if lhs.network != rhs.network {
+        if lhs.`outboundCapacityMsat` != rhs.`outboundCapacityMsat` {
             return false
         }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(seed)
-        hasher.combine(bitcoindRpcUsername)
-        hasher.combine(bitcoindRpcPassword)
-        hasher.combine(bitcoindRpcPort)
-        hasher.combine(bitcoindRpcHost)
-        hasher.combine(ldkPeerListeningPort)
-        hasher.combine(network)
+        hasher.combine(`numChannels`)
+        hasher.combine(`numUsableChannels`)
+        hasher.combine(`localBalanceMsat`)
+        hasher.combine(`inboundCapacityMsat`)
+        hasher.combine(`outboundCapacityMsat`)
     }
 }
 
 
-fileprivate struct FfiConverterTypeLipaLightningConfig: FfiConverterRustBuffer {
-    fileprivate static func read(from buf: Reader) throws -> LipaLightningConfig {
-        return try LipaLightningConfig(
-            seed: FfiConverterSequenceUInt8.read(from: buf), 
-            bitcoindRpcUsername: FfiConverterString.read(from: buf), 
-            bitcoindRpcPassword: FfiConverterString.read(from: buf), 
-            bitcoindRpcPort: FfiConverterUInt16.read(from: buf), 
-            bitcoindRpcHost: FfiConverterString.read(from: buf), 
-            ldkPeerListeningPort: FfiConverterUInt16.read(from: buf), 
-            network: FfiConverterTypeNetwork.read(from: buf)
+fileprivate struct FfiConverterTypeChannelsInfo: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> ChannelsInfo {
+        return try ChannelsInfo(
+            `numChannels`: FfiConverterUInt16.read(from: buf), 
+            `numUsableChannels`: FfiConverterUInt16.read(from: buf), 
+            `localBalanceMsat`: FfiConverterUInt64.read(from: buf), 
+            `inboundCapacityMsat`: FfiConverterUInt64.read(from: buf), 
+            `outboundCapacityMsat`: FfiConverterUInt64.read(from: buf)
         )
     }
 
-    fileprivate static func write(_ value: LipaLightningConfig, into buf: Writer) {
-        FfiConverterSequenceUInt8.write(value.seed, into: buf)
-        FfiConverterString.write(value.bitcoindRpcUsername, into: buf)
-        FfiConverterString.write(value.bitcoindRpcPassword, into: buf)
-        FfiConverterUInt16.write(value.bitcoindRpcPort, into: buf)
-        FfiConverterString.write(value.bitcoindRpcHost, into: buf)
-        FfiConverterUInt16.write(value.ldkPeerListeningPort, into: buf)
-        FfiConverterTypeNetwork.write(value.network, into: buf)
+    fileprivate static func write(_ value: ChannelsInfo, into buf: Writer) {
+        FfiConverterUInt16.write(value.`numChannels`, into: buf)
+        FfiConverterUInt16.write(value.`numUsableChannels`, into: buf)
+        FfiConverterUInt64.write(value.`localBalanceMsat`, into: buf)
+        FfiConverterUInt64.write(value.`inboundCapacityMsat`, into: buf)
+        FfiConverterUInt64.write(value.`outboundCapacityMsat`, into: buf)
     }
 }
 
 
-public struct LipaNodeInfo {
-    public var nodePubkey: [UInt8]
-    public var numChannels: UInt64
-    public var numUsableChannels: UInt64
-    public var localBalanceMsat: UInt64
-    public var numPeers: UInt64
+public struct Config {
+    public var `network`: Network
+    public var `seed`: [UInt8]
+    public var `esploraApiUrl`: String
+    public var `lspNode`: NodeAddress
+    public var `rgsUrl`: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(nodePubkey: [UInt8], numChannels: UInt64, numUsableChannels: UInt64, localBalanceMsat: UInt64, numPeers: UInt64) {
-        self.nodePubkey = nodePubkey
-        self.numChannels = numChannels
-        self.numUsableChannels = numUsableChannels
-        self.localBalanceMsat = localBalanceMsat
-        self.numPeers = numPeers
+    public init(`network`: Network, `seed`: [UInt8], `esploraApiUrl`: String, `lspNode`: NodeAddress, `rgsUrl`: String) {
+        self.`network` = `network`
+        self.`seed` = `seed`
+        self.`esploraApiUrl` = `esploraApiUrl`
+        self.`lspNode` = `lspNode`
+        self.`rgsUrl` = `rgsUrl`
     }
 }
 
 
-extension LipaNodeInfo: Equatable, Hashable {
-    public static func ==(lhs: LipaNodeInfo, rhs: LipaNodeInfo) -> Bool {
-        if lhs.nodePubkey != rhs.nodePubkey {
+extension Config: Equatable, Hashable {
+    public static func ==(lhs: Config, rhs: Config) -> Bool {
+        if lhs.`network` != rhs.`network` {
             return false
         }
-        if lhs.numChannels != rhs.numChannels {
+        if lhs.`seed` != rhs.`seed` {
             return false
         }
-        if lhs.numUsableChannels != rhs.numUsableChannels {
+        if lhs.`esploraApiUrl` != rhs.`esploraApiUrl` {
             return false
         }
-        if lhs.localBalanceMsat != rhs.localBalanceMsat {
+        if lhs.`lspNode` != rhs.`lspNode` {
             return false
         }
-        if lhs.numPeers != rhs.numPeers {
+        if lhs.`rgsUrl` != rhs.`rgsUrl` {
             return false
         }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(nodePubkey)
-        hasher.combine(numChannels)
-        hasher.combine(numUsableChannels)
-        hasher.combine(localBalanceMsat)
-        hasher.combine(numPeers)
+        hasher.combine(`network`)
+        hasher.combine(`seed`)
+        hasher.combine(`esploraApiUrl`)
+        hasher.combine(`lspNode`)
+        hasher.combine(`rgsUrl`)
     }
 }
 
 
-fileprivate struct FfiConverterTypeLipaNodeInfo: FfiConverterRustBuffer {
-    fileprivate static func read(from buf: Reader) throws -> LipaNodeInfo {
-        return try LipaNodeInfo(
-            nodePubkey: FfiConverterSequenceUInt8.read(from: buf), 
-            numChannels: FfiConverterUInt64.read(from: buf), 
-            numUsableChannels: FfiConverterUInt64.read(from: buf), 
-            localBalanceMsat: FfiConverterUInt64.read(from: buf), 
-            numPeers: FfiConverterUInt64.read(from: buf)
+fileprivate struct FfiConverterTypeConfig: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> Config {
+        return try Config(
+            `network`: FfiConverterTypeNetwork.read(from: buf), 
+            `seed`: FfiConverterSequenceUInt8.read(from: buf), 
+            `esploraApiUrl`: FfiConverterString.read(from: buf), 
+            `lspNode`: FfiConverterTypeNodeAddress.read(from: buf), 
+            `rgsUrl`: FfiConverterString.read(from: buf)
         )
     }
 
-    fileprivate static func write(_ value: LipaNodeInfo, into buf: Writer) {
-        FfiConverterSequenceUInt8.write(value.nodePubkey, into: buf)
-        FfiConverterUInt64.write(value.numChannels, into: buf)
-        FfiConverterUInt64.write(value.numUsableChannels, into: buf)
-        FfiConverterUInt64.write(value.localBalanceMsat, into: buf)
-        FfiConverterUInt64.write(value.numPeers, into: buf)
+    fileprivate static func write(_ value: Config, into buf: Writer) {
+        FfiConverterTypeNetwork.write(value.`network`, into: buf)
+        FfiConverterSequenceUInt8.write(value.`seed`, into: buf)
+        FfiConverterString.write(value.`esploraApiUrl`, into: buf)
+        FfiConverterTypeNodeAddress.write(value.`lspNode`, into: buf)
+        FfiConverterString.write(value.`rgsUrl`, into: buf)
+    }
+}
+
+
+public struct LspFee {
+    public var `minMsat`: UInt64
+    public var `ratePpm`: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`minMsat`: UInt64, `ratePpm`: UInt64) {
+        self.`minMsat` = `minMsat`
+        self.`ratePpm` = `ratePpm`
+    }
+}
+
+
+extension LspFee: Equatable, Hashable {
+    public static func ==(lhs: LspFee, rhs: LspFee) -> Bool {
+        if lhs.`minMsat` != rhs.`minMsat` {
+            return false
+        }
+        if lhs.`ratePpm` != rhs.`ratePpm` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`minMsat`)
+        hasher.combine(`ratePpm`)
+    }
+}
+
+
+fileprivate struct FfiConverterTypeLspFee: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> LspFee {
+        return try LspFee(
+            `minMsat`: FfiConverterUInt64.read(from: buf), 
+            `ratePpm`: FfiConverterUInt64.read(from: buf)
+        )
+    }
+
+    fileprivate static func write(_ value: LspFee, into buf: Writer) {
+        FfiConverterUInt64.write(value.`minMsat`, into: buf)
+        FfiConverterUInt64.write(value.`ratePpm`, into: buf)
+    }
+}
+
+
+public struct NodeAddress {
+    public var `pubKey`: String
+    public var `address`: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`pubKey`: String, `address`: String) {
+        self.`pubKey` = `pubKey`
+        self.`address` = `address`
+    }
+}
+
+
+extension NodeAddress: Equatable, Hashable {
+    public static func ==(lhs: NodeAddress, rhs: NodeAddress) -> Bool {
+        if lhs.`pubKey` != rhs.`pubKey` {
+            return false
+        }
+        if lhs.`address` != rhs.`address` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`pubKey`)
+        hasher.combine(`address`)
+    }
+}
+
+
+fileprivate struct FfiConverterTypeNodeAddress: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> NodeAddress {
+        return try NodeAddress(
+            `pubKey`: FfiConverterString.read(from: buf), 
+            `address`: FfiConverterString.read(from: buf)
+        )
+    }
+
+    fileprivate static func write(_ value: NodeAddress, into buf: Writer) {
+        FfiConverterString.write(value.`pubKey`, into: buf)
+        FfiConverterString.write(value.`address`, into: buf)
+    }
+}
+
+
+public struct NodeInfo {
+    public var `nodePubkey`: [UInt8]
+    public var `numPeers`: UInt16
+    public var `channelsInfo`: ChannelsInfo
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`nodePubkey`: [UInt8], `numPeers`: UInt16, `channelsInfo`: ChannelsInfo) {
+        self.`nodePubkey` = `nodePubkey`
+        self.`numPeers` = `numPeers`
+        self.`channelsInfo` = `channelsInfo`
+    }
+}
+
+
+extension NodeInfo: Equatable, Hashable {
+    public static func ==(lhs: NodeInfo, rhs: NodeInfo) -> Bool {
+        if lhs.`nodePubkey` != rhs.`nodePubkey` {
+            return false
+        }
+        if lhs.`numPeers` != rhs.`numPeers` {
+            return false
+        }
+        if lhs.`channelsInfo` != rhs.`channelsInfo` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`nodePubkey`)
+        hasher.combine(`numPeers`)
+        hasher.combine(`channelsInfo`)
+    }
+}
+
+
+fileprivate struct FfiConverterTypeNodeInfo: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> NodeInfo {
+        return try NodeInfo(
+            `nodePubkey`: FfiConverterSequenceUInt8.read(from: buf), 
+            `numPeers`: FfiConverterUInt16.read(from: buf), 
+            `channelsInfo`: FfiConverterTypeChannelsInfo.read(from: buf)
+        )
+    }
+
+    fileprivate static func write(_ value: NodeInfo, into buf: Writer) {
+        FfiConverterSequenceUInt8.write(value.`nodePubkey`, into: buf)
+        FfiConverterUInt16.write(value.`numPeers`, into: buf)
+        FfiConverterTypeChannelsInfo.write(value.`channelsInfo`, into: buf)
+    }
+}
+
+
+public struct Secret {
+    public var `mnemonic`: [String]
+    public var `passphrase`: String
+    public var `seed`: [UInt8]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`mnemonic`: [String], `passphrase`: String, `seed`: [UInt8]) {
+        self.`mnemonic` = `mnemonic`
+        self.`passphrase` = `passphrase`
+        self.`seed` = `seed`
+    }
+}
+
+
+extension Secret: Equatable, Hashable {
+    public static func ==(lhs: Secret, rhs: Secret) -> Bool {
+        if lhs.`mnemonic` != rhs.`mnemonic` {
+            return false
+        }
+        if lhs.`passphrase` != rhs.`passphrase` {
+            return false
+        }
+        if lhs.`seed` != rhs.`seed` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`mnemonic`)
+        hasher.combine(`passphrase`)
+        hasher.combine(`seed`)
+    }
+}
+
+
+fileprivate struct FfiConverterTypeSecret: FfiConverterRustBuffer {
+    fileprivate static func read(from buf: Reader) throws -> Secret {
+        return try Secret(
+            `mnemonic`: FfiConverterSequenceString.read(from: buf), 
+            `passphrase`: FfiConverterString.read(from: buf), 
+            `seed`: FfiConverterSequenceUInt8.read(from: buf)
+        )
+    }
+
+    fileprivate static func write(_ value: Secret, into buf: Writer) {
+        FfiConverterSequenceString.write(value.`mnemonic`, into: buf)
+        FfiConverterString.write(value.`passphrase`, into: buf)
+        FfiConverterSequenceUInt8.write(value.`seed`, into: buf)
     }
 }
 
@@ -691,11 +843,11 @@ fileprivate struct FfiConverterTypeLipaNodeInfo: FfiConverterRustBuffer {
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum LogLevel {
     
-    case error
-    case warn
-    case info
-    case debug
-    case trace
+    case `error`
+    case `warn`
+    case `info`
+    case `debug`
+    case `trace`
 }
 
 fileprivate struct FfiConverterTypeLogLevel: FfiConverterRustBuffer {
@@ -705,15 +857,15 @@ fileprivate struct FfiConverterTypeLogLevel: FfiConverterRustBuffer {
         let variant: Int32 = try buf.readInt()
         switch variant {
         
-        case 1: return .error
+        case 1: return .`error`
         
-        case 2: return .warn
+        case 2: return .`warn`
         
-        case 3: return .info
+        case 3: return .`info`
         
-        case 4: return .debug
+        case 4: return .`debug`
         
-        case 5: return .trace
+        case 5: return .`trace`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -723,23 +875,23 @@ fileprivate struct FfiConverterTypeLogLevel: FfiConverterRustBuffer {
         switch value {
         
         
-        case .error:
+        case .`error`:
             buf.writeInt(Int32(1))
         
         
-        case .warn:
+        case .`warn`:
             buf.writeInt(Int32(2))
         
         
-        case .info:
+        case .`info`:
             buf.writeInt(Int32(3))
         
         
-        case .debug:
+        case .`debug`:
             buf.writeInt(Int32(4))
         
         
-        case .trace:
+        case .`trace`:
             buf.writeInt(Int32(5))
         
         }
@@ -754,10 +906,10 @@ extension LogLevel: Equatable, Hashable {}
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum Network {
     
-    case bitcoin
-    case testnet
-    case signet
-    case regtest
+    case `bitcoin`
+    case `testnet`
+    case `signet`
+    case `regtest`
 }
 
 fileprivate struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
@@ -767,13 +919,13 @@ fileprivate struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
         let variant: Int32 = try buf.readInt()
         switch variant {
         
-        case 1: return .bitcoin
+        case 1: return .`bitcoin`
         
-        case 2: return .testnet
+        case 2: return .`testnet`
         
-        case 3: return .signet
+        case 3: return .`signet`
         
-        case 4: return .regtest
+        case 4: return .`regtest`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -783,19 +935,19 @@ fileprivate struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
         switch value {
         
         
-        case .bitcoin:
+        case .`bitcoin`:
             buf.writeInt(Int32(1))
         
         
-        case .testnet:
+        case .`testnet`:
             buf.writeInt(Int32(2))
         
         
-        case .signet:
+        case .`signet`:
             buf.writeInt(Int32(3))
         
         
-        case .regtest:
+        case .`regtest`:
             buf.writeInt(Int32(4))
         
         }
@@ -807,96 +959,89 @@ extension Network: Equatable, Hashable {}
 
 
 
-public enum LipaLightningError {
+public enum InitializationError {
 
     
     
     // Simple error enums only carry a message
-    case Placeholder(message: String)
+    case AsyncRuntime(message: String)
+    
+    // Simple error enums only carry a message
+    case ChainMonitorWatchChannel(message: String)
+    
+    // Simple error enums only carry a message
+    case ChainSync(message: String)
+    
+    // Simple error enums only carry a message
+    case ChannelMonitorBackup(message: String)
+    
+    // Simple error enums only carry a message
+    case EsploraClient(message: String)
+    
+    // Simple error enums only carry a message
+    case KeysManager(message: String)
+    
+    // Simple error enums only carry a message
+    case Logic(message: String)
     
     // Simple error enums only carry a message
     case PeerConnection(message: String)
     
     // Simple error enums only carry a message
-    case ChannelOpen(message: String)
+    case PublicKey(message: String)
     
     // Simple error enums only carry a message
-    case InvoiceParsing(message: String)
-    
-    // Simple error enums only carry a message
-    case InvoiceInvalid(message: String)
-    
-    // Simple error enums only carry a message
-    case Routing(message: String)
-    
-    // Simple error enums only carry a message
-    case PaymentFail(message: String)
-    
-    // Simple error enums only carry a message
-    case InternalError(message: String)
-    
-    // Simple error enums only carry a message
-    case PubkeyParsing(message: String)
-    
-    // Simple error enums only carry a message
-    case InvalidPayee(message: String)
-    
-    // Simple error enums only carry a message
-    case InvoiceCreation(message: String)
+    case SecretGeneration(message: String)
     
 }
 
-fileprivate struct FfiConverterTypeLipaLightningError: FfiConverterRustBuffer {
-    typealias SwiftType = LipaLightningError
+fileprivate struct FfiConverterTypeInitializationError: FfiConverterRustBuffer {
+    typealias SwiftType = InitializationError
 
-    static func read(from buf: Reader) throws -> LipaLightningError {
+    static func read(from buf: Reader) throws -> InitializationError {
         let variant: Int32 = try buf.readInt()
         switch variant {
 
         
 
         
-        case 1: return .Placeholder(
+        case 1: return .AsyncRuntime(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 2: return .PeerConnection(
+        case 2: return .ChainMonitorWatchChannel(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 3: return .ChannelOpen(
+        case 3: return .ChainSync(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 4: return .InvoiceParsing(
+        case 4: return .ChannelMonitorBackup(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 5: return .InvoiceInvalid(
+        case 5: return .EsploraClient(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 6: return .Routing(
+        case 6: return .KeysManager(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 7: return .PaymentFail(
+        case 7: return .Logic(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 8: return .InternalError(
+        case 8: return .PeerConnection(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 9: return .PubkeyParsing(
+        case 9: return .PublicKey(
             message: try FfiConverterString.read(from: buf)
         )
         
-        case 10: return .InvalidPayee(
-            message: try FfiConverterString.read(from: buf)
-        )
-        
-        case 11: return .InvoiceCreation(
+        case 10: return .SecretGeneration(
             message: try FfiConverterString.read(from: buf)
         )
         
@@ -905,44 +1050,41 @@ fileprivate struct FfiConverterTypeLipaLightningError: FfiConverterRustBuffer {
         }
     }
 
-    static func write(_ value: LipaLightningError, into buf: Writer) {
+    static func write(_ value: InitializationError, into buf: Writer) {
         switch value {
 
         
 
         
-        case let .Placeholder(message):
+        case let .AsyncRuntime(message):
             buf.writeInt(Int32(1))
             FfiConverterString.write(message, into: buf)
-        case let .PeerConnection(message):
+        case let .ChainMonitorWatchChannel(message):
             buf.writeInt(Int32(2))
             FfiConverterString.write(message, into: buf)
-        case let .ChannelOpen(message):
+        case let .ChainSync(message):
             buf.writeInt(Int32(3))
             FfiConverterString.write(message, into: buf)
-        case let .InvoiceParsing(message):
+        case let .ChannelMonitorBackup(message):
             buf.writeInt(Int32(4))
             FfiConverterString.write(message, into: buf)
-        case let .InvoiceInvalid(message):
+        case let .EsploraClient(message):
             buf.writeInt(Int32(5))
             FfiConverterString.write(message, into: buf)
-        case let .Routing(message):
+        case let .KeysManager(message):
             buf.writeInt(Int32(6))
             FfiConverterString.write(message, into: buf)
-        case let .PaymentFail(message):
+        case let .Logic(message):
             buf.writeInt(Int32(7))
             FfiConverterString.write(message, into: buf)
-        case let .InternalError(message):
+        case let .PeerConnection(message):
             buf.writeInt(Int32(8))
             FfiConverterString.write(message, into: buf)
-        case let .PubkeyParsing(message):
+        case let .PublicKey(message):
             buf.writeInt(Int32(9))
             FfiConverterString.write(message, into: buf)
-        case let .InvalidPayee(message):
+        case let .SecretGeneration(message):
             buf.writeInt(Int32(10))
-            FfiConverterString.write(message, into: buf)
-        case let .InvoiceCreation(message):
-            buf.writeInt(Int32(11))
             FfiConverterString.write(message, into: buf)
 
         
@@ -951,9 +1093,236 @@ fileprivate struct FfiConverterTypeLipaLightningError: FfiConverterRustBuffer {
 }
 
 
-extension LipaLightningError: Equatable, Hashable {}
+extension InitializationError: Equatable, Hashable {}
 
-extension LipaLightningError: Error { }
+extension InitializationError: Error { }
+
+
+public enum LipaError {
+
+    
+    
+    // Simple error enums only carry a message
+    case InvalidInput(message: String)
+    
+    // Simple error enums only carry a message
+    case RuntimeError(message: String)
+    
+    // Simple error enums only carry a message
+    case PermanentFailure(message: String)
+    
+}
+
+fileprivate struct FfiConverterTypeLipaError: FfiConverterRustBuffer {
+    typealias SwiftType = LipaError
+
+    static func read(from buf: Reader) throws -> LipaError {
+        let variant: Int32 = try buf.readInt()
+        switch variant {
+
+        
+
+        
+        case 1: return .InvalidInput(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 2: return .RuntimeError(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 3: return .PermanentFailure(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    static func write(_ value: LipaError, into buf: Writer) {
+        switch value {
+
+        
+
+        
+        case let .InvalidInput(message):
+            buf.writeInt(Int32(1))
+            FfiConverterString.write(message, into: buf)
+        case let .RuntimeError(message):
+            buf.writeInt(Int32(2))
+            FfiConverterString.write(message, into: buf)
+        case let .PermanentFailure(message):
+            buf.writeInt(Int32(3))
+            FfiConverterString.write(message, into: buf)
+
+        
+        }
+    }
+}
+
+
+extension LipaError: Equatable, Hashable {}
+
+extension LipaError: Error { }
+
+
+public enum LspError {
+
+    
+    
+    // Simple error enums only carry a message
+    case Grpc(message: String)
+    
+    // Simple error enums only carry a message
+    case Network(message: String)
+    
+    // Simple error enums only carry a message
+    case UnexpectedUniFfi(message: String)
+    
+}
+
+fileprivate struct FfiConverterTypeLspError: FfiConverterRustBuffer {
+    typealias SwiftType = LspError
+
+    static func read(from buf: Reader) throws -> LspError {
+        let variant: Int32 = try buf.readInt()
+        switch variant {
+
+        
+
+        
+        case 1: return .Grpc(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 2: return .Network(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 3: return .UnexpectedUniFfi(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    static func write(_ value: LspError, into buf: Writer) {
+        switch value {
+
+        
+
+        
+        case let .Grpc(message):
+            buf.writeInt(Int32(1))
+            FfiConverterString.write(message, into: buf)
+        case let .Network(message):
+            buf.writeInt(Int32(2))
+            FfiConverterString.write(message, into: buf)
+        case let .UnexpectedUniFfi(message):
+            buf.writeInt(Int32(3))
+            FfiConverterString.write(message, into: buf)
+
+        
+        }
+    }
+}
+
+
+extension LspError: Equatable, Hashable {}
+
+extension LspError: Error { }
+
+
+public enum RuntimeError {
+
+    
+    
+    // Simple error enums only carry a message
+    case ChainSync(message: String)
+    
+    // Simple error enums only carry a message
+    case InvalidAddress(message: String)
+    
+    // Simple error enums only carry a message
+    case InvalidPubKey(message: String)
+    
+    // Simple error enums only carry a message
+    case Logic(message: String)
+    
+    // Simple error enums only carry a message
+    case PeerConnection(message: String)
+    
+}
+
+fileprivate struct FfiConverterTypeRuntimeError: FfiConverterRustBuffer {
+    typealias SwiftType = RuntimeError
+
+    static func read(from buf: Reader) throws -> RuntimeError {
+        let variant: Int32 = try buf.readInt()
+        switch variant {
+
+        
+
+        
+        case 1: return .ChainSync(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 2: return .InvalidAddress(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 3: return .InvalidPubKey(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 4: return .Logic(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+        case 5: return .PeerConnection(
+            message: try FfiConverterString.read(from: buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    static func write(_ value: RuntimeError, into buf: Writer) {
+        switch value {
+
+        
+
+        
+        case let .ChainSync(message):
+            buf.writeInt(Int32(1))
+            FfiConverterString.write(message, into: buf)
+        case let .InvalidAddress(message):
+            buf.writeInt(Int32(2))
+            FfiConverterString.write(message, into: buf)
+        case let .InvalidPubKey(message):
+            buf.writeInt(Int32(3))
+            FfiConverterString.write(message, into: buf)
+        case let .Logic(message):
+            buf.writeInt(Int32(4))
+            FfiConverterString.write(message, into: buf)
+        case let .PeerConnection(message):
+            buf.writeInt(Int32(5))
+            FfiConverterString.write(message, into: buf)
+
+        
+        }
+    }
+}
+
+
+extension RuntimeError: Equatable, Hashable {}
+
+extension RuntimeError: Error { }
 
 fileprivate extension NSLock {
     func withLock<T>(f: () throws -> T) rethrows -> T {
@@ -1016,105 +1385,80 @@ fileprivate class ConcurrentHandleMap<T> {
 // to free the callback once it's dropped by Rust.
 private let IDX_CALLBACK_FREE: Int32 = 0
 
-// Declaration and FfiConverters for PersistCallback Callback Interface
+// Declaration and FfiConverters for LspCallback Callback Interface
 
-public protocol PersistCallback : AnyObject {
-    func exists(path: String)  -> Bool
-    func readDir(path: String)  -> [String]
-    func writeToFile(path: String, data: [UInt8])  -> Bool
-    func read(path: String)  -> [UInt8]
+public protocol LspCallback : AnyObject {
+    func `channelInformation`() throws -> [UInt8]
+    func `registerPayment`(`bytes`: [UInt8]) throws
     
 }
 
 // The ForeignCallback that is passed to Rust.
-fileprivate let foreignCallbackCallbackInterfacePersistCallback : ForeignCallback =
+fileprivate let foreignCallbackCallbackInterfaceLspCallback : ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
-        func invokeExists(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
+        func `invokeChannelInformation`(_ swiftCallbackInterface: LspCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
-
-            let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.exists(
-                    path:  try FfiConverterString.read(from: reader)
-                    )
-            let writer = Writer()
-                FfiConverterBool.write(result, into: writer)
-                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeReadDir(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
-
-            let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.readDir(
-                    path:  try FfiConverterString.read(from: reader)
-                    )
-            let writer = Writer()
-                FfiConverterSequenceString.write(result, into: writer)
-                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeWriteToFile(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
-
-            let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.writeToFile(
-                    path:  try FfiConverterString.read(from: reader), 
-                    data:  try FfiConverterSequenceUInt8.read(from: reader)
-                    )
-            let writer = Writer()
-                FfiConverterBool.write(result, into: writer)
-                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-    }
-    func invokeRead(_ swiftCallbackInterface: PersistCallback, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
-
-            let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.read(
-                    path:  try FfiConverterString.read(from: reader)
-                    )
+            let result = try swiftCallbackInterface.`channelInformation`()
             let writer = Writer()
                 FfiConverterSequenceUInt8.write(result, into: writer)
                 return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
                 // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    
+        }
+        func `invokeRegisterPayment`(_ swiftCallbackInterface: LspCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
 
-        let cb = try! FfiConverterCallbackInterfacePersistCallback.lift(handle)
+            let reader = Reader(data: Data(rustBuffer: args))
+            try swiftCallbackInterface.`registerPayment`(
+                    `bytes`:  try FfiConverterSequenceUInt8.read(from: reader)
+                    )
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+        
+
+        let cb: LspCallback
+        do {
+            cb = try FfiConverterCallbackInterfaceLspCallback.lift(handle)
+        } catch {
+            out_buf.pointee = FfiConverterString.lower("LspCallback: Invalid handle")
+            return -1
+        }
+
         switch method {
             case IDX_CALLBACK_FREE:
-                FfiConverterCallbackInterfacePersistCallback.drop(handle: handle)
+                FfiConverterCallbackInterfaceLspCallback.drop(handle: handle)
                 // No return value.
                 // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
                 return 0
             case 1:
-                let buffer = try! invokeExists(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokeChannelInformation`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error as LspError {
+                    out_buf.pointee = FfiConverterTypeLspError.lower(error)
+                    return -2
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             case 2:
-                let buffer = try! invokeReadDir(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
-            case 3:
-                let buffer = try! invokeWriteToFile(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
-            case 4:
-                let buffer = try! invokeRead(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokeRegisterPayment`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error as LspError {
+                    out_buf.pointee = FfiConverterTypeLspError.lower(error)
+                    return -2
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             
             // This should never happen, because an out of bounds method index won't
             // ever be used. Once we can catch errors, we should return an InternalError.
@@ -1127,12 +1471,12 @@ fileprivate let foreignCallbackCallbackInterfacePersistCallback : ForeignCallbac
     }
 
 // FFIConverter protocol for callback interfaces
-fileprivate struct FfiConverterCallbackInterfacePersistCallback {
+fileprivate struct FfiConverterCallbackInterfaceLspCallback {
     // Initialize our callback method with the scaffolding code
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_da8c_PersistCallback_init_callback(foreignCallbackCallbackInterfacePersistCallback, err)
+                ffi_lipalightninglib_977e_LspCallback_init_callback(foreignCallbackCallbackInterfaceLspCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -1146,11 +1490,11 @@ fileprivate struct FfiConverterCallbackInterfacePersistCallback {
         handleMap.remove(handle: handle)
     }
 
-    private static var handleMap = ConcurrentHandleMap<PersistCallback>()
+    private static var handleMap = ConcurrentHandleMap<LspCallback>()
 }
 
-extension FfiConverterCallbackInterfacePersistCallback : FfiConverter {
-    typealias SwiftType = PersistCallback
+extension FfiConverterCallbackInterfaceLspCallback : FfiConverter {
+    typealias SwiftType = LspCallback
     // We can use Handle as the FFIType because it's a typealias to UInt64
     typealias FfiType = Handle
 
@@ -1184,89 +1528,111 @@ extension FfiConverterCallbackInterfacePersistCallback : FfiConverter {
 // Declaration and FfiConverters for RedundantStorageCallback Callback Interface
 
 public protocol RedundantStorageCallback : AnyObject {
-    func objectExists(bucket: String, key: String)  -> Bool
-    func getObject(bucket: String, key: String)  -> [UInt8]
-    func checkHealth(bucket: String)  -> Bool
-    func putObject(bucket: String, key: String, value: [UInt8])  -> Bool
-    func listObjects(bucket: String)  -> [String]
+    func `objectExists`(`bucket`: String, `key`: String)  -> Bool
+    func `getObject`(`bucket`: String, `key`: String)  -> [UInt8]
+    func `checkHealth`(`bucket`: String)  -> Bool
+    func `putObject`(`bucket`: String, `key`: String, `value`: [UInt8])  -> Bool
+    func `listObjects`(`bucket`: String)  -> [String]
+    func `deleteObject`(`bucket`: String, `key`: String)  -> Bool
     
 }
 
 // The ForeignCallback that is passed to Rust.
 fileprivate let foreignCallbackCallbackInterfaceRedundantStorageCallback : ForeignCallback =
     { (handle: Handle, method: Int32, args: RustBuffer, out_buf: UnsafeMutablePointer<RustBuffer>) -> Int32 in
-        func invokeObjectExists(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        func `invokeObjectExists`(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.objectExists(
-                    bucket:  try FfiConverterString.read(from: reader), 
-                    key:  try FfiConverterString.read(from: reader)
+            let result = swiftCallbackInterface.`objectExists`(
+                    `bucket`:  try FfiConverterString.read(from: reader), 
+                    `key`:  try FfiConverterString.read(from: reader)
                     )
             let writer = Writer()
                 FfiConverterBool.write(result, into: writer)
                 return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
                 // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    func invokeGetObject(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        }
+        func `invokeGetObject`(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.getObject(
-                    bucket:  try FfiConverterString.read(from: reader), 
-                    key:  try FfiConverterString.read(from: reader)
+            let result = swiftCallbackInterface.`getObject`(
+                    `bucket`:  try FfiConverterString.read(from: reader), 
+                    `key`:  try FfiConverterString.read(from: reader)
                     )
             let writer = Writer()
                 FfiConverterSequenceUInt8.write(result, into: writer)
                 return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
                 // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    func invokeCheckHealth(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        }
+        func `invokeCheckHealth`(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.checkHealth(
-                    bucket:  try FfiConverterString.read(from: reader)
+            let result = swiftCallbackInterface.`checkHealth`(
+                    `bucket`:  try FfiConverterString.read(from: reader)
                     )
             let writer = Writer()
                 FfiConverterBool.write(result, into: writer)
                 return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
                 // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    func invokePutObject(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        }
+        func `invokePutObject`(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.putObject(
-                    bucket:  try FfiConverterString.read(from: reader), 
-                    key:  try FfiConverterString.read(from: reader), 
-                    value:  try FfiConverterSequenceUInt8.read(from: reader)
+            let result = swiftCallbackInterface.`putObject`(
+                    `bucket`:  try FfiConverterString.read(from: reader), 
+                    `key`:  try FfiConverterString.read(from: reader), 
+                    `value`:  try FfiConverterSequenceUInt8.read(from: reader)
                     )
             let writer = Writer()
                 FfiConverterBool.write(result, into: writer)
                 return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
                 // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    func invokeListObjects(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        }
+        func `invokeListObjects`(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
         defer { args.deallocate() }
 
             let reader = Reader(data: Data(rustBuffer: args))
-            let result = swiftCallbackInterface.listObjects(
-                    bucket:  try FfiConverterString.read(from: reader)
+            let result = swiftCallbackInterface.`listObjects`(
+                    `bucket`:  try FfiConverterString.read(from: reader)
                     )
             let writer = Writer()
                 FfiConverterSequenceString.write(result, into: writer)
                 return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
                 // https://github.com/mozilla/uniffi-rs/issues/351
 
-    }
-    
+        }
+        func `invokeDeleteObject`(_ swiftCallbackInterface: RedundantStorageCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
 
-        let cb = try! FfiConverterCallbackInterfaceRedundantStorageCallback.lift(handle)
+            let reader = Reader(data: Data(rustBuffer: args))
+            let result = swiftCallbackInterface.`deleteObject`(
+                    `bucket`:  try FfiConverterString.read(from: reader), 
+                    `key`:  try FfiConverterString.read(from: reader)
+                    )
+            let writer = Writer()
+                FfiConverterBool.write(result, into: writer)
+                return RustBuffer(bytes: writer.bytes)// TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+        
+
+        let cb: RedundantStorageCallback
+        do {
+            cb = try FfiConverterCallbackInterfaceRedundantStorageCallback.lift(handle)
+        } catch {
+            out_buf.pointee = FfiConverterString.lower("RedundantStorageCallback: Invalid handle")
+            return -1
+        }
+
         switch method {
             case IDX_CALLBACK_FREE:
                 FfiConverterCallbackInterfaceRedundantStorageCallback.drop(handle: handle)
@@ -1274,35 +1640,65 @@ fileprivate let foreignCallbackCallbackInterfaceRedundantStorageCallback : Forei
                 // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
                 return 0
             case 1:
-                let buffer = try! invokeObjectExists(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokeObjectExists`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             case 2:
-                let buffer = try! invokeGetObject(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokeGetObject`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             case 3:
-                let buffer = try! invokeCheckHealth(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokeCheckHealth`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             case 4:
-                let buffer = try! invokePutObject(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokePutObject`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             case 5:
-                let buffer = try! invokeListObjects(cb, args)
-                out_buf.pointee = buffer
-                // Value written to out buffer.
-                // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
-                return 1
+                do {
+                    out_buf.pointee = try `invokeListObjects`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
+            case 6:
+                do {
+                    out_buf.pointee = try `invokeDeleteObject`(cb, args)
+                    // Value written to out buffer.
+                    // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
+                    return 1
+                } catch let error {
+                    out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                    return -1
+                }
             
             // This should never happen, because an out of bounds method index won't
             // ever be used. Once we can catch errors, we should return an InternalError.
@@ -1320,7 +1716,7 @@ fileprivate struct FfiConverterCallbackInterfaceRedundantStorageCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_da8c_RedundantStorageCallback_init_callback(foreignCallbackCallbackInterfaceRedundantStorageCallback, err)
+                ffi_lipalightninglib_977e_RedundantStorageCallback_init_callback(foreignCallbackCallbackInterfaceRedundantStorageCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -1411,15 +1807,44 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     }
 }
 
-public func initNativeLoggerOnce(minLevel: LogLevel)  {
+public func `initNativeLoggerOnce`(`minLevel`: LogLevel)  {
     try!
     
     rustCall() {
     
-    lipalightninglib_da8c_init_native_logger_once(
-        FfiConverterTypeLogLevel.lower(minLevel), $0)
+    lipalightninglib_977e_init_native_logger_once(
+        FfiConverterTypeLogLevel.lower(`minLevel`), $0)
 }
 }
+
+
+public func `generateSecret`(`passphrase`: String) throws -> Secret {
+    return try FfiConverterTypeSecret.lift(
+        try
+    
+    rustCallWithError(FfiConverterTypeLipaError.self) {
+    
+    lipalightninglib_977e_generate_secret(
+        FfiConverterString.lower(`passphrase`), $0)
+}
+    )
+}
+
+
+
+public func `mnemonicToSecret`(`mnemonicString`: [String], `passphrase`: String) throws -> Secret {
+    return try FfiConverterTypeSecret.lift(
+        try
+    
+    rustCallWithError(FfiConverterTypeLipaError.self) {
+    
+    lipalightninglib_977e_mnemonic_to_secret(
+        FfiConverterSequenceString.lower(`mnemonicString`), 
+        FfiConverterString.lower(`passphrase`), $0)
+}
+    )
+}
+
 
 
 /**
