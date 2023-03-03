@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_d3b5_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_c3f5_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_d3b5_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_c3f5_rustbuffer_free(self, $0) }
     }
 }
 
@@ -454,6 +454,8 @@ public protocol LightningNodeProtocol {
     func `getPayment`(`hash`: String) throws -> Payment
     func `foreground`() 
     func `background`() 
+    func `listCurrencyCodes`() throws -> [String]
+    func `getExchangeRates`() throws -> ExchangeRates
     
 }
 
@@ -471,14 +473,14 @@ public class LightningNode: LightningNodeProtocol {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_d3b5_LightningNode_new(
+    lipalightninglib_c3f5_LightningNode_new(
         FfiConverterTypeConfig.lower(`config`), 
         FfiConverterCallbackInterfaceEventsCallback.lower(`eventsCallback`), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_lipalightninglib_d3b5_LightningNode_object_free(pointer, $0) }
+        try! rustCall { ffi_lipalightninglib_c3f5_LightningNode_object_free(pointer, $0) }
     }
 
     
@@ -489,7 +491,7 @@ public class LightningNode: LightningNodeProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_d3b5_LightningNode_get_node_info(self.pointer, $0
+    lipalightninglib_c3f5_LightningNode_get_node_info(self.pointer, $0
     )
 }
         )
@@ -498,7 +500,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeLspFee.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_d3b5_LightningNode_query_lsp_fee(self.pointer, $0
+    lipalightninglib_c3f5_LightningNode_query_lsp_fee(self.pointer, $0
     )
 }
         )
@@ -507,7 +509,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterString.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_d3b5_LightningNode_create_invoice(self.pointer, 
+    lipalightninglib_c3f5_LightningNode_create_invoice(self.pointer, 
         FfiConverterUInt64.lower(`amountMsat`), 
         FfiConverterString.lower(`description`), 
         FfiConverterString.lower(`metadata`), $0
@@ -519,7 +521,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_d3b5_LightningNode_decode_invoice(self.pointer, 
+    lipalightninglib_c3f5_LightningNode_decode_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), $0
     )
 }
@@ -528,7 +530,7 @@ public class LightningNode: LightningNodeProtocol {
     public func `payInvoice`(`invoice`: String, `metadata`: String) throws {
         try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_d3b5_LightningNode_pay_invoice(self.pointer, 
+    lipalightninglib_c3f5_LightningNode_pay_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), 
         FfiConverterString.lower(`metadata`), $0
     )
@@ -538,7 +540,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_d3b5_LightningNode_get_latest_payments(self.pointer, 
+    lipalightninglib_c3f5_LightningNode_get_latest_payments(self.pointer, 
         FfiConverterUInt32.lower(`numberOfPayments`), $0
     )
 }
@@ -548,7 +550,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_d3b5_LightningNode_get_payment(self.pointer, 
+    lipalightninglib_c3f5_LightningNode_get_payment(self.pointer, 
         FfiConverterString.lower(`hash`), $0
     )
 }
@@ -558,7 +560,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_d3b5_LightningNode_foreground(self.pointer, $0
+    lipalightninglib_c3f5_LightningNode_foreground(self.pointer, $0
     )
 }
     }
@@ -566,9 +568,27 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_d3b5_LightningNode_background(self.pointer, $0
+    lipalightninglib_c3f5_LightningNode_background(self.pointer, $0
     )
 }
+    }
+    public func `listCurrencyCodes`() throws -> [String] {
+        return try FfiConverterSequenceString.lift(
+            try
+    rustCallWithError(FfiConverterTypeLnError.self) {
+    lipalightninglib_c3f5_LightningNode_list_currency_codes(self.pointer, $0
+    )
+}
+        )
+    }
+    public func `getExchangeRates`() throws -> ExchangeRates {
+        return try FfiConverterTypeExchangeRates.lift(
+            try
+    rustCallWithError(FfiConverterTypeLnError.self) {
+    lipalightninglib_c3f5_LightningNode_get_exchange_rates(self.pointer, $0
+    )
+}
+        )
     }
     
 }
@@ -687,24 +707,28 @@ public func FfiConverterTypeChannelsInfo_lower(_ value: ChannelsInfo) -> RustBuf
 public struct Config {
     public var `network`: Network
     public var `seed`: [UInt8]
+    public var `fiatCurrency`: String
     public var `esploraApiUrl`: String
     public var `rgsUrl`: String
     public var `lspUrl`: String
     public var `lspToken`: String
     public var `localPersistencePath`: String
     public var `timezoneConfig`: TzConfig
+    public var `graphqlUrl`: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`network`: Network, `seed`: [UInt8], `esploraApiUrl`: String, `rgsUrl`: String, `lspUrl`: String, `lspToken`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig) {
+    public init(`network`: Network, `seed`: [UInt8], `fiatCurrency`: String, `esploraApiUrl`: String, `rgsUrl`: String, `lspUrl`: String, `lspToken`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `graphqlUrl`: String) {
         self.`network` = `network`
         self.`seed` = `seed`
+        self.`fiatCurrency` = `fiatCurrency`
         self.`esploraApiUrl` = `esploraApiUrl`
         self.`rgsUrl` = `rgsUrl`
         self.`lspUrl` = `lspUrl`
         self.`lspToken` = `lspToken`
         self.`localPersistencePath` = `localPersistencePath`
         self.`timezoneConfig` = `timezoneConfig`
+        self.`graphqlUrl` = `graphqlUrl`
     }
 }
 
@@ -715,6 +739,9 @@ extension Config: Equatable, Hashable {
             return false
         }
         if lhs.`seed` != rhs.`seed` {
+            return false
+        }
+        if lhs.`fiatCurrency` != rhs.`fiatCurrency` {
             return false
         }
         if lhs.`esploraApiUrl` != rhs.`esploraApiUrl` {
@@ -735,18 +762,23 @@ extension Config: Equatable, Hashable {
         if lhs.`timezoneConfig` != rhs.`timezoneConfig` {
             return false
         }
+        if lhs.`graphqlUrl` != rhs.`graphqlUrl` {
+            return false
+        }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`network`)
         hasher.combine(`seed`)
+        hasher.combine(`fiatCurrency`)
         hasher.combine(`esploraApiUrl`)
         hasher.combine(`rgsUrl`)
         hasher.combine(`lspUrl`)
         hasher.combine(`lspToken`)
         hasher.combine(`localPersistencePath`)
         hasher.combine(`timezoneConfig`)
+        hasher.combine(`graphqlUrl`)
     }
 }
 
@@ -756,24 +788,28 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         return try Config(
             `network`: FfiConverterTypeNetwork.read(from: &buf), 
             `seed`: FfiConverterSequenceUInt8.read(from: &buf), 
+            `fiatCurrency`: FfiConverterString.read(from: &buf), 
             `esploraApiUrl`: FfiConverterString.read(from: &buf), 
             `rgsUrl`: FfiConverterString.read(from: &buf), 
             `lspUrl`: FfiConverterString.read(from: &buf), 
             `lspToken`: FfiConverterString.read(from: &buf), 
             `localPersistencePath`: FfiConverterString.read(from: &buf), 
-            `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf)
+            `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf), 
+            `graphqlUrl`: FfiConverterString.read(from: &buf)
         )
     }
 
     public static func write(_ value: Config, into buf: inout [UInt8]) {
         FfiConverterTypeNetwork.write(value.`network`, into: &buf)
         FfiConverterSequenceUInt8.write(value.`seed`, into: &buf)
+        FfiConverterString.write(value.`fiatCurrency`, into: &buf)
         FfiConverterString.write(value.`esploraApiUrl`, into: &buf)
         FfiConverterString.write(value.`rgsUrl`, into: &buf)
         FfiConverterString.write(value.`lspUrl`, into: &buf)
         FfiConverterString.write(value.`lspToken`, into: &buf)
         FfiConverterString.write(value.`localPersistencePath`, into: &buf)
         FfiConverterTypeTzConfig.write(value.`timezoneConfig`, into: &buf)
+        FfiConverterString.write(value.`graphqlUrl`, into: &buf)
     }
 }
 
@@ -787,25 +823,85 @@ public func FfiConverterTypeConfig_lower(_ value: Config) -> RustBuffer {
 }
 
 
-public struct FiatValue {
-    public var `fiat`: String
-    public var `amount`: UInt64
+public struct ExchangeRates {
+    public var `defaultCurrency`: UInt32
+    public var `usd`: UInt32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`fiat`: String, `amount`: UInt64) {
-        self.`fiat` = `fiat`
-        self.`amount` = `amount`
+    public init(`defaultCurrency`: UInt32, `usd`: UInt32) {
+        self.`defaultCurrency` = `defaultCurrency`
+        self.`usd` = `usd`
     }
 }
 
 
-extension FiatValue: Equatable, Hashable {
-    public static func ==(lhs: FiatValue, rhs: FiatValue) -> Bool {
+extension ExchangeRates: Equatable, Hashable {
+    public static func ==(lhs: ExchangeRates, rhs: ExchangeRates) -> Bool {
+        if lhs.`defaultCurrency` != rhs.`defaultCurrency` {
+            return false
+        }
+        if lhs.`usd` != rhs.`usd` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`defaultCurrency`)
+        hasher.combine(`usd`)
+    }
+}
+
+
+public struct FfiConverterTypeExchangeRates: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExchangeRates {
+        return try ExchangeRates(
+            `defaultCurrency`: FfiConverterUInt32.read(from: &buf), 
+            `usd`: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ExchangeRates, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.`defaultCurrency`, into: &buf)
+        FfiConverterUInt32.write(value.`usd`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeExchangeRates_lift(_ buf: RustBuffer) throws -> ExchangeRates {
+    return try FfiConverterTypeExchangeRates.lift(buf)
+}
+
+public func FfiConverterTypeExchangeRates_lower(_ value: ExchangeRates) -> RustBuffer {
+    return FfiConverterTypeExchangeRates.lower(value)
+}
+
+
+public struct FiatValues {
+    public var `fiat`: String
+    public var `amount`: UInt64
+    public var `amountUsd`: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`fiat`: String, `amount`: UInt64, `amountUsd`: UInt64) {
+        self.`fiat` = `fiat`
+        self.`amount` = `amount`
+        self.`amountUsd` = `amountUsd`
+    }
+}
+
+
+extension FiatValues: Equatable, Hashable {
+    public static func ==(lhs: FiatValues, rhs: FiatValues) -> Bool {
         if lhs.`fiat` != rhs.`fiat` {
             return false
         }
         if lhs.`amount` != rhs.`amount` {
+            return false
+        }
+        if lhs.`amountUsd` != rhs.`amountUsd` {
             return false
         }
         return true
@@ -814,31 +910,34 @@ extension FiatValue: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`fiat`)
         hasher.combine(`amount`)
+        hasher.combine(`amountUsd`)
     }
 }
 
 
-public struct FfiConverterTypeFiatValue: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatValue {
-        return try FiatValue(
+public struct FfiConverterTypeFiatValues: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatValues {
+        return try FiatValues(
             `fiat`: FfiConverterString.read(from: &buf), 
-            `amount`: FfiConverterUInt64.read(from: &buf)
+            `amount`: FfiConverterUInt64.read(from: &buf), 
+            `amountUsd`: FfiConverterUInt64.read(from: &buf)
         )
     }
 
-    public static func write(_ value: FiatValue, into buf: inout [UInt8]) {
+    public static func write(_ value: FiatValues, into buf: inout [UInt8]) {
         FfiConverterString.write(value.`fiat`, into: &buf)
         FfiConverterUInt64.write(value.`amount`, into: &buf)
+        FfiConverterUInt64.write(value.`amountUsd`, into: &buf)
     }
 }
 
 
-public func FfiConverterTypeFiatValue_lift(_ buf: RustBuffer) throws -> FiatValue {
-    return try FfiConverterTypeFiatValue.lift(buf)
+public func FfiConverterTypeFiatValues_lift(_ buf: RustBuffer) throws -> FiatValues {
+    return try FfiConverterTypeFiatValues.lift(buf)
 }
 
-public func FfiConverterTypeFiatValue_lower(_ value: FiatValue) -> RustBuffer {
-    return FfiConverterTypeFiatValue.lower(value)
+public func FfiConverterTypeFiatValues_lower(_ value: FiatValues) -> RustBuffer {
+    return FfiConverterTypeFiatValues.lower(value)
 }
 
 
@@ -1059,12 +1158,12 @@ public struct Payment {
     public var `preimage`: String?
     public var `networkFeesMsat`: UInt64?
     public var `lspFeesMsat`: UInt64?
-    public var `fiatValue`: FiatValue?
+    public var `fiatValues`: FiatValues?
     public var `metadata`: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `hash`: String, `amountMsat`: UInt64, `invoice`: String, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFeesMsat`: UInt64?, `lspFeesMsat`: UInt64?, `fiatValue`: FiatValue?, `metadata`: String) {
+    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `hash`: String, `amountMsat`: UInt64, `invoice`: String, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFeesMsat`: UInt64?, `lspFeesMsat`: UInt64?, `fiatValues`: FiatValues?, `metadata`: String) {
         self.`paymentType` = `paymentType`
         self.`paymentState` = `paymentState`
         self.`hash` = `hash`
@@ -1076,7 +1175,7 @@ public struct Payment {
         self.`preimage` = `preimage`
         self.`networkFeesMsat` = `networkFeesMsat`
         self.`lspFeesMsat` = `lspFeesMsat`
-        self.`fiatValue` = `fiatValue`
+        self.`fiatValues` = `fiatValues`
         self.`metadata` = `metadata`
     }
 }
@@ -1117,7 +1216,7 @@ extension Payment: Equatable, Hashable {
         if lhs.`lspFeesMsat` != rhs.`lspFeesMsat` {
             return false
         }
-        if lhs.`fiatValue` != rhs.`fiatValue` {
+        if lhs.`fiatValues` != rhs.`fiatValues` {
             return false
         }
         if lhs.`metadata` != rhs.`metadata` {
@@ -1138,7 +1237,7 @@ extension Payment: Equatable, Hashable {
         hasher.combine(`preimage`)
         hasher.combine(`networkFeesMsat`)
         hasher.combine(`lspFeesMsat`)
-        hasher.combine(`fiatValue`)
+        hasher.combine(`fiatValues`)
         hasher.combine(`metadata`)
     }
 }
@@ -1158,7 +1257,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
             `preimage`: FfiConverterOptionString.read(from: &buf), 
             `networkFeesMsat`: FfiConverterOptionUInt64.read(from: &buf), 
             `lspFeesMsat`: FfiConverterOptionUInt64.read(from: &buf), 
-            `fiatValue`: FfiConverterOptionTypeFiatValue.read(from: &buf), 
+            `fiatValues`: FfiConverterOptionTypeFiatValues.read(from: &buf), 
             `metadata`: FfiConverterString.read(from: &buf)
         )
     }
@@ -1175,7 +1274,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterOptionString.write(value.`preimage`, into: &buf)
         FfiConverterOptionUInt64.write(value.`networkFeesMsat`, into: &buf)
         FfiConverterOptionUInt64.write(value.`lspFeesMsat`, into: &buf)
-        FfiConverterOptionTypeFiatValue.write(value.`fiatValue`, into: &buf)
+        FfiConverterOptionTypeFiatValues.write(value.`fiatValues`, into: &buf)
         FfiConverterString.write(value.`metadata`, into: &buf)
     }
 }
@@ -1621,13 +1720,15 @@ extension PaymentType: Equatable, Hashable {}
 public enum RuntimeErrorCode {
     
     case `esploraServiceUnavailable`
-    case `rgsServiceUnavailable`
-    case `rgsUpdateError`
+    case `exchangeRateProviderUnavailable`
     case `lspServiceUnavailable`
     case `remoteStorageServiceUnavailable`
+    case `rgsServiceUnavailable`
+    case `rgsUpdateError`
+    case `objectNotFound`
+    case `alreadyUsedInvoice`
     case `noRouteFound`
     case `sendFailure`
-    case `alreadyUsedInvoice`
     case `genericError`
 }
 
@@ -1640,21 +1741,25 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case 1: return .`esploraServiceUnavailable`
         
-        case 2: return .`rgsServiceUnavailable`
+        case 2: return .`exchangeRateProviderUnavailable`
         
-        case 3: return .`rgsUpdateError`
+        case 3: return .`lspServiceUnavailable`
         
-        case 4: return .`lspServiceUnavailable`
+        case 4: return .`remoteStorageServiceUnavailable`
         
-        case 5: return .`remoteStorageServiceUnavailable`
+        case 5: return .`rgsServiceUnavailable`
         
-        case 6: return .`noRouteFound`
+        case 6: return .`rgsUpdateError`
         
-        case 7: return .`sendFailure`
+        case 7: return .`objectNotFound`
         
         case 8: return .`alreadyUsedInvoice`
         
-        case 9: return .`genericError`
+        case 9: return .`noRouteFound`
+        
+        case 10: return .`sendFailure`
+        
+        case 11: return .`genericError`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -1668,27 +1773,27 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(1))
         
         
-        case .`rgsServiceUnavailable`:
+        case .`exchangeRateProviderUnavailable`:
             writeInt(&buf, Int32(2))
         
         
-        case .`rgsUpdateError`:
+        case .`lspServiceUnavailable`:
             writeInt(&buf, Int32(3))
         
         
-        case .`lspServiceUnavailable`:
+        case .`remoteStorageServiceUnavailable`:
             writeInt(&buf, Int32(4))
         
         
-        case .`remoteStorageServiceUnavailable`:
+        case .`rgsServiceUnavailable`:
             writeInt(&buf, Int32(5))
         
         
-        case .`noRouteFound`:
+        case .`rgsUpdateError`:
             writeInt(&buf, Int32(6))
         
         
-        case .`sendFailure`:
+        case .`objectNotFound`:
             writeInt(&buf, Int32(7))
         
         
@@ -1696,8 +1801,16 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(8))
         
         
-        case .`genericError`:
+        case .`noRouteFound`:
             writeInt(&buf, Int32(9))
+        
+        
+        case .`sendFailure`:
+            writeInt(&buf, Int32(10))
+        
+        
+        case .`genericError`:
+            writeInt(&buf, Int32(11))
         
         }
     }
@@ -2072,7 +2185,7 @@ fileprivate struct FfiConverterCallbackInterfaceEventsCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_d3b5_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
+                ffi_lipalightninglib_c3f5_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -2161,8 +2274,8 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     }
 }
 
-fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
-    typealias SwiftType = FiatValue?
+fileprivate struct FfiConverterOptionTypeFiatValues: FfiConverterRustBuffer {
+    typealias SwiftType = FiatValues?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -2170,13 +2283,13 @@ fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeFiatValue.write(value, into: &buf)
+        FfiConverterTypeFiatValues.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeFiatValue.read(from: &buf)
+        case 1: return try FfiConverterTypeFiatValues.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -2253,7 +2366,7 @@ public func `initNativeLoggerOnce`(`minLevel`: LogLevel)  {
     
     rustCall() {
     
-    lipalightninglib_d3b5_init_native_logger_once(
+    lipalightninglib_c3f5_init_native_logger_once(
         FfiConverterTypeLogLevel.lower(`minLevel`), $0)
 }
 }
@@ -2265,7 +2378,7 @@ public func `generateSecret`(`passphrase`: String) throws -> Secret {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_d3b5_generate_secret(
+    lipalightninglib_c3f5_generate_secret(
         FfiConverterString.lower(`passphrase`), $0)
 }
     )
@@ -2279,7 +2392,7 @@ public func `mnemonicToSecret`(`mnemonicString`: [String], `passphrase`: String)
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_d3b5_mnemonic_to_secret(
+    lipalightninglib_c3f5_mnemonic_to_secret(
         FfiConverterSequenceString.lower(`mnemonicString`), 
         FfiConverterString.lower(`passphrase`), $0)
 }
