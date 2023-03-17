@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_c3f5_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_3a2_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_c3f5_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_3a2_rustbuffer_free(self, $0) }
     }
 }
 
@@ -447,7 +447,7 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 public protocol LightningNodeProtocol {
     func `getNodeInfo`()  -> NodeInfo
     func `queryLspFee`() throws -> LspFee
-    func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> String
+    func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails
     func `decodeInvoice`(`invoice`: String) throws -> InvoiceDetails
     func `payInvoice`(`invoice`: String, `metadata`: String) throws
     func `getLatestPayments`(`numberOfPayments`: UInt32) throws -> [Payment]
@@ -456,6 +456,7 @@ public protocol LightningNodeProtocol {
     func `background`() 
     func `listCurrencyCodes`() throws -> [String]
     func `getExchangeRates`() throws -> ExchangeRates
+    func `changeFiatCurrency`(`fiatCurrency`: String) 
     
 }
 
@@ -473,14 +474,14 @@ public class LightningNode: LightningNodeProtocol {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_c3f5_LightningNode_new(
+    lipalightninglib_3a2_LightningNode_new(
         FfiConverterTypeConfig.lower(`config`), 
         FfiConverterCallbackInterfaceEventsCallback.lower(`eventsCallback`), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_lipalightninglib_c3f5_LightningNode_object_free(pointer, $0) }
+        try! rustCall { ffi_lipalightninglib_3a2_LightningNode_object_free(pointer, $0) }
     }
 
     
@@ -491,7 +492,7 @@ public class LightningNode: LightningNodeProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_c3f5_LightningNode_get_node_info(self.pointer, $0
+    lipalightninglib_3a2_LightningNode_get_node_info(self.pointer, $0
     )
 }
         )
@@ -500,16 +501,16 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeLspFee.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_query_lsp_fee(self.pointer, $0
+    lipalightninglib_3a2_LightningNode_query_lsp_fee(self.pointer, $0
     )
 }
         )
     }
-    public func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> String {
-        return try FfiConverterString.lift(
+    public func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails {
+        return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_create_invoice(self.pointer, 
+    lipalightninglib_3a2_LightningNode_create_invoice(self.pointer, 
         FfiConverterUInt64.lower(`amountMsat`), 
         FfiConverterString.lower(`description`), 
         FfiConverterString.lower(`metadata`), $0
@@ -521,7 +522,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_decode_invoice(self.pointer, 
+    lipalightninglib_3a2_LightningNode_decode_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), $0
     )
 }
@@ -530,7 +531,7 @@ public class LightningNode: LightningNodeProtocol {
     public func `payInvoice`(`invoice`: String, `metadata`: String) throws {
         try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_pay_invoice(self.pointer, 
+    lipalightninglib_3a2_LightningNode_pay_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), 
         FfiConverterString.lower(`metadata`), $0
     )
@@ -540,7 +541,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_get_latest_payments(self.pointer, 
+    lipalightninglib_3a2_LightningNode_get_latest_payments(self.pointer, 
         FfiConverterUInt32.lower(`numberOfPayments`), $0
     )
 }
@@ -550,7 +551,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_get_payment(self.pointer, 
+    lipalightninglib_3a2_LightningNode_get_payment(self.pointer, 
         FfiConverterString.lower(`hash`), $0
     )
 }
@@ -560,7 +561,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_c3f5_LightningNode_foreground(self.pointer, $0
+    lipalightninglib_3a2_LightningNode_foreground(self.pointer, $0
     )
 }
     }
@@ -568,7 +569,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_c3f5_LightningNode_background(self.pointer, $0
+    lipalightninglib_3a2_LightningNode_background(self.pointer, $0
     )
 }
     }
@@ -576,7 +577,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceString.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_list_currency_codes(self.pointer, $0
+    lipalightninglib_3a2_LightningNode_list_currency_codes(self.pointer, $0
     )
 }
         )
@@ -585,10 +586,19 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeExchangeRates.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_c3f5_LightningNode_get_exchange_rates(self.pointer, $0
+    lipalightninglib_3a2_LightningNode_get_exchange_rates(self.pointer, $0
     )
 }
         )
+    }
+    public func `changeFiatCurrency`(`fiatCurrency`: String)  {
+        try!
+    rustCall() {
+    
+    lipalightninglib_3a2_LightningNode_change_fiat_currency(self.pointer, 
+        FfiConverterString.lower(`fiatCurrency`), $0
+    )
+}
     }
     
 }
@@ -715,10 +725,11 @@ public struct Config {
     public var `localPersistencePath`: String
     public var `timezoneConfig`: TzConfig
     public var `graphqlUrl`: String
+    public var `backendHealthUrl`: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`network`: Network, `seed`: [UInt8], `fiatCurrency`: String, `esploraApiUrl`: String, `rgsUrl`: String, `lspUrl`: String, `lspToken`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `graphqlUrl`: String) {
+    public init(`network`: Network, `seed`: [UInt8], `fiatCurrency`: String, `esploraApiUrl`: String, `rgsUrl`: String, `lspUrl`: String, `lspToken`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `graphqlUrl`: String, `backendHealthUrl`: String) {
         self.`network` = `network`
         self.`seed` = `seed`
         self.`fiatCurrency` = `fiatCurrency`
@@ -729,6 +740,7 @@ public struct Config {
         self.`localPersistencePath` = `localPersistencePath`
         self.`timezoneConfig` = `timezoneConfig`
         self.`graphqlUrl` = `graphqlUrl`
+        self.`backendHealthUrl` = `backendHealthUrl`
     }
 }
 
@@ -765,6 +777,9 @@ extension Config: Equatable, Hashable {
         if lhs.`graphqlUrl` != rhs.`graphqlUrl` {
             return false
         }
+        if lhs.`backendHealthUrl` != rhs.`backendHealthUrl` {
+            return false
+        }
         return true
     }
 
@@ -779,6 +794,7 @@ extension Config: Equatable, Hashable {
         hasher.combine(`localPersistencePath`)
         hasher.combine(`timezoneConfig`)
         hasher.combine(`graphqlUrl`)
+        hasher.combine(`backendHealthUrl`)
     }
 }
 
@@ -795,7 +811,8 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
             `lspToken`: FfiConverterString.read(from: &buf), 
             `localPersistencePath`: FfiConverterString.read(from: &buf), 
             `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf), 
-            `graphqlUrl`: FfiConverterString.read(from: &buf)
+            `graphqlUrl`: FfiConverterString.read(from: &buf), 
+            `backendHealthUrl`: FfiConverterString.read(from: &buf)
         )
     }
 
@@ -810,6 +827,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         FfiConverterString.write(value.`localPersistencePath`, into: &buf)
         FfiConverterTypeTzConfig.write(value.`timezoneConfig`, into: &buf)
         FfiConverterString.write(value.`graphqlUrl`, into: &buf)
+        FfiConverterString.write(value.`backendHealthUrl`, into: &buf)
     }
 }
 
@@ -942,6 +960,7 @@ public func FfiConverterTypeFiatValues_lower(_ value: FiatValues) -> RustBuffer 
 
 
 public struct InvoiceDetails {
+    public var `invoice`: String
     public var `amountMsat`: UInt64?
     public var `description`: String
     public var `paymentHash`: String
@@ -951,7 +970,8 @@ public struct InvoiceDetails {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`amountMsat`: UInt64?, `description`: String, `paymentHash`: String, `payeePubKey`: String, `invoiceTimestamp`: Date, `expiryInterval`: TimeInterval) {
+    public init(`invoice`: String, `amountMsat`: UInt64?, `description`: String, `paymentHash`: String, `payeePubKey`: String, `invoiceTimestamp`: Date, `expiryInterval`: TimeInterval) {
+        self.`invoice` = `invoice`
         self.`amountMsat` = `amountMsat`
         self.`description` = `description`
         self.`paymentHash` = `paymentHash`
@@ -964,6 +984,9 @@ public struct InvoiceDetails {
 
 extension InvoiceDetails: Equatable, Hashable {
     public static func ==(lhs: InvoiceDetails, rhs: InvoiceDetails) -> Bool {
+        if lhs.`invoice` != rhs.`invoice` {
+            return false
+        }
         if lhs.`amountMsat` != rhs.`amountMsat` {
             return false
         }
@@ -986,6 +1009,7 @@ extension InvoiceDetails: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
+        hasher.combine(`invoice`)
         hasher.combine(`amountMsat`)
         hasher.combine(`description`)
         hasher.combine(`paymentHash`)
@@ -999,6 +1023,7 @@ extension InvoiceDetails: Equatable, Hashable {
 public struct FfiConverterTypeInvoiceDetails: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> InvoiceDetails {
         return try InvoiceDetails(
+            `invoice`: FfiConverterString.read(from: &buf), 
             `amountMsat`: FfiConverterOptionUInt64.read(from: &buf), 
             `description`: FfiConverterString.read(from: &buf), 
             `paymentHash`: FfiConverterString.read(from: &buf), 
@@ -1009,6 +1034,7 @@ public struct FfiConverterTypeInvoiceDetails: FfiConverterRustBuffer {
     }
 
     public static func write(_ value: InvoiceDetails, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.`invoice`, into: &buf)
         FfiConverterOptionUInt64.write(value.`amountMsat`, into: &buf)
         FfiConverterString.write(value.`description`, into: &buf)
         FfiConverterString.write(value.`paymentHash`, into: &buf)
@@ -1722,7 +1748,7 @@ public enum RuntimeErrorCode {
     case `esploraServiceUnavailable`
     case `exchangeRateProviderUnavailable`
     case `lspServiceUnavailable`
-    case `remoteStorageServiceUnavailable`
+    case `remoteStorageError`
     case `rgsServiceUnavailable`
     case `rgsUpdateError`
     case `objectNotFound`
@@ -1745,7 +1771,7 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case 3: return .`lspServiceUnavailable`
         
-        case 4: return .`remoteStorageServiceUnavailable`
+        case 4: return .`remoteStorageError`
         
         case 5: return .`rgsServiceUnavailable`
         
@@ -1781,7 +1807,7 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(3))
         
         
-        case .`remoteStorageServiceUnavailable`:
+        case .`remoteStorageError`:
             writeInt(&buf, Int32(4))
         
         
@@ -1828,85 +1854,6 @@ public func FfiConverterTypeRuntimeErrorCode_lower(_ value: RuntimeErrorCode) ->
 
 extension RuntimeErrorCode: Equatable, Hashable {}
 
-
-
-public enum CallbackError {
-
-    
-    
-    // Simple error enums only carry a message
-    case InvalidInput(message: String)
-    
-    // Simple error enums only carry a message
-    case RuntimeError(message: String)
-    
-    // Simple error enums only carry a message
-    case PermanentFailure(message: String)
-    
-    // Simple error enums only carry a message
-    case UnexpectedUniFfi(message: String)
-    
-}
-
-public struct FfiConverterTypeCallbackError: FfiConverterRustBuffer {
-    typealias SwiftType = CallbackError
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CallbackError {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-
-        
-
-        
-        case 1: return .InvalidInput(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 2: return .RuntimeError(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 3: return .PermanentFailure(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-        case 4: return .UnexpectedUniFfi(
-            message: try FfiConverterString.read(from: &buf)
-        )
-        
-
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: CallbackError, into buf: inout [UInt8]) {
-        switch value {
-
-        
-
-        
-        case let .InvalidInput(message):
-            writeInt(&buf, Int32(1))
-            FfiConverterString.write(message, into: &buf)
-        case let .RuntimeError(message):
-            writeInt(&buf, Int32(2))
-            FfiConverterString.write(message, into: &buf)
-        case let .PermanentFailure(message):
-            writeInt(&buf, Int32(3))
-            FfiConverterString.write(message, into: &buf)
-        case let .UnexpectedUniFfi(message):
-            writeInt(&buf, Int32(4))
-            FfiConverterString.write(message, into: &buf)
-
-        
-        }
-    }
-}
-
-
-extension CallbackError: Equatable, Hashable {}
-
-extension CallbackError: Error { }
 
 
 public enum LnError {
@@ -2038,10 +1985,10 @@ private let IDX_CALLBACK_FREE: Int32 = 0
 // Declaration and FfiConverters for EventsCallback Callback Interface
 
 public protocol EventsCallback : AnyObject {
-    func `paymentReceived`(`paymentHash`: String, `amountMsat`: UInt64) throws
-    func `channelClosed`(`channelId`: String, `reason`: String) throws
-    func `paymentSent`(`paymentHash`: String, `paymentPreimage`: String, `feePaidMsat`: UInt64) throws
-    func `paymentFailed`(`paymentHash`: String) throws
+    func `paymentReceived`(`paymentHash`: String, `amountMsat`: UInt64) 
+    func `paymentSent`(`paymentHash`: String, `paymentPreimage`: String, `feePaidMsat`: UInt64) 
+    func `paymentFailed`(`paymentHash`: String) 
+    func `channelClosed`(`channelId`: String, `reason`: String) 
     
 }
 
@@ -2052,22 +1999,9 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
         defer { args.deallocate() }
 
             var reader = createReader(data: Data(rustBuffer: args))
-            try swiftCallbackInterface.`paymentReceived`(
+            swiftCallbackInterface.`paymentReceived`(
                     `paymentHash`:  try FfiConverterString.read(from: &reader), 
                     `amountMsat`:  try FfiConverterUInt64.read(from: &reader)
-                    )
-            return RustBuffer()
-                // TODO catch errors and report them back to Rust.
-                // https://github.com/mozilla/uniffi-rs/issues/351
-
-        }
-        func `invokeChannelClosed`(_ swiftCallbackInterface: EventsCallback, _ args: RustBuffer) throws -> RustBuffer {
-        defer { args.deallocate() }
-
-            var reader = createReader(data: Data(rustBuffer: args))
-            try swiftCallbackInterface.`channelClosed`(
-                    `channelId`:  try FfiConverterString.read(from: &reader), 
-                    `reason`:  try FfiConverterString.read(from: &reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -2078,7 +2012,7 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
         defer { args.deallocate() }
 
             var reader = createReader(data: Data(rustBuffer: args))
-            try swiftCallbackInterface.`paymentSent`(
+            swiftCallbackInterface.`paymentSent`(
                     `paymentHash`:  try FfiConverterString.read(from: &reader), 
                     `paymentPreimage`:  try FfiConverterString.read(from: &reader), 
                     `feePaidMsat`:  try FfiConverterUInt64.read(from: &reader)
@@ -2092,8 +2026,21 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
         defer { args.deallocate() }
 
             var reader = createReader(data: Data(rustBuffer: args))
-            try swiftCallbackInterface.`paymentFailed`(
+            swiftCallbackInterface.`paymentFailed`(
                     `paymentHash`:  try FfiConverterString.read(from: &reader)
+                    )
+            return RustBuffer()
+                // TODO catch errors and report them back to Rust.
+                // https://github.com/mozilla/uniffi-rs/issues/351
+
+        }
+        func `invokeChannelClosed`(_ swiftCallbackInterface: EventsCallback, _ args: RustBuffer) throws -> RustBuffer {
+        defer { args.deallocate() }
+
+            var reader = createReader(data: Data(rustBuffer: args))
+            swiftCallbackInterface.`channelClosed`(
+                    `channelId`:  try FfiConverterString.read(from: &reader), 
+                    `reason`:  try FfiConverterString.read(from: &reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -2122,48 +2069,36 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
                     // Value written to out buffer.
                     // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
                     return 1
-                } catch let error as CallbackError {
-                    out_buf.pointee = FfiConverterTypeCallbackError.lower(error)
-                    return -2
                 } catch let error {
                     out_buf.pointee = FfiConverterString.lower(String(describing: error))
                     return -1
                 }
             case 2:
                 do {
-                    out_buf.pointee = try `invokeChannelClosed`(cb, args)
+                    out_buf.pointee = try `invokePaymentSent`(cb, args)
                     // Value written to out buffer.
                     // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
                     return 1
-                } catch let error as CallbackError {
-                    out_buf.pointee = FfiConverterTypeCallbackError.lower(error)
-                    return -2
                 } catch let error {
                     out_buf.pointee = FfiConverterString.lower(String(describing: error))
                     return -1
                 }
             case 3:
                 do {
-                    out_buf.pointee = try `invokePaymentSent`(cb, args)
+                    out_buf.pointee = try `invokePaymentFailed`(cb, args)
                     // Value written to out buffer.
                     // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
                     return 1
-                } catch let error as CallbackError {
-                    out_buf.pointee = FfiConverterTypeCallbackError.lower(error)
-                    return -2
                 } catch let error {
                     out_buf.pointee = FfiConverterString.lower(String(describing: error))
                     return -1
                 }
             case 4:
                 do {
-                    out_buf.pointee = try `invokePaymentFailed`(cb, args)
+                    out_buf.pointee = try `invokeChannelClosed`(cb, args)
                     // Value written to out buffer.
                     // See docs of ForeignCallback in `uniffi/src/ffi/foreigncallbacks.rs`
                     return 1
-                } catch let error as CallbackError {
-                    out_buf.pointee = FfiConverterTypeCallbackError.lower(error)
-                    return -2
                 } catch let error {
                     out_buf.pointee = FfiConverterString.lower(String(describing: error))
                     return -1
@@ -2185,7 +2120,7 @@ fileprivate struct FfiConverterCallbackInterfaceEventsCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_c3f5_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
+                ffi_lipalightninglib_3a2_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -2366,7 +2301,7 @@ public func `initNativeLoggerOnce`(`minLevel`: LogLevel)  {
     
     rustCall() {
     
-    lipalightninglib_c3f5_init_native_logger_once(
+    lipalightninglib_3a2_init_native_logger_once(
         FfiConverterTypeLogLevel.lower(`minLevel`), $0)
 }
 }
@@ -2378,7 +2313,7 @@ public func `generateSecret`(`passphrase`: String) throws -> Secret {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_c3f5_generate_secret(
+    lipalightninglib_3a2_generate_secret(
         FfiConverterString.lower(`passphrase`), $0)
 }
     )
@@ -2392,9 +2327,23 @@ public func `mnemonicToSecret`(`mnemonicString`: [String], `passphrase`: String)
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_c3f5_mnemonic_to_secret(
+    lipalightninglib_3a2_mnemonic_to_secret(
         FfiConverterSequenceString.lower(`mnemonicString`), 
         FfiConverterString.lower(`passphrase`), $0)
+}
+    )
+}
+
+
+
+public func `wordsByPrefix`(`prefix`: String)  -> [String] {
+    return try! FfiConverterSequenceString.lift(
+        try!
+    
+    rustCall() {
+    
+    lipalightninglib_3a2_words_by_prefix(
+        FfiConverterString.lower(`prefix`), $0)
 }
     )
 }
