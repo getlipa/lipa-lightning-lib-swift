@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_8125_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_c39a_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_8125_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_c39a_rustbuffer_free(self, $0) }
     }
 }
 
@@ -451,6 +451,7 @@ public protocol LightningNodeProtocol {
     func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails
     func `decodeInvoice`(`invoice`: String) throws -> InvoiceDetails
     func `payInvoice`(`invoice`: String, `metadata`: String) throws
+    func `payOpenInvoice`(`invoice`: String, `amountMsat`: UInt64, `metadata`: String) throws
     func `getLatestPayments`(`numberOfPayments`: UInt32) throws -> [Payment]
     func `getPayment`(`hash`: String) throws -> Payment
     func `foreground`() 
@@ -476,14 +477,14 @@ public class LightningNode: LightningNodeProtocol {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_8125_LightningNode_new(
+    lipalightninglib_c39a_LightningNode_new(
         FfiConverterTypeConfig.lower(`config`), 
         FfiConverterCallbackInterfaceEventsCallback.lower(`eventsCallback`), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_lipalightninglib_8125_LightningNode_object_free(pointer, $0) }
+        try! rustCall { ffi_lipalightninglib_c39a_LightningNode_object_free(pointer, $0) }
     }
 
     
@@ -494,7 +495,7 @@ public class LightningNode: LightningNodeProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_8125_LightningNode_get_node_info(self.pointer, $0
+    lipalightninglib_c39a_LightningNode_get_node_info(self.pointer, $0
     )
 }
         )
@@ -503,7 +504,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeLspFee.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_query_lsp_fee(self.pointer, $0
+    lipalightninglib_c39a_LightningNode_query_lsp_fee(self.pointer, $0
     )
 }
         )
@@ -512,7 +513,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterUInt64.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_calculate_lsp_fee(self.pointer, 
+    lipalightninglib_c39a_LightningNode_calculate_lsp_fee(self.pointer, 
         FfiConverterUInt64.lower(`amountMsat`), $0
     )
 }
@@ -522,7 +523,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_create_invoice(self.pointer, 
+    lipalightninglib_c39a_LightningNode_create_invoice(self.pointer, 
         FfiConverterUInt64.lower(`amountMsat`), 
         FfiConverterString.lower(`description`), 
         FfiConverterString.lower(`metadata`), $0
@@ -534,7 +535,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_decode_invoice(self.pointer, 
+    lipalightninglib_c39a_LightningNode_decode_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), $0
     )
 }
@@ -543,8 +544,18 @@ public class LightningNode: LightningNodeProtocol {
     public func `payInvoice`(`invoice`: String, `metadata`: String) throws {
         try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_pay_invoice(self.pointer, 
+    lipalightninglib_c39a_LightningNode_pay_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), 
+        FfiConverterString.lower(`metadata`), $0
+    )
+}
+    }
+    public func `payOpenInvoice`(`invoice`: String, `amountMsat`: UInt64, `metadata`: String) throws {
+        try
+    rustCallWithError(FfiConverterTypeLnError.self) {
+    lipalightninglib_c39a_LightningNode_pay_open_invoice(self.pointer, 
+        FfiConverterString.lower(`invoice`), 
+        FfiConverterUInt64.lower(`amountMsat`), 
         FfiConverterString.lower(`metadata`), $0
     )
 }
@@ -553,7 +564,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_get_latest_payments(self.pointer, 
+    lipalightninglib_c39a_LightningNode_get_latest_payments(self.pointer, 
         FfiConverterUInt32.lower(`numberOfPayments`), $0
     )
 }
@@ -563,7 +574,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_get_payment(self.pointer, 
+    lipalightninglib_c39a_LightningNode_get_payment(self.pointer, 
         FfiConverterString.lower(`hash`), $0
     )
 }
@@ -573,7 +584,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_8125_LightningNode_foreground(self.pointer, $0
+    lipalightninglib_c39a_LightningNode_foreground(self.pointer, $0
     )
 }
     }
@@ -581,7 +592,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_8125_LightningNode_background(self.pointer, $0
+    lipalightninglib_c39a_LightningNode_background(self.pointer, $0
     )
 }
     }
@@ -589,7 +600,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceString.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_list_currency_codes(self.pointer, $0
+    lipalightninglib_c39a_LightningNode_list_currency_codes(self.pointer, $0
     )
 }
         )
@@ -598,7 +609,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeExchangeRates.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_8125_LightningNode_get_exchange_rates(self.pointer, $0
+    lipalightninglib_c39a_LightningNode_get_exchange_rates(self.pointer, $0
     )
 }
         )
@@ -607,7 +618,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_8125_LightningNode_change_fiat_currency(self.pointer, 
+    lipalightninglib_c39a_LightningNode_change_fiat_currency(self.pointer, 
         FfiConverterString.lower(`fiatCurrency`), $0
     )
 }
@@ -616,7 +627,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_8125_LightningNode_change_timezone_config(self.pointer, 
+    lipalightninglib_c39a_LightningNode_change_timezone_config(self.pointer, 
         FfiConverterTypeTzConfig.lower(`timezoneConfig`), $0
     )
 }
@@ -2200,7 +2211,7 @@ fileprivate struct FfiConverterCallbackInterfaceEventsCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_8125_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
+                ffi_lipalightninglib_c39a_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -2381,7 +2392,7 @@ public func `initNativeLoggerOnce`(`minLevel`: LogLevel)  {
     
     rustCall() {
     
-    lipalightninglib_8125_init_native_logger_once(
+    lipalightninglib_c39a_init_native_logger_once(
         FfiConverterTypeLogLevel.lower(`minLevel`), $0)
 }
 }
@@ -2393,7 +2404,7 @@ public func `generateSecret`(`passphrase`: String) throws -> Secret {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_8125_generate_secret(
+    lipalightninglib_c39a_generate_secret(
         FfiConverterString.lower(`passphrase`), $0)
 }
     )
@@ -2407,7 +2418,7 @@ public func `mnemonicToSecret`(`mnemonicString`: [String], `passphrase`: String)
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_8125_mnemonic_to_secret(
+    lipalightninglib_c39a_mnemonic_to_secret(
         FfiConverterSequenceString.lower(`mnemonicString`), 
         FfiConverterString.lower(`passphrase`), $0)
 }
@@ -2422,7 +2433,7 @@ public func `wordsByPrefix`(`prefix`: String)  -> [String] {
     
     rustCall() {
     
-    lipalightninglib_8125_words_by_prefix(
+    lipalightninglib_c39a_words_by_prefix(
         FfiConverterString.lower(`prefix`), $0)
 }
     )
@@ -2435,7 +2446,7 @@ public func `acceptTermsAndConditions`(`seed`: [UInt8], `graphqlUrl`: String) th
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_8125_accept_terms_and_conditions(
+    lipalightninglib_c39a_accept_terms_and_conditions(
         FfiConverterSequenceUInt8.lower(`seed`), 
         FfiConverterString.lower(`graphqlUrl`), $0)
 }
@@ -2447,7 +2458,7 @@ public func `recoverLightningNode`(`seed`: [UInt8], `localPersistencePath`: Stri
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_8125_recover_lightning_node(
+    lipalightninglib_c39a_recover_lightning_node(
         FfiConverterSequenceUInt8.lower(`seed`), 
         FfiConverterString.lower(`localPersistencePath`), 
         FfiConverterString.lower(`graphqlUrl`), 
