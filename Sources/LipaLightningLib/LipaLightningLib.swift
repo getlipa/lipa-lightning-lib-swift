@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_lipalightninglib_9b5f_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_lipalightninglib_90ce_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_lipalightninglib_9b5f_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_lipalightninglib_90ce_rustbuffer_free(self, $0) }
     }
 }
 
@@ -448,11 +448,11 @@ public protocol LightningNodeProtocol {
     func `getNodeInfo`()  -> NodeInfo
     func `queryLspFee`() throws -> LspFee
     func `getPaymentAmountLimits`() throws -> PaymentAmountLimits
-    func `calculateLspFee`(`amountMsat`: UInt64) throws -> UInt64
-    func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails
+    func `calculateLspFee`(`amountSat`: UInt64) throws -> Amount
+    func `createInvoice`(`amountSat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails
     func `decodeInvoice`(`invoice`: String) throws -> InvoiceDetails
     func `payInvoice`(`invoice`: String, `metadata`: String) throws
-    func `payOpenInvoice`(`invoice`: String, `amountMsat`: UInt64, `metadata`: String) throws
+    func `payOpenInvoice`(`invoice`: String, `amountSat`: UInt64, `metadata`: String) throws
     func `getLatestPayments`(`numberOfPayments`: UInt32) throws -> [Payment]
     func `getPayment`(`hash`: String) throws -> Payment
     func `foreground`() 
@@ -481,14 +481,14 @@ public class LightningNode: LightningNodeProtocol {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_9b5f_LightningNode_new(
+    lipalightninglib_90ce_LightningNode_new(
         FfiConverterTypeConfig.lower(`config`), 
         FfiConverterCallbackInterfaceEventsCallback.lower(`eventsCallback`), $0)
 })
     }
 
     deinit {
-        try! rustCall { ffi_lipalightninglib_9b5f_LightningNode_object_free(pointer, $0) }
+        try! rustCall { ffi_lipalightninglib_90ce_LightningNode_object_free(pointer, $0) }
     }
 
     
@@ -499,7 +499,7 @@ public class LightningNode: LightningNodeProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_get_node_info(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_get_node_info(self.pointer, $0
     )
 }
         )
@@ -508,7 +508,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeLspFee.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_query_lsp_fee(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_query_lsp_fee(self.pointer, $0
     )
 }
         )
@@ -517,27 +517,27 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypePaymentAmountLimits.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_get_payment_amount_limits(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_get_payment_amount_limits(self.pointer, $0
     )
 }
         )
     }
-    public func `calculateLspFee`(`amountMsat`: UInt64) throws -> UInt64 {
-        return try FfiConverterUInt64.lift(
+    public func `calculateLspFee`(`amountSat`: UInt64) throws -> Amount {
+        return try FfiConverterTypeAmount.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_calculate_lsp_fee(self.pointer, 
-        FfiConverterUInt64.lower(`amountMsat`), $0
+    lipalightninglib_90ce_LightningNode_calculate_lsp_fee(self.pointer, 
+        FfiConverterUInt64.lower(`amountSat`), $0
     )
 }
         )
     }
-    public func `createInvoice`(`amountMsat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails {
+    public func `createInvoice`(`amountSat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails {
         return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_create_invoice(self.pointer, 
-        FfiConverterUInt64.lower(`amountMsat`), 
+    lipalightninglib_90ce_LightningNode_create_invoice(self.pointer, 
+        FfiConverterUInt64.lower(`amountSat`), 
         FfiConverterString.lower(`description`), 
         FfiConverterString.lower(`metadata`), $0
     )
@@ -548,7 +548,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypeInvoiceDetails.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_decode_invoice(self.pointer, 
+    lipalightninglib_90ce_LightningNode_decode_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), $0
     )
 }
@@ -557,18 +557,18 @@ public class LightningNode: LightningNodeProtocol {
     public func `payInvoice`(`invoice`: String, `metadata`: String) throws {
         try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_pay_invoice(self.pointer, 
+    lipalightninglib_90ce_LightningNode_pay_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), 
         FfiConverterString.lower(`metadata`), $0
     )
 }
     }
-    public func `payOpenInvoice`(`invoice`: String, `amountMsat`: UInt64, `metadata`: String) throws {
+    public func `payOpenInvoice`(`invoice`: String, `amountSat`: UInt64, `metadata`: String) throws {
         try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_pay_open_invoice(self.pointer, 
+    lipalightninglib_90ce_LightningNode_pay_open_invoice(self.pointer, 
         FfiConverterString.lower(`invoice`), 
-        FfiConverterUInt64.lower(`amountMsat`), 
+        FfiConverterUInt64.lower(`amountSat`), 
         FfiConverterString.lower(`metadata`), $0
     )
 }
@@ -577,7 +577,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_get_latest_payments(self.pointer, 
+    lipalightninglib_90ce_LightningNode_get_latest_payments(self.pointer, 
         FfiConverterUInt32.lower(`numberOfPayments`), $0
     )
 }
@@ -587,7 +587,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterTypePayment.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_get_payment(self.pointer, 
+    lipalightninglib_90ce_LightningNode_get_payment(self.pointer, 
         FfiConverterString.lower(`hash`), $0
     )
 }
@@ -597,7 +597,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_foreground(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_foreground(self.pointer, $0
     )
 }
     }
@@ -605,7 +605,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_background(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_background(self.pointer, $0
     )
 }
     }
@@ -613,7 +613,7 @@ public class LightningNode: LightningNodeProtocol {
         return try FfiConverterSequenceString.lift(
             try
     rustCallWithError(FfiConverterTypeLnError.self) {
-    lipalightninglib_9b5f_LightningNode_list_currency_codes(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_list_currency_codes(self.pointer, $0
     )
 }
         )
@@ -623,7 +623,7 @@ public class LightningNode: LightningNodeProtocol {
             try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_get_exchange_rate(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_get_exchange_rate(self.pointer, $0
     )
 }
         )
@@ -632,7 +632,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_change_fiat_currency(self.pointer, 
+    lipalightninglib_90ce_LightningNode_change_fiat_currency(self.pointer, 
         FfiConverterString.lower(`fiatCurrency`), $0
     )
 }
@@ -641,7 +641,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_change_timezone_config(self.pointer, 
+    lipalightninglib_90ce_LightningNode_change_timezone_config(self.pointer, 
         FfiConverterTypeTzConfig.lower(`timezoneConfig`), $0
     )
 }
@@ -650,7 +650,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_panic_directly(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_panic_directly(self.pointer, $0
     )
 }
     }
@@ -658,7 +658,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_panic_in_background_thread(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_panic_in_background_thread(self.pointer, $0
     )
 }
     }
@@ -666,7 +666,7 @@ public class LightningNode: LightningNodeProtocol {
         try!
     rustCall() {
     
-    lipalightninglib_9b5f_LightningNode_panic_in_tokio(self.pointer, $0
+    lipalightninglib_90ce_LightningNode_panic_in_tokio(self.pointer, $0
     )
 }
     }
@@ -705,23 +705,78 @@ public struct FfiConverterTypeLightningNode: FfiConverter {
 }
 
 
-public struct ChannelsInfo {
-    public var `numChannels`: UInt16
-    public var `numUsableChannels`: UInt16
-    public var `localBalanceMsat`: UInt64
-    public var `totalChannelCapacitiesMsat`: UInt64
-    public var `inboundCapacityMsat`: UInt64
-    public var `outboundCapacityMsat`: UInt64
+public struct Amount {
+    public var `sats`: UInt64
+    public var `fiat`: FiatValue?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`numChannels`: UInt16, `numUsableChannels`: UInt16, `localBalanceMsat`: UInt64, `totalChannelCapacitiesMsat`: UInt64, `inboundCapacityMsat`: UInt64, `outboundCapacityMsat`: UInt64) {
+    public init(`sats`: UInt64, `fiat`: FiatValue?) {
+        self.`sats` = `sats`
+        self.`fiat` = `fiat`
+    }
+}
+
+
+extension Amount: Equatable, Hashable {
+    public static func ==(lhs: Amount, rhs: Amount) -> Bool {
+        if lhs.`sats` != rhs.`sats` {
+            return false
+        }
+        if lhs.`fiat` != rhs.`fiat` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`sats`)
+        hasher.combine(`fiat`)
+    }
+}
+
+
+public struct FfiConverterTypeAmount: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Amount {
+        return try Amount(
+            `sats`: FfiConverterUInt64.read(from: &buf), 
+            `fiat`: FfiConverterOptionTypeFiatValue.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Amount, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.`sats`, into: &buf)
+        FfiConverterOptionTypeFiatValue.write(value.`fiat`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeAmount_lift(_ buf: RustBuffer) throws -> Amount {
+    return try FfiConverterTypeAmount.lift(buf)
+}
+
+public func FfiConverterTypeAmount_lower(_ value: Amount) -> RustBuffer {
+    return FfiConverterTypeAmount.lower(value)
+}
+
+
+public struct ChannelsInfo {
+    public var `numChannels`: UInt16
+    public var `numUsableChannels`: UInt16
+    public var `localBalance`: Amount
+    public var `totalChannelCapacities`: Amount
+    public var `inboundCapacity`: Amount
+    public var `outboundCapacity`: Amount
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`numChannels`: UInt16, `numUsableChannels`: UInt16, `localBalance`: Amount, `totalChannelCapacities`: Amount, `inboundCapacity`: Amount, `outboundCapacity`: Amount) {
         self.`numChannels` = `numChannels`
         self.`numUsableChannels` = `numUsableChannels`
-        self.`localBalanceMsat` = `localBalanceMsat`
-        self.`totalChannelCapacitiesMsat` = `totalChannelCapacitiesMsat`
-        self.`inboundCapacityMsat` = `inboundCapacityMsat`
-        self.`outboundCapacityMsat` = `outboundCapacityMsat`
+        self.`localBalance` = `localBalance`
+        self.`totalChannelCapacities` = `totalChannelCapacities`
+        self.`inboundCapacity` = `inboundCapacity`
+        self.`outboundCapacity` = `outboundCapacity`
     }
 }
 
@@ -734,16 +789,16 @@ extension ChannelsInfo: Equatable, Hashable {
         if lhs.`numUsableChannels` != rhs.`numUsableChannels` {
             return false
         }
-        if lhs.`localBalanceMsat` != rhs.`localBalanceMsat` {
+        if lhs.`localBalance` != rhs.`localBalance` {
             return false
         }
-        if lhs.`totalChannelCapacitiesMsat` != rhs.`totalChannelCapacitiesMsat` {
+        if lhs.`totalChannelCapacities` != rhs.`totalChannelCapacities` {
             return false
         }
-        if lhs.`inboundCapacityMsat` != rhs.`inboundCapacityMsat` {
+        if lhs.`inboundCapacity` != rhs.`inboundCapacity` {
             return false
         }
-        if lhs.`outboundCapacityMsat` != rhs.`outboundCapacityMsat` {
+        if lhs.`outboundCapacity` != rhs.`outboundCapacity` {
             return false
         }
         return true
@@ -752,10 +807,10 @@ extension ChannelsInfo: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`numChannels`)
         hasher.combine(`numUsableChannels`)
-        hasher.combine(`localBalanceMsat`)
-        hasher.combine(`totalChannelCapacitiesMsat`)
-        hasher.combine(`inboundCapacityMsat`)
-        hasher.combine(`outboundCapacityMsat`)
+        hasher.combine(`localBalance`)
+        hasher.combine(`totalChannelCapacities`)
+        hasher.combine(`inboundCapacity`)
+        hasher.combine(`outboundCapacity`)
     }
 }
 
@@ -765,20 +820,20 @@ public struct FfiConverterTypeChannelsInfo: FfiConverterRustBuffer {
         return try ChannelsInfo(
             `numChannels`: FfiConverterUInt16.read(from: &buf), 
             `numUsableChannels`: FfiConverterUInt16.read(from: &buf), 
-            `localBalanceMsat`: FfiConverterUInt64.read(from: &buf), 
-            `totalChannelCapacitiesMsat`: FfiConverterUInt64.read(from: &buf), 
-            `inboundCapacityMsat`: FfiConverterUInt64.read(from: &buf), 
-            `outboundCapacityMsat`: FfiConverterUInt64.read(from: &buf)
+            `localBalance`: FfiConverterTypeAmount.read(from: &buf), 
+            `totalChannelCapacities`: FfiConverterTypeAmount.read(from: &buf), 
+            `inboundCapacity`: FfiConverterTypeAmount.read(from: &buf), 
+            `outboundCapacity`: FfiConverterTypeAmount.read(from: &buf)
         )
     }
 
     public static func write(_ value: ChannelsInfo, into buf: inout [UInt8]) {
         FfiConverterUInt16.write(value.`numChannels`, into: &buf)
         FfiConverterUInt16.write(value.`numUsableChannels`, into: &buf)
-        FfiConverterUInt64.write(value.`localBalanceMsat`, into: &buf)
-        FfiConverterUInt64.write(value.`totalChannelCapacitiesMsat`, into: &buf)
-        FfiConverterUInt64.write(value.`inboundCapacityMsat`, into: &buf)
-        FfiConverterUInt64.write(value.`outboundCapacityMsat`, into: &buf)
+        FfiConverterTypeAmount.write(value.`localBalance`, into: &buf)
+        FfiConverterTypeAmount.write(value.`totalChannelCapacities`, into: &buf)
+        FfiConverterTypeAmount.write(value.`inboundCapacity`, into: &buf)
+        FfiConverterTypeAmount.write(value.`outboundCapacity`, into: &buf)
     }
 }
 
@@ -934,72 +989,72 @@ public func FfiConverterTypeExchangeRate_lower(_ value: ExchangeRate) -> RustBuf
 }
 
 
-public struct FiatValues {
-    public var `fiat`: String
-    public var `amount`: UInt64
-    public var `amountUsd`: UInt64
+public struct FiatValue {
+    public var `minorUnits`: UInt64
+    public var `currencyCode`: String
+    public var `convertedAt`: Date
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`fiat`: String, `amount`: UInt64, `amountUsd`: UInt64) {
-        self.`fiat` = `fiat`
-        self.`amount` = `amount`
-        self.`amountUsd` = `amountUsd`
+    public init(`minorUnits`: UInt64, `currencyCode`: String, `convertedAt`: Date) {
+        self.`minorUnits` = `minorUnits`
+        self.`currencyCode` = `currencyCode`
+        self.`convertedAt` = `convertedAt`
     }
 }
 
 
-extension FiatValues: Equatable, Hashable {
-    public static func ==(lhs: FiatValues, rhs: FiatValues) -> Bool {
-        if lhs.`fiat` != rhs.`fiat` {
+extension FiatValue: Equatable, Hashable {
+    public static func ==(lhs: FiatValue, rhs: FiatValue) -> Bool {
+        if lhs.`minorUnits` != rhs.`minorUnits` {
             return false
         }
-        if lhs.`amount` != rhs.`amount` {
+        if lhs.`currencyCode` != rhs.`currencyCode` {
             return false
         }
-        if lhs.`amountUsd` != rhs.`amountUsd` {
+        if lhs.`convertedAt` != rhs.`convertedAt` {
             return false
         }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(`fiat`)
-        hasher.combine(`amount`)
-        hasher.combine(`amountUsd`)
+        hasher.combine(`minorUnits`)
+        hasher.combine(`currencyCode`)
+        hasher.combine(`convertedAt`)
     }
 }
 
 
-public struct FfiConverterTypeFiatValues: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatValues {
-        return try FiatValues(
-            `fiat`: FfiConverterString.read(from: &buf), 
-            `amount`: FfiConverterUInt64.read(from: &buf), 
-            `amountUsd`: FfiConverterUInt64.read(from: &buf)
+public struct FfiConverterTypeFiatValue: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatValue {
+        return try FiatValue(
+            `minorUnits`: FfiConverterUInt64.read(from: &buf), 
+            `currencyCode`: FfiConverterString.read(from: &buf), 
+            `convertedAt`: FfiConverterTimestamp.read(from: &buf)
         )
     }
 
-    public static func write(_ value: FiatValues, into buf: inout [UInt8]) {
-        FfiConverterString.write(value.`fiat`, into: &buf)
-        FfiConverterUInt64.write(value.`amount`, into: &buf)
-        FfiConverterUInt64.write(value.`amountUsd`, into: &buf)
+    public static func write(_ value: FiatValue, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.`minorUnits`, into: &buf)
+        FfiConverterString.write(value.`currencyCode`, into: &buf)
+        FfiConverterTimestamp.write(value.`convertedAt`, into: &buf)
     }
 }
 
 
-public func FfiConverterTypeFiatValues_lift(_ buf: RustBuffer) throws -> FiatValues {
-    return try FfiConverterTypeFiatValues.lift(buf)
+public func FfiConverterTypeFiatValue_lift(_ buf: RustBuffer) throws -> FiatValue {
+    return try FfiConverterTypeFiatValue.lift(buf)
 }
 
-public func FfiConverterTypeFiatValues_lower(_ value: FiatValues) -> RustBuffer {
-    return FfiConverterTypeFiatValues.lower(value)
+public func FfiConverterTypeFiatValue_lower(_ value: FiatValue) -> RustBuffer {
+    return FfiConverterTypeFiatValue.lower(value)
 }
 
 
 public struct InvoiceDetails {
     public var `invoice`: String
-    public var `amountMsat`: UInt64?
+    public var `amount`: Amount?
     public var `description`: String
     public var `paymentHash`: String
     public var `payeePubKey`: String
@@ -1009,9 +1064,9 @@ public struct InvoiceDetails {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`invoice`: String, `amountMsat`: UInt64?, `description`: String, `paymentHash`: String, `payeePubKey`: String, `creationTimestamp`: Date, `expiryInterval`: TimeInterval, `expiryTimestamp`: Date) {
+    public init(`invoice`: String, `amount`: Amount?, `description`: String, `paymentHash`: String, `payeePubKey`: String, `creationTimestamp`: Date, `expiryInterval`: TimeInterval, `expiryTimestamp`: Date) {
         self.`invoice` = `invoice`
-        self.`amountMsat` = `amountMsat`
+        self.`amount` = `amount`
         self.`description` = `description`
         self.`paymentHash` = `paymentHash`
         self.`payeePubKey` = `payeePubKey`
@@ -1027,7 +1082,7 @@ extension InvoiceDetails: Equatable, Hashable {
         if lhs.`invoice` != rhs.`invoice` {
             return false
         }
-        if lhs.`amountMsat` != rhs.`amountMsat` {
+        if lhs.`amount` != rhs.`amount` {
             return false
         }
         if lhs.`description` != rhs.`description` {
@@ -1053,7 +1108,7 @@ extension InvoiceDetails: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`invoice`)
-        hasher.combine(`amountMsat`)
+        hasher.combine(`amount`)
         hasher.combine(`description`)
         hasher.combine(`paymentHash`)
         hasher.combine(`payeePubKey`)
@@ -1068,7 +1123,7 @@ public struct FfiConverterTypeInvoiceDetails: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> InvoiceDetails {
         return try InvoiceDetails(
             `invoice`: FfiConverterString.read(from: &buf), 
-            `amountMsat`: FfiConverterOptionUInt64.read(from: &buf), 
+            `amount`: FfiConverterOptionTypeAmount.read(from: &buf), 
             `description`: FfiConverterString.read(from: &buf), 
             `paymentHash`: FfiConverterString.read(from: &buf), 
             `payeePubKey`: FfiConverterString.read(from: &buf), 
@@ -1080,7 +1135,7 @@ public struct FfiConverterTypeInvoiceDetails: FfiConverterRustBuffer {
 
     public static func write(_ value: InvoiceDetails, into buf: inout [UInt8]) {
         FfiConverterString.write(value.`invoice`, into: &buf)
-        FfiConverterOptionUInt64.write(value.`amountMsat`, into: &buf)
+        FfiConverterOptionTypeAmount.write(value.`amount`, into: &buf)
         FfiConverterString.write(value.`description`, into: &buf)
         FfiConverterString.write(value.`paymentHash`, into: &buf)
         FfiConverterString.write(value.`payeePubKey`, into: &buf)
@@ -1101,13 +1156,13 @@ public func FfiConverterTypeInvoiceDetails_lower(_ value: InvoiceDetails) -> Rus
 
 
 public struct LspFee {
-    public var `channelMinimumFeeMsat`: UInt64
+    public var `channelMinimumFee`: Amount
     public var `channelFeePermyriad`: UInt64
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`channelMinimumFeeMsat`: UInt64, `channelFeePermyriad`: UInt64) {
-        self.`channelMinimumFeeMsat` = `channelMinimumFeeMsat`
+    public init(`channelMinimumFee`: Amount, `channelFeePermyriad`: UInt64) {
+        self.`channelMinimumFee` = `channelMinimumFee`
         self.`channelFeePermyriad` = `channelFeePermyriad`
     }
 }
@@ -1115,7 +1170,7 @@ public struct LspFee {
 
 extension LspFee: Equatable, Hashable {
     public static func ==(lhs: LspFee, rhs: LspFee) -> Bool {
-        if lhs.`channelMinimumFeeMsat` != rhs.`channelMinimumFeeMsat` {
+        if lhs.`channelMinimumFee` != rhs.`channelMinimumFee` {
             return false
         }
         if lhs.`channelFeePermyriad` != rhs.`channelFeePermyriad` {
@@ -1125,7 +1180,7 @@ extension LspFee: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(`channelMinimumFeeMsat`)
+        hasher.combine(`channelMinimumFee`)
         hasher.combine(`channelFeePermyriad`)
     }
 }
@@ -1134,13 +1189,13 @@ extension LspFee: Equatable, Hashable {
 public struct FfiConverterTypeLspFee: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LspFee {
         return try LspFee(
-            `channelMinimumFeeMsat`: FfiConverterUInt64.read(from: &buf), 
+            `channelMinimumFee`: FfiConverterTypeAmount.read(from: &buf), 
             `channelFeePermyriad`: FfiConverterUInt64.read(from: &buf)
         )
     }
 
     public static func write(_ value: LspFee, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.`channelMinimumFeeMsat`, into: &buf)
+        FfiConverterTypeAmount.write(value.`channelMinimumFee`, into: &buf)
         FfiConverterUInt64.write(value.`channelFeePermyriad`, into: &buf)
     }
 }
@@ -1222,32 +1277,30 @@ public struct Payment {
     public var `paymentType`: PaymentType
     public var `paymentState`: PaymentState
     public var `hash`: String
-    public var `amountMsat`: UInt64
+    public var `amount`: Amount
     public var `invoiceDetails`: InvoiceDetails
     public var `createdAt`: TzTime
     public var `latestStateChangeAt`: TzTime
     public var `description`: String
     public var `preimage`: String?
-    public var `networkFeesMsat`: UInt64?
-    public var `lspFeesMsat`: UInt64?
-    public var `fiatValues`: FiatValues?
+    public var `networkFees`: Amount?
+    public var `lspFees`: Amount?
     public var `metadata`: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `hash`: String, `amountMsat`: UInt64, `invoiceDetails`: InvoiceDetails, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFeesMsat`: UInt64?, `lspFeesMsat`: UInt64?, `fiatValues`: FiatValues?, `metadata`: String) {
+    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `hash`: String, `amount`: Amount, `invoiceDetails`: InvoiceDetails, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFees`: Amount?, `lspFees`: Amount?, `metadata`: String) {
         self.`paymentType` = `paymentType`
         self.`paymentState` = `paymentState`
         self.`hash` = `hash`
-        self.`amountMsat` = `amountMsat`
+        self.`amount` = `amount`
         self.`invoiceDetails` = `invoiceDetails`
         self.`createdAt` = `createdAt`
         self.`latestStateChangeAt` = `latestStateChangeAt`
         self.`description` = `description`
         self.`preimage` = `preimage`
-        self.`networkFeesMsat` = `networkFeesMsat`
-        self.`lspFeesMsat` = `lspFeesMsat`
-        self.`fiatValues` = `fiatValues`
+        self.`networkFees` = `networkFees`
+        self.`lspFees` = `lspFees`
         self.`metadata` = `metadata`
     }
 }
@@ -1264,7 +1317,7 @@ extension Payment: Equatable, Hashable {
         if lhs.`hash` != rhs.`hash` {
             return false
         }
-        if lhs.`amountMsat` != rhs.`amountMsat` {
+        if lhs.`amount` != rhs.`amount` {
             return false
         }
         if lhs.`invoiceDetails` != rhs.`invoiceDetails` {
@@ -1282,13 +1335,10 @@ extension Payment: Equatable, Hashable {
         if lhs.`preimage` != rhs.`preimage` {
             return false
         }
-        if lhs.`networkFeesMsat` != rhs.`networkFeesMsat` {
+        if lhs.`networkFees` != rhs.`networkFees` {
             return false
         }
-        if lhs.`lspFeesMsat` != rhs.`lspFeesMsat` {
-            return false
-        }
-        if lhs.`fiatValues` != rhs.`fiatValues` {
+        if lhs.`lspFees` != rhs.`lspFees` {
             return false
         }
         if lhs.`metadata` != rhs.`metadata` {
@@ -1301,15 +1351,14 @@ extension Payment: Equatable, Hashable {
         hasher.combine(`paymentType`)
         hasher.combine(`paymentState`)
         hasher.combine(`hash`)
-        hasher.combine(`amountMsat`)
+        hasher.combine(`amount`)
         hasher.combine(`invoiceDetails`)
         hasher.combine(`createdAt`)
         hasher.combine(`latestStateChangeAt`)
         hasher.combine(`description`)
         hasher.combine(`preimage`)
-        hasher.combine(`networkFeesMsat`)
-        hasher.combine(`lspFeesMsat`)
-        hasher.combine(`fiatValues`)
+        hasher.combine(`networkFees`)
+        hasher.combine(`lspFees`)
         hasher.combine(`metadata`)
     }
 }
@@ -1321,15 +1370,14 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
             `paymentType`: FfiConverterTypePaymentType.read(from: &buf), 
             `paymentState`: FfiConverterTypePaymentState.read(from: &buf), 
             `hash`: FfiConverterString.read(from: &buf), 
-            `amountMsat`: FfiConverterUInt64.read(from: &buf), 
+            `amount`: FfiConverterTypeAmount.read(from: &buf), 
             `invoiceDetails`: FfiConverterTypeInvoiceDetails.read(from: &buf), 
             `createdAt`: FfiConverterTypeTzTime.read(from: &buf), 
             `latestStateChangeAt`: FfiConverterTypeTzTime.read(from: &buf), 
             `description`: FfiConverterString.read(from: &buf), 
             `preimage`: FfiConverterOptionString.read(from: &buf), 
-            `networkFeesMsat`: FfiConverterOptionUInt64.read(from: &buf), 
-            `lspFeesMsat`: FfiConverterOptionUInt64.read(from: &buf), 
-            `fiatValues`: FfiConverterOptionTypeFiatValues.read(from: &buf), 
+            `networkFees`: FfiConverterOptionTypeAmount.read(from: &buf), 
+            `lspFees`: FfiConverterOptionTypeAmount.read(from: &buf), 
             `metadata`: FfiConverterString.read(from: &buf)
         )
     }
@@ -1338,15 +1386,14 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterTypePaymentType.write(value.`paymentType`, into: &buf)
         FfiConverterTypePaymentState.write(value.`paymentState`, into: &buf)
         FfiConverterString.write(value.`hash`, into: &buf)
-        FfiConverterUInt64.write(value.`amountMsat`, into: &buf)
+        FfiConverterTypeAmount.write(value.`amount`, into: &buf)
         FfiConverterTypeInvoiceDetails.write(value.`invoiceDetails`, into: &buf)
         FfiConverterTypeTzTime.write(value.`createdAt`, into: &buf)
         FfiConverterTypeTzTime.write(value.`latestStateChangeAt`, into: &buf)
         FfiConverterString.write(value.`description`, into: &buf)
         FfiConverterOptionString.write(value.`preimage`, into: &buf)
-        FfiConverterOptionUInt64.write(value.`networkFeesMsat`, into: &buf)
-        FfiConverterOptionUInt64.write(value.`lspFeesMsat`, into: &buf)
-        FfiConverterOptionTypeFiatValues.write(value.`fiatValues`, into: &buf)
+        FfiConverterOptionTypeAmount.write(value.`networkFees`, into: &buf)
+        FfiConverterOptionTypeAmount.write(value.`lspFees`, into: &buf)
         FfiConverterString.write(value.`metadata`, into: &buf)
     }
 }
@@ -1362,13 +1409,13 @@ public func FfiConverterTypePayment_lower(_ value: Payment) -> RustBuffer {
 
 
 public struct PaymentAmountLimits {
-    public var `maxReceiveSat`: UInt64
+    public var `maxReceive`: Amount
     public var `liquidityLimit`: LiquidityLimit
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`maxReceiveSat`: UInt64, `liquidityLimit`: LiquidityLimit) {
-        self.`maxReceiveSat` = `maxReceiveSat`
+    public init(`maxReceive`: Amount, `liquidityLimit`: LiquidityLimit) {
+        self.`maxReceive` = `maxReceive`
         self.`liquidityLimit` = `liquidityLimit`
     }
 }
@@ -1376,7 +1423,7 @@ public struct PaymentAmountLimits {
 
 extension PaymentAmountLimits: Equatable, Hashable {
     public static func ==(lhs: PaymentAmountLimits, rhs: PaymentAmountLimits) -> Bool {
-        if lhs.`maxReceiveSat` != rhs.`maxReceiveSat` {
+        if lhs.`maxReceive` != rhs.`maxReceive` {
             return false
         }
         if lhs.`liquidityLimit` != rhs.`liquidityLimit` {
@@ -1386,7 +1433,7 @@ extension PaymentAmountLimits: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(`maxReceiveSat`)
+        hasher.combine(`maxReceive`)
         hasher.combine(`liquidityLimit`)
     }
 }
@@ -1395,13 +1442,13 @@ extension PaymentAmountLimits: Equatable, Hashable {
 public struct FfiConverterTypePaymentAmountLimits: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PaymentAmountLimits {
         return try PaymentAmountLimits(
-            `maxReceiveSat`: FfiConverterUInt64.read(from: &buf), 
+            `maxReceive`: FfiConverterTypeAmount.read(from: &buf), 
             `liquidityLimit`: FfiConverterTypeLiquidityLimit.read(from: &buf)
         )
     }
 
     public static func write(_ value: PaymentAmountLimits, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.`maxReceiveSat`, into: &buf)
+        FfiConverterTypeAmount.write(value.`maxReceive`, into: &buf)
         FfiConverterTypeLiquidityLimit.write(value.`liquidityLimit`, into: &buf)
     }
 }
@@ -1666,8 +1713,8 @@ extension EnvironmentCode: Equatable, Hashable {}
 public enum LiquidityLimit {
     
     case `none`
-    case `maxFreeReceive`(`satAmount`: UInt64)
-    case `minReceive`(`satAmount`: UInt64)
+    case `maxFreeReceive`(`amount`: Amount)
+    case `minReceive`(`amount`: Amount)
 }
 
 public struct FfiConverterTypeLiquidityLimit: FfiConverterRustBuffer {
@@ -1680,11 +1727,11 @@ public struct FfiConverterTypeLiquidityLimit: FfiConverterRustBuffer {
         case 1: return .`none`
         
         case 2: return .`maxFreeReceive`(
-            `satAmount`: try FfiConverterUInt64.read(from: &buf)
+            `amount`: try FfiConverterTypeAmount.read(from: &buf)
         )
         
         case 3: return .`minReceive`(
-            `satAmount`: try FfiConverterUInt64.read(from: &buf)
+            `amount`: try FfiConverterTypeAmount.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -1699,14 +1746,14 @@ public struct FfiConverterTypeLiquidityLimit: FfiConverterRustBuffer {
             writeInt(&buf, Int32(1))
         
         
-        case let .`maxFreeReceive`(`satAmount`):
+        case let .`maxFreeReceive`(`amount`):
             writeInt(&buf, Int32(2))
-            FfiConverterUInt64.write(`satAmount`, into: &buf)
+            FfiConverterTypeAmount.write(`amount`, into: &buf)
             
         
-        case let .`minReceive`(`satAmount`):
+        case let .`minReceive`(`amount`):
             writeInt(&buf, Int32(3))
-            FfiConverterUInt64.write(`satAmount`, into: &buf)
+            FfiConverterTypeAmount.write(`amount`, into: &buf)
             
         }
     }
@@ -2185,8 +2232,8 @@ private let IDX_CALLBACK_FREE: Int32 = 0
 // Declaration and FfiConverters for EventsCallback Callback Interface
 
 public protocol EventsCallback : AnyObject {
-    func `paymentReceived`(`paymentHash`: String, `amountMsat`: UInt64) 
-    func `paymentSent`(`paymentHash`: String, `paymentPreimage`: String, `feePaidMsat`: UInt64) 
+    func `paymentReceived`(`paymentHash`: String) 
+    func `paymentSent`(`paymentHash`: String, `paymentPreimage`: String) 
     func `paymentFailed`(`paymentHash`: String) 
     func `channelClosed`(`channelId`: String, `reason`: String) 
     
@@ -2200,8 +2247,7 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
 
             var reader = createReader(data: Data(rustBuffer: args))
             swiftCallbackInterface.`paymentReceived`(
-                    `paymentHash`:  try FfiConverterString.read(from: &reader), 
-                    `amountMsat`:  try FfiConverterUInt64.read(from: &reader)
+                    `paymentHash`:  try FfiConverterString.read(from: &reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -2214,8 +2260,7 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
             var reader = createReader(data: Data(rustBuffer: args))
             swiftCallbackInterface.`paymentSent`(
                     `paymentHash`:  try FfiConverterString.read(from: &reader), 
-                    `paymentPreimage`:  try FfiConverterString.read(from: &reader), 
-                    `feePaidMsat`:  try FfiConverterUInt64.read(from: &reader)
+                    `paymentPreimage`:  try FfiConverterString.read(from: &reader)
                     )
             return RustBuffer()
                 // TODO catch errors and report them back to Rust.
@@ -2320,7 +2365,7 @@ fileprivate struct FfiConverterCallbackInterfaceEventsCallback {
     private static var callbackInitialized = false
     private static func initCallback() {
         try! rustCall { (err: UnsafeMutablePointer<RustCallStatus>) in
-                ffi_lipalightninglib_9b5f_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
+                ffi_lipalightninglib_90ce_EventsCallback_init_callback(foreignCallbackCallbackInterfaceEventsCallback, err)
         }
     }
     private static func ensureCallbackinitialized() {
@@ -2367,27 +2412,6 @@ extension FfiConverterCallbackInterfaceEventsCallback : FfiConverter {
     }
 }
 
-fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
-    typealias SwiftType = UInt64?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterUInt64.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterUInt64.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -2404,6 +2428,27 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterOptionTypeAmount: FfiConverterRustBuffer {
+    typealias SwiftType = Amount?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeAmount.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeAmount.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -2430,8 +2475,8 @@ fileprivate struct FfiConverterOptionTypeExchangeRate: FfiConverterRustBuffer {
     }
 }
 
-fileprivate struct FfiConverterOptionTypeFiatValues: FfiConverterRustBuffer {
-    typealias SwiftType = FiatValues?
+fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
+    typealias SwiftType = FiatValue?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -2439,13 +2484,13 @@ fileprivate struct FfiConverterOptionTypeFiatValues: FfiConverterRustBuffer {
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeFiatValues.write(value, into: &buf)
+        FfiConverterTypeFiatValue.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeFiatValues.read(from: &buf)
+        case 1: return try FfiConverterTypeFiatValue.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -2522,7 +2567,7 @@ public func `initNativeLoggerOnce`(`minLevel`: LogLevel)  {
     
     rustCall() {
     
-    lipalightninglib_9b5f_init_native_logger_once(
+    lipalightninglib_90ce_init_native_logger_once(
         FfiConverterTypeLogLevel.lower(`minLevel`), $0)
 }
 }
@@ -2534,7 +2579,7 @@ public func `generateSecret`(`passphrase`: String) throws -> Secret {
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_9b5f_generate_secret(
+    lipalightninglib_90ce_generate_secret(
         FfiConverterString.lower(`passphrase`), $0)
 }
     )
@@ -2548,7 +2593,7 @@ public func `mnemonicToSecret`(`mnemonicString`: [String], `passphrase`: String)
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_9b5f_mnemonic_to_secret(
+    lipalightninglib_90ce_mnemonic_to_secret(
         FfiConverterSequenceString.lower(`mnemonicString`), 
         FfiConverterString.lower(`passphrase`), $0)
 }
@@ -2563,7 +2608,7 @@ public func `wordsByPrefix`(`prefix`: String)  -> [String] {
     
     rustCall() {
     
-    lipalightninglib_9b5f_words_by_prefix(
+    lipalightninglib_90ce_words_by_prefix(
         FfiConverterString.lower(`prefix`), $0)
 }
     )
@@ -2576,7 +2621,7 @@ public func `acceptTermsAndConditions`(`environment`: EnvironmentCode, `seed`: [
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_9b5f_accept_terms_and_conditions(
+    lipalightninglib_90ce_accept_terms_and_conditions(
         FfiConverterTypeEnvironmentCode.lower(`environment`), 
         FfiConverterSequenceUInt8.lower(`seed`), $0)
 }
@@ -2588,7 +2633,7 @@ public func `recoverLightningNode`(`environment`: EnvironmentCode, `seed`: [UInt
     
     rustCallWithError(FfiConverterTypeLnError.self) {
     
-    lipalightninglib_9b5f_recover_lightning_node(
+    lipalightninglib_90ce_recover_lightning_node(
         FfiConverterTypeEnvironmentCode.lower(`environment`), 
         FfiConverterSequenceUInt8.lower(`seed`), 
         FfiConverterString.lower(`localPersistencePath`), $0)
