@@ -1342,6 +1342,7 @@ public func FfiConverterTypeNodeInfo_lower(_ value: NodeInfo) -> RustBuffer {
 public struct Payment {
     public var `paymentType`: PaymentType
     public var `paymentState`: PaymentState
+    public var `failReason`: PayErrorCode?
     public var `hash`: String
     public var `amount`: Amount
     public var `invoiceDetails`: InvoiceDetails
@@ -1355,9 +1356,10 @@ public struct Payment {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `hash`: String, `amount`: Amount, `invoiceDetails`: InvoiceDetails, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFees`: Amount?, `lspFees`: Amount?, `metadata`: String) {
+    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `failReason`: PayErrorCode?, `hash`: String, `amount`: Amount, `invoiceDetails`: InvoiceDetails, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFees`: Amount?, `lspFees`: Amount?, `metadata`: String) {
         self.`paymentType` = `paymentType`
         self.`paymentState` = `paymentState`
+        self.`failReason` = `failReason`
         self.`hash` = `hash`
         self.`amount` = `amount`
         self.`invoiceDetails` = `invoiceDetails`
@@ -1378,6 +1380,9 @@ extension Payment: Equatable, Hashable {
             return false
         }
         if lhs.`paymentState` != rhs.`paymentState` {
+            return false
+        }
+        if lhs.`failReason` != rhs.`failReason` {
             return false
         }
         if lhs.`hash` != rhs.`hash` {
@@ -1416,6 +1421,7 @@ extension Payment: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`paymentType`)
         hasher.combine(`paymentState`)
+        hasher.combine(`failReason`)
         hasher.combine(`hash`)
         hasher.combine(`amount`)
         hasher.combine(`invoiceDetails`)
@@ -1435,6 +1441,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         return try Payment(
             `paymentType`: FfiConverterTypePaymentType.read(from: &buf), 
             `paymentState`: FfiConverterTypePaymentState.read(from: &buf), 
+            `failReason`: FfiConverterOptionTypePayErrorCode.read(from: &buf), 
             `hash`: FfiConverterString.read(from: &buf), 
             `amount`: FfiConverterTypeAmount.read(from: &buf), 
             `invoiceDetails`: FfiConverterTypeInvoiceDetails.read(from: &buf), 
@@ -1451,6 +1458,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
     public static func write(_ value: Payment, into buf: inout [UInt8]) {
         FfiConverterTypePaymentType.write(value.`paymentType`, into: &buf)
         FfiConverterTypePaymentState.write(value.`paymentState`, into: &buf)
+        FfiConverterOptionTypePayErrorCode.write(value.`failReason`, into: &buf)
         FfiConverterString.write(value.`hash`, into: &buf)
         FfiConverterTypeAmount.write(value.`amount`, into: &buf)
         FfiConverterTypeInvoiceDetails.write(value.`invoiceDetails`, into: &buf)
@@ -2335,6 +2343,7 @@ public enum PayErrorCode {
     case `recipientRejected`
     case `retriesExhausted`
     case `noMoreRoutes`
+    case `unexpectedError`
 }
 
 public struct FfiConverterTypePayErrorCode: FfiConverterRustBuffer {
@@ -2357,6 +2366,8 @@ public struct FfiConverterTypePayErrorCode: FfiConverterRustBuffer {
         case 6: return .`retriesExhausted`
         
         case 7: return .`noMoreRoutes`
+        
+        case 8: return .`unexpectedError`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2392,6 +2403,10 @@ public struct FfiConverterTypePayErrorCode: FfiConverterRustBuffer {
         
         case .`noMoreRoutes`:
             writeInt(&buf, Int32(7))
+        
+        
+        case .`unexpectedError`:
+            writeInt(&buf, Int32(8))
         
         }
     }
@@ -2988,6 +3003,27 @@ fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeFiatValue.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterOptionTypePayErrorCode: FfiConverterRustBuffer {
+    typealias SwiftType = PayErrorCode?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePayErrorCode.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePayErrorCode.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
