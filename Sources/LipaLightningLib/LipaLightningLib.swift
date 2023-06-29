@@ -293,19 +293,6 @@ private func uniffiCheckCallStatus(
 // Public interface members begin here.
 
 
-fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
-    typealias FfiType = UInt8
-    typealias SwiftType = UInt8
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt8 {
-        return try lift(readInt(&buf))
-    }
-
-    public static func write(_ value: UInt8, into buf: inout [UInt8]) {
-        writeInt(&buf, lower(value))
-    }
-}
-
 fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
     typealias FfiType = UInt16
     typealias SwiftType = UInt16
@@ -915,14 +902,14 @@ public func FfiConverterTypeChannelsInfo_lower(_ value: ChannelsInfo) -> RustBuf
 
 public struct Config {
     public var `environment`: EnvironmentCode
-    public var `seed`: [UInt8]
+    public var `seed`: Data
     public var `fiatCurrency`: String
     public var `localPersistencePath`: String
     public var `timezoneConfig`: TzConfig
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`environment`: EnvironmentCode, `seed`: [UInt8], `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig) {
+    public init(`environment`: EnvironmentCode, `seed`: Data, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig) {
         self.`environment` = `environment`
         self.`seed` = `seed`
         self.`fiatCurrency` = `fiatCurrency`
@@ -966,7 +953,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Config {
         return try Config(
             `environment`: FfiConverterTypeEnvironmentCode.read(from: &buf), 
-            `seed`: FfiConverterSequenceUInt8.read(from: &buf), 
+            `seed`: FfiConverterData.read(from: &buf), 
             `fiatCurrency`: FfiConverterString.read(from: &buf), 
             `localPersistencePath`: FfiConverterString.read(from: &buf), 
             `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf)
@@ -975,7 +962,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
 
     public static func write(_ value: Config, into buf: inout [UInt8]) {
         FfiConverterTypeEnvironmentCode.write(value.`environment`, into: &buf)
-        FfiConverterSequenceUInt8.write(value.`seed`, into: &buf)
+        FfiConverterData.write(value.`seed`, into: &buf)
         FfiConverterString.write(value.`fiatCurrency`, into: &buf)
         FfiConverterString.write(value.`localPersistencePath`, into: &buf)
         FfiConverterTypeTzConfig.write(value.`timezoneConfig`, into: &buf)
@@ -3026,28 +3013,6 @@ fileprivate struct FfiConverterOptionTypePayErrorCode: FfiConverterRustBuffer {
         case 1: return try FfiConverterTypePayErrorCode.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
-    }
-}
-
-fileprivate struct FfiConverterSequenceUInt8: FfiConverterRustBuffer {
-    typealias SwiftType = [UInt8]
-
-    public static func write(_ value: [UInt8], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterUInt8.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt8] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [UInt8]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterUInt8.read(from: &buf))
-        }
-        return seq
     }
 }
 
