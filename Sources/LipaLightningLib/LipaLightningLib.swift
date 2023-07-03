@@ -3060,10 +3060,11 @@ fileprivate struct FfiConverterSequenceTypePayment: FfiConverterRustBuffer {
     }
 }
 
-public func `initNativeLoggerOnce`(`minLevel`: LogLevel)  {
+public func `initLoggerOnce`(`minLevel`: LogLevel, `path`: String)  {
     try! rustCall() {
-    uniffi_lipalightninglib_fn_func_init_native_logger_once(
-        FfiConverterTypeLogLevel.lower(`minLevel`),$0)
+    uniffi_lipalightninglib_fn_func_init_logger_once(
+        FfiConverterTypeLogLevel.lower(`minLevel`),
+        FfiConverterString.lower(`path`),$0)
 }
 }
 
@@ -3133,7 +3134,7 @@ private var initializationResult: InitializationResult {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_lipalightninglib_checksum_func_init_native_logger_once() != 61197) {
+    if (uniffi_lipalightninglib_checksum_func_init_logger_once() != 51876) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_lipalightninglib_checksum_func_generate_secret() != 15006) {
