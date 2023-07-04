@@ -345,6 +345,27 @@ fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     }
 }
 
+fileprivate struct FfiConverterBool : FfiConverter {
+    typealias FfiType = Int8
+    typealias SwiftType = Bool
+
+    public static func lift(_ value: Int8) throws -> Bool {
+        return value != 0
+    }
+
+    public static func lower(_ value: Bool) -> Int8 {
+        return value ? 1 : 0
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bool {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Bool, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
 fileprivate struct FfiConverterString: FfiConverter {
     typealias SwiftType = String
     typealias FfiType = RustBuffer
@@ -906,15 +927,17 @@ public struct Config {
     public var `fiatCurrency`: String
     public var `localPersistencePath`: String
     public var `timezoneConfig`: TzConfig
+    public var `enableFileLogging`: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`environment`: EnvironmentCode, `seed`: Data, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig) {
+    public init(`environment`: EnvironmentCode, `seed`: Data, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `enableFileLogging`: Bool) {
         self.`environment` = `environment`
         self.`seed` = `seed`
         self.`fiatCurrency` = `fiatCurrency`
         self.`localPersistencePath` = `localPersistencePath`
         self.`timezoneConfig` = `timezoneConfig`
+        self.`enableFileLogging` = `enableFileLogging`
     }
 }
 
@@ -936,6 +959,9 @@ extension Config: Equatable, Hashable {
         if lhs.`timezoneConfig` != rhs.`timezoneConfig` {
             return false
         }
+        if lhs.`enableFileLogging` != rhs.`enableFileLogging` {
+            return false
+        }
         return true
     }
 
@@ -945,6 +971,7 @@ extension Config: Equatable, Hashable {
         hasher.combine(`fiatCurrency`)
         hasher.combine(`localPersistencePath`)
         hasher.combine(`timezoneConfig`)
+        hasher.combine(`enableFileLogging`)
     }
 }
 
@@ -956,7 +983,8 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
             `seed`: FfiConverterData.read(from: &buf), 
             `fiatCurrency`: FfiConverterString.read(from: &buf), 
             `localPersistencePath`: FfiConverterString.read(from: &buf), 
-            `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf)
+            `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf), 
+            `enableFileLogging`: FfiConverterBool.read(from: &buf)
         )
     }
 
@@ -966,6 +994,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         FfiConverterString.write(value.`fiatCurrency`, into: &buf)
         FfiConverterString.write(value.`localPersistencePath`, into: &buf)
         FfiConverterTypeTzConfig.write(value.`timezoneConfig`, into: &buf)
+        FfiConverterBool.write(value.`enableFileLogging`, into: &buf)
     }
 }
 
@@ -1974,79 +2003,6 @@ public struct FfiConverterTypeLnError: FfiConverterRustBuffer {
 extension LnError: Equatable, Hashable {}
 
 extension LnError: Error { }
-
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-public enum LogLevel {
-    
-    case `error`
-    case `warn`
-    case `info`
-    case `debug`
-    case `trace`
-}
-
-public struct FfiConverterTypeLogLevel: FfiConverterRustBuffer {
-    typealias SwiftType = LogLevel
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LogLevel {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .`error`
-        
-        case 2: return .`warn`
-        
-        case 3: return .`info`
-        
-        case 4: return .`debug`
-        
-        case 5: return .`trace`
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: LogLevel, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case .`error`:
-            writeInt(&buf, Int32(1))
-        
-        
-        case .`warn`:
-            writeInt(&buf, Int32(2))
-        
-        
-        case .`info`:
-            writeInt(&buf, Int32(3))
-        
-        
-        case .`debug`:
-            writeInt(&buf, Int32(4))
-        
-        
-        case .`trace`:
-            writeInt(&buf, Int32(5))
-        
-        }
-    }
-}
-
-
-public func FfiConverterTypeLogLevel_lift(_ buf: RustBuffer) throws -> LogLevel {
-    return try FfiConverterTypeLogLevel.lift(buf)
-}
-
-public func FfiConverterTypeLogLevel_lower(_ value: LogLevel) -> RustBuffer {
-    return FfiConverterTypeLogLevel.lower(value)
-}
-
-
-extension LogLevel: Equatable, Hashable {}
-
-
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -3060,16 +3016,6 @@ fileprivate struct FfiConverterSequenceTypePayment: FfiConverterRustBuffer {
     }
 }
 
-public func `initLoggerOnce`(`minLevel`: LogLevel, `path`: String)  {
-    try! rustCall() {
-    uniffi_lipalightninglib_fn_func_init_logger_once(
-        FfiConverterTypeLogLevel.lower(`minLevel`),
-        FfiConverterString.lower(`path`),$0)
-}
-}
-
-
-
 public func `generateSecret`(`passphrase`: String) throws -> Secret {
     return try  FfiConverterTypeSecret.lift(
         try rustCallWithError(FfiConverterTypeSimpleError.lift) {
@@ -3108,12 +3054,13 @@ public func `acceptTermsAndConditions`(`environment`: EnvironmentCode, `seed`: D
 
 
 
-public func `recoverLightningNode`(`environment`: EnvironmentCode, `seed`: Data, `localPersistencePath`: String) throws {
+public func `recoverLightningNode`(`environment`: EnvironmentCode, `seed`: Data, `localPersistencePath`: String, `enableFileLogging`: Bool) throws {
     try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_lipalightninglib_fn_func_recover_lightning_node(
         FfiConverterTypeEnvironmentCode.lower(`environment`),
         FfiConverterData.lower(`seed`),
-        FfiConverterString.lower(`localPersistencePath`),$0)
+        FfiConverterString.lower(`localPersistencePath`),
+        FfiConverterBool.lower(`enableFileLogging`),$0)
 }
 }
 
@@ -3134,9 +3081,6 @@ private var initializationResult: InitializationResult {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_lipalightninglib_checksum_func_init_logger_once() != 51876) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_lipalightninglib_checksum_func_generate_secret() != 15006) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -3149,7 +3093,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_lipalightninglib_checksum_func_accept_terms_and_conditions() != 17154) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 51083) {
+    if (uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 45132) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_get_node_info() != 55691) {
