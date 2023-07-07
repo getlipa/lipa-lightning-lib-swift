@@ -2571,7 +2571,7 @@ public enum SimpleError {
 
     
     
-    case SimpleError(`msg`: String)
+    case Simple(`msg`: String)
 
     fileprivate static func uniffiErrorHandler(_ error: RustBuffer) throws -> Error {
         return try FfiConverterTypeSimpleError.lift(error)
@@ -2589,7 +2589,7 @@ public struct FfiConverterTypeSimpleError: FfiConverterRustBuffer {
         
 
         
-        case 1: return .SimpleError(
+        case 1: return .Simple(
             `msg`: try FfiConverterString.read(from: &buf)
             )
 
@@ -2604,7 +2604,7 @@ public struct FfiConverterTypeSimpleError: FfiConverterRustBuffer {
 
         
         
-        case let .SimpleError(`msg`):
+        case let .Simple(`msg`):
             writeInt(&buf, Int32(1))
             FfiConverterString.write(`msg`, into: &buf)
             
