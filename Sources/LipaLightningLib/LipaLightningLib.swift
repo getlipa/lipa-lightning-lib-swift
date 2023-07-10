@@ -1074,13 +1074,15 @@ public func FfiConverterTypeExchangeRate_lower(_ value: ExchangeRate) -> RustBuf
 public struct FiatValue {
     public var `minorUnits`: UInt64
     public var `currencyCode`: String
+    public var `rate`: UInt32
     public var `convertedAt`: Date
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`minorUnits`: UInt64, `currencyCode`: String, `convertedAt`: Date) {
+    public init(`minorUnits`: UInt64, `currencyCode`: String, `rate`: UInt32, `convertedAt`: Date) {
         self.`minorUnits` = `minorUnits`
         self.`currencyCode` = `currencyCode`
+        self.`rate` = `rate`
         self.`convertedAt` = `convertedAt`
     }
 }
@@ -1094,6 +1096,9 @@ extension FiatValue: Equatable, Hashable {
         if lhs.`currencyCode` != rhs.`currencyCode` {
             return false
         }
+        if lhs.`rate` != rhs.`rate` {
+            return false
+        }
         if lhs.`convertedAt` != rhs.`convertedAt` {
             return false
         }
@@ -1103,6 +1108,7 @@ extension FiatValue: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`minorUnits`)
         hasher.combine(`currencyCode`)
+        hasher.combine(`rate`)
         hasher.combine(`convertedAt`)
     }
 }
@@ -1113,6 +1119,7 @@ public struct FfiConverterTypeFiatValue: FfiConverterRustBuffer {
         return try FiatValue(
             `minorUnits`: FfiConverterUInt64.read(from: &buf), 
             `currencyCode`: FfiConverterString.read(from: &buf), 
+            `rate`: FfiConverterUInt32.read(from: &buf), 
             `convertedAt`: FfiConverterTimestamp.read(from: &buf)
         )
     }
@@ -1120,6 +1127,7 @@ public struct FfiConverterTypeFiatValue: FfiConverterRustBuffer {
     public static func write(_ value: FiatValue, into buf: inout [UInt8]) {
         FfiConverterUInt64.write(value.`minorUnits`, into: &buf)
         FfiConverterString.write(value.`currencyCode`, into: &buf)
+        FfiConverterUInt32.write(value.`rate`, into: &buf)
         FfiConverterTimestamp.write(value.`convertedAt`, into: &buf)
     }
 }
