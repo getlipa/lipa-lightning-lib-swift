@@ -498,6 +498,7 @@ public protocol LightningNodeProtocol {
     func `getExchangeRate`()   -> ExchangeRate?
     func `changeFiatCurrency`(`fiatCurrency`: String)  
     func `changeTimezoneConfig`(`timezoneConfig`: TzConfig)  
+    func `acceptPocketTermsAndConditions`()  throws
     func `panicDirectly`()  
     func `panicInBackgroundThread`()  
     func `panicInTokio`()  
@@ -707,6 +708,14 @@ public class LightningNode: LightningNodeProtocol {
     
     uniffi_lipalightninglib_fn_method_lightningnode_change_timezone_config(self.pointer, 
         FfiConverterTypeTzConfig.lower(`timezoneConfig`),$0
+    )
+}
+    }
+
+    public func `acceptPocketTermsAndConditions`() throws {
+        try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_accept_pocket_terms_and_conditions(self.pointer, $0
     )
 }
     }
@@ -3153,6 +3162,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_change_timezone_config() != 43718) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 46574) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_panic_directly() != 60936) {
