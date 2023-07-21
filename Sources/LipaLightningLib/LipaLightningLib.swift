@@ -499,6 +499,8 @@ public protocol LightningNodeProtocol {
     func `changeFiatCurrency`(`fiatCurrency`: String)  
     func `changeTimezoneConfig`(`timezoneConfig`: TzConfig)  
     func `acceptPocketTermsAndConditions`()  throws
+    func `registerFiatTopup`(`email`: String?, `userIban`: String, `userCurrency`: TopupCurrency)  throws -> FiatTopupInfo
+    func `queryAvailableOffers`()  throws -> [OfferInfo]
     func `panicDirectly`()  
     func `panicInBackgroundThread`()  
     func `panicInTokio`()  
@@ -718,6 +720,29 @@ public class LightningNode: LightningNodeProtocol {
     uniffi_lipalightninglib_fn_method_lightningnode_accept_pocket_terms_and_conditions(self.pointer, $0
     )
 }
+    }
+
+    public func `registerFiatTopup`(`email`: String?, `userIban`: String, `userCurrency`: TopupCurrency) throws -> FiatTopupInfo {
+        return try  FfiConverterTypeFiatTopupInfo.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_register_fiat_topup(self.pointer, 
+        FfiConverterOptionString.lower(`email`),
+        FfiConverterString.lower(`userIban`),
+        FfiConverterTypeTopupCurrency.lower(`userCurrency`),$0
+    )
+}
+        )
+    }
+
+    public func `queryAvailableOffers`() throws -> [OfferInfo] {
+        return try  FfiConverterSequenceTypeOfferInfo.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_query_available_offers(self.pointer, $0
+    )
+}
+        )
     }
 
     public func `panicDirectly`()  {
@@ -1080,6 +1105,149 @@ public func FfiConverterTypeExchangeRate_lower(_ value: ExchangeRate) -> RustBuf
 }
 
 
+public struct FiatTopupInfo {
+    public var `debitorIban`: String
+    public var `creditorIban`: String
+    public var `creditorBankName`: String
+    public var `creditorBankStreet`: String
+    public var `creditorBankPostalCode`: String
+    public var `creditorBankTown`: String
+    public var `creditorBankCountry`: String
+    public var `creditorBankBic`: String
+    public var `creditorName`: String
+    public var `creditorStreet`: String
+    public var `creditorPostalCode`: String
+    public var `creditorTown`: String
+    public var `creditorCountry`: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`debitorIban`: String, `creditorIban`: String, `creditorBankName`: String, `creditorBankStreet`: String, `creditorBankPostalCode`: String, `creditorBankTown`: String, `creditorBankCountry`: String, `creditorBankBic`: String, `creditorName`: String, `creditorStreet`: String, `creditorPostalCode`: String, `creditorTown`: String, `creditorCountry`: String) {
+        self.`debitorIban` = `debitorIban`
+        self.`creditorIban` = `creditorIban`
+        self.`creditorBankName` = `creditorBankName`
+        self.`creditorBankStreet` = `creditorBankStreet`
+        self.`creditorBankPostalCode` = `creditorBankPostalCode`
+        self.`creditorBankTown` = `creditorBankTown`
+        self.`creditorBankCountry` = `creditorBankCountry`
+        self.`creditorBankBic` = `creditorBankBic`
+        self.`creditorName` = `creditorName`
+        self.`creditorStreet` = `creditorStreet`
+        self.`creditorPostalCode` = `creditorPostalCode`
+        self.`creditorTown` = `creditorTown`
+        self.`creditorCountry` = `creditorCountry`
+    }
+}
+
+
+extension FiatTopupInfo: Equatable, Hashable {
+    public static func ==(lhs: FiatTopupInfo, rhs: FiatTopupInfo) -> Bool {
+        if lhs.`debitorIban` != rhs.`debitorIban` {
+            return false
+        }
+        if lhs.`creditorIban` != rhs.`creditorIban` {
+            return false
+        }
+        if lhs.`creditorBankName` != rhs.`creditorBankName` {
+            return false
+        }
+        if lhs.`creditorBankStreet` != rhs.`creditorBankStreet` {
+            return false
+        }
+        if lhs.`creditorBankPostalCode` != rhs.`creditorBankPostalCode` {
+            return false
+        }
+        if lhs.`creditorBankTown` != rhs.`creditorBankTown` {
+            return false
+        }
+        if lhs.`creditorBankCountry` != rhs.`creditorBankCountry` {
+            return false
+        }
+        if lhs.`creditorBankBic` != rhs.`creditorBankBic` {
+            return false
+        }
+        if lhs.`creditorName` != rhs.`creditorName` {
+            return false
+        }
+        if lhs.`creditorStreet` != rhs.`creditorStreet` {
+            return false
+        }
+        if lhs.`creditorPostalCode` != rhs.`creditorPostalCode` {
+            return false
+        }
+        if lhs.`creditorTown` != rhs.`creditorTown` {
+            return false
+        }
+        if lhs.`creditorCountry` != rhs.`creditorCountry` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`debitorIban`)
+        hasher.combine(`creditorIban`)
+        hasher.combine(`creditorBankName`)
+        hasher.combine(`creditorBankStreet`)
+        hasher.combine(`creditorBankPostalCode`)
+        hasher.combine(`creditorBankTown`)
+        hasher.combine(`creditorBankCountry`)
+        hasher.combine(`creditorBankBic`)
+        hasher.combine(`creditorName`)
+        hasher.combine(`creditorStreet`)
+        hasher.combine(`creditorPostalCode`)
+        hasher.combine(`creditorTown`)
+        hasher.combine(`creditorCountry`)
+    }
+}
+
+
+public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopupInfo {
+        return try FiatTopupInfo(
+            `debitorIban`: FfiConverterString.read(from: &buf), 
+            `creditorIban`: FfiConverterString.read(from: &buf), 
+            `creditorBankName`: FfiConverterString.read(from: &buf), 
+            `creditorBankStreet`: FfiConverterString.read(from: &buf), 
+            `creditorBankPostalCode`: FfiConverterString.read(from: &buf), 
+            `creditorBankTown`: FfiConverterString.read(from: &buf), 
+            `creditorBankCountry`: FfiConverterString.read(from: &buf), 
+            `creditorBankBic`: FfiConverterString.read(from: &buf), 
+            `creditorName`: FfiConverterString.read(from: &buf), 
+            `creditorStreet`: FfiConverterString.read(from: &buf), 
+            `creditorPostalCode`: FfiConverterString.read(from: &buf), 
+            `creditorTown`: FfiConverterString.read(from: &buf), 
+            `creditorCountry`: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FiatTopupInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.`debitorIban`, into: &buf)
+        FfiConverterString.write(value.`creditorIban`, into: &buf)
+        FfiConverterString.write(value.`creditorBankName`, into: &buf)
+        FfiConverterString.write(value.`creditorBankStreet`, into: &buf)
+        FfiConverterString.write(value.`creditorBankPostalCode`, into: &buf)
+        FfiConverterString.write(value.`creditorBankTown`, into: &buf)
+        FfiConverterString.write(value.`creditorBankCountry`, into: &buf)
+        FfiConverterString.write(value.`creditorBankBic`, into: &buf)
+        FfiConverterString.write(value.`creditorName`, into: &buf)
+        FfiConverterString.write(value.`creditorStreet`, into: &buf)
+        FfiConverterString.write(value.`creditorPostalCode`, into: &buf)
+        FfiConverterString.write(value.`creditorTown`, into: &buf)
+        FfiConverterString.write(value.`creditorCountry`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeFiatTopupInfo_lift(_ buf: RustBuffer) throws -> FiatTopupInfo {
+    return try FfiConverterTypeFiatTopupInfo.lift(buf)
+}
+
+public func FfiConverterTypeFiatTopupInfo_lower(_ value: FiatTopupInfo) -> RustBuffer {
+    return FfiConverterTypeFiatTopupInfo.lower(value)
+}
+
+
 public struct FiatValue {
     public var `minorUnits`: UInt64
     public var `currencyCode`: String
@@ -1369,6 +1537,85 @@ public func FfiConverterTypeNodeInfo_lift(_ buf: RustBuffer) throws -> NodeInfo 
 
 public func FfiConverterTypeNodeInfo_lower(_ value: NodeInfo) -> RustBuffer {
     return FfiConverterTypeNodeInfo.lower(value)
+}
+
+
+public struct OfferInfo {
+    public var `offerKind`: OfferKind
+    public var `amount`: Amount
+    public var `lnurlw`: String
+    public var `createdAt`: Date
+    public var `expiresAt`: Date
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`offerKind`: OfferKind, `amount`: Amount, `lnurlw`: String, `createdAt`: Date, `expiresAt`: Date) {
+        self.`offerKind` = `offerKind`
+        self.`amount` = `amount`
+        self.`lnurlw` = `lnurlw`
+        self.`createdAt` = `createdAt`
+        self.`expiresAt` = `expiresAt`
+    }
+}
+
+
+extension OfferInfo: Equatable, Hashable {
+    public static func ==(lhs: OfferInfo, rhs: OfferInfo) -> Bool {
+        if lhs.`offerKind` != rhs.`offerKind` {
+            return false
+        }
+        if lhs.`amount` != rhs.`amount` {
+            return false
+        }
+        if lhs.`lnurlw` != rhs.`lnurlw` {
+            return false
+        }
+        if lhs.`createdAt` != rhs.`createdAt` {
+            return false
+        }
+        if lhs.`expiresAt` != rhs.`expiresAt` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`offerKind`)
+        hasher.combine(`amount`)
+        hasher.combine(`lnurlw`)
+        hasher.combine(`createdAt`)
+        hasher.combine(`expiresAt`)
+    }
+}
+
+
+public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OfferInfo {
+        return try OfferInfo(
+            `offerKind`: FfiConverterTypeOfferKind.read(from: &buf), 
+            `amount`: FfiConverterTypeAmount.read(from: &buf), 
+            `lnurlw`: FfiConverterString.read(from: &buf), 
+            `createdAt`: FfiConverterTimestamp.read(from: &buf), 
+            `expiresAt`: FfiConverterTimestamp.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OfferInfo, into buf: inout [UInt8]) {
+        FfiConverterTypeOfferKind.write(value.`offerKind`, into: &buf)
+        FfiConverterTypeAmount.write(value.`amount`, into: &buf)
+        FfiConverterString.write(value.`lnurlw`, into: &buf)
+        FfiConverterTimestamp.write(value.`createdAt`, into: &buf)
+        FfiConverterTimestamp.write(value.`expiresAt`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeOfferInfo_lift(_ buf: RustBuffer) throws -> OfferInfo {
+    return try FfiConverterTypeOfferInfo.lift(buf)
+}
+
+public func FfiConverterTypeOfferInfo_lower(_ value: OfferInfo) -> RustBuffer {
+    return FfiConverterTypeOfferInfo.lower(value)
 }
 
 
@@ -2222,6 +2469,54 @@ extension Network: Equatable, Hashable {}
 
 
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum OfferKind {
+    
+    case `pocket`(`exchangeFee`: FiatValue)
+}
+
+public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
+    typealias SwiftType = OfferKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OfferKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .`pocket`(
+            `exchangeFee`: try FfiConverterTypeFiatValue.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: OfferKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .`pocket`(`exchangeFee`):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypeFiatValue.write(`exchangeFee`, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeOfferKind_lift(_ buf: RustBuffer) throws -> OfferKind {
+    return try FfiConverterTypeOfferKind.lift(buf)
+}
+
+public func FfiConverterTypeOfferKind_lower(_ value: OfferKind) -> RustBuffer {
+    return FfiConverterTypeOfferKind.lower(value)
+}
+
+
+extension OfferKind: Equatable, Hashable {}
+
+
+
 public enum PayError {
 
     
@@ -2515,7 +2810,8 @@ extension PaymentType: Equatable, Hashable {}
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum RuntimeErrorCode {
     
-    case `authServiceUnvailable`
+    case `authServiceUnavailable`
+    case `topupServiceUnavailable`
     case `esploraServiceUnavailable`
     case `lspServiceUnavailable`
     case `remoteStorageError`
@@ -2529,15 +2825,17 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         let variant: Int32 = try readInt(&buf)
         switch variant {
         
-        case 1: return .`authServiceUnvailable`
+        case 1: return .`authServiceUnavailable`
         
-        case 2: return .`esploraServiceUnavailable`
+        case 2: return .`topupServiceUnavailable`
         
-        case 3: return .`lspServiceUnavailable`
+        case 3: return .`esploraServiceUnavailable`
         
-        case 4: return .`remoteStorageError`
+        case 4: return .`lspServiceUnavailable`
         
-        case 5: return .`nonExistingWallet`
+        case 5: return .`remoteStorageError`
+        
+        case 6: return .`nonExistingWallet`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2547,24 +2845,28 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         switch value {
         
         
-        case .`authServiceUnvailable`:
+        case .`authServiceUnavailable`:
             writeInt(&buf, Int32(1))
         
         
-        case .`esploraServiceUnavailable`:
+        case .`topupServiceUnavailable`:
             writeInt(&buf, Int32(2))
         
         
-        case .`lspServiceUnavailable`:
+        case .`esploraServiceUnavailable`:
             writeInt(&buf, Int32(3))
         
         
-        case .`remoteStorageError`:
+        case .`lspServiceUnavailable`:
             writeInt(&buf, Int32(4))
         
         
-        case .`nonExistingWallet`:
+        case .`remoteStorageError`:
             writeInt(&buf, Int32(5))
+        
+        
+        case .`nonExistingWallet`:
+            writeInt(&buf, Int32(6))
         
         }
     }
@@ -2633,6 +2935,65 @@ public struct FfiConverterTypeSimpleError: FfiConverterRustBuffer {
 extension SimpleError: Equatable, Hashable {}
 
 extension SimpleError: Error { }
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum TopupCurrency {
+    
+    case `eur`
+    case `chf`
+    case `gbp`
+}
+
+public struct FfiConverterTypeTopupCurrency: FfiConverterRustBuffer {
+    typealias SwiftType = TopupCurrency
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TopupCurrency {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .`eur`
+        
+        case 2: return .`chf`
+        
+        case 3: return .`gbp`
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TopupCurrency, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .`eur`:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .`chf`:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .`gbp`:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeTopupCurrency_lift(_ buf: RustBuffer) throws -> TopupCurrency {
+    return try FfiConverterTypeTopupCurrency.lift(buf)
+}
+
+public func FfiConverterTypeTopupCurrency_lower(_ value: TopupCurrency) -> RustBuffer {
+    return FfiConverterTypeTopupCurrency.lower(value)
+}
+
+
+extension TopupCurrency: Equatable, Hashable {}
+
+
 
 fileprivate extension NSLock {
     func withLock<T>(f: () throws -> T) rethrows -> T {
@@ -3011,6 +3372,28 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterSequenceTypeOfferInfo: FfiConverterRustBuffer {
+    typealias SwiftType = [OfferInfo]
+
+    public static func write(_ value: [OfferInfo], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeOfferInfo.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [OfferInfo] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [OfferInfo]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeOfferInfo.read(from: &buf))
+        }
+        return seq
+    }
+}
+
 fileprivate struct FfiConverterSequenceTypePayment: FfiConverterRustBuffer {
     typealias SwiftType = [Payment]
 
@@ -3165,6 +3548,12 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 46574) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_register_fiat_topup() != 54306) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_query_available_offers() != 4503) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_panic_directly() != 60936) {
