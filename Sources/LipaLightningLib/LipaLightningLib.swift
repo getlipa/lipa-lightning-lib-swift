@@ -345,6 +345,19 @@ fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     }
 }
 
+fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
+    typealias FfiType = Double
+    typealias SwiftType = Double
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Double {
+        return try lift(readDouble(&buf))
+    }
+
+    public static func write(_ value: Double, into buf: inout [UInt8]) {
+        writeDouble(&buf, lower(value))
+    }
+}
+
 fileprivate struct FfiConverterBool : FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -2473,7 +2486,7 @@ extension Network: Equatable, Hashable {}
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
-    case `pocket`(`exchangeFee`: FiatValue)
+    case `pocket`(`exchangeFee`: FiatValue, `exchangeFeeRate`: Double)
 }
 
 public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
@@ -2484,7 +2497,8 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
         switch variant {
         
         case 1: return .`pocket`(
-            `exchangeFee`: try FfiConverterTypeFiatValue.read(from: &buf)
+            `exchangeFee`: try FfiConverterTypeFiatValue.read(from: &buf), 
+            `exchangeFeeRate`: try FfiConverterDouble.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -2495,9 +2509,10 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
         switch value {
         
         
-        case let .`pocket`(`exchangeFee`):
+        case let .`pocket`(`exchangeFee`,`exchangeFeeRate`):
             writeInt(&buf, Int32(1))
             FfiConverterTypeFiatValue.write(`exchangeFee`, into: &buf)
+            FfiConverterDouble.write(`exchangeFeeRate`, into: &buf)
             
         }
     }
