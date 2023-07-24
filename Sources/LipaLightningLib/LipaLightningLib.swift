@@ -1120,6 +1120,7 @@ public func FfiConverterTypeExchangeRate_lower(_ value: ExchangeRate) -> RustBuf
 
 public struct FiatTopupInfo {
     public var `debitorIban`: String
+    public var `creditorReference`: String
     public var `creditorIban`: String
     public var `creditorBankName`: String
     public var `creditorBankStreet`: String
@@ -1135,8 +1136,9 @@ public struct FiatTopupInfo {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`debitorIban`: String, `creditorIban`: String, `creditorBankName`: String, `creditorBankStreet`: String, `creditorBankPostalCode`: String, `creditorBankTown`: String, `creditorBankCountry`: String, `creditorBankBic`: String, `creditorName`: String, `creditorStreet`: String, `creditorPostalCode`: String, `creditorTown`: String, `creditorCountry`: String) {
+    public init(`debitorIban`: String, `creditorReference`: String, `creditorIban`: String, `creditorBankName`: String, `creditorBankStreet`: String, `creditorBankPostalCode`: String, `creditorBankTown`: String, `creditorBankCountry`: String, `creditorBankBic`: String, `creditorName`: String, `creditorStreet`: String, `creditorPostalCode`: String, `creditorTown`: String, `creditorCountry`: String) {
         self.`debitorIban` = `debitorIban`
+        self.`creditorReference` = `creditorReference`
         self.`creditorIban` = `creditorIban`
         self.`creditorBankName` = `creditorBankName`
         self.`creditorBankStreet` = `creditorBankStreet`
@@ -1156,6 +1158,9 @@ public struct FiatTopupInfo {
 extension FiatTopupInfo: Equatable, Hashable {
     public static func ==(lhs: FiatTopupInfo, rhs: FiatTopupInfo) -> Bool {
         if lhs.`debitorIban` != rhs.`debitorIban` {
+            return false
+        }
+        if lhs.`creditorReference` != rhs.`creditorReference` {
             return false
         }
         if lhs.`creditorIban` != rhs.`creditorIban` {
@@ -1199,6 +1204,7 @@ extension FiatTopupInfo: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`debitorIban`)
+        hasher.combine(`creditorReference`)
         hasher.combine(`creditorIban`)
         hasher.combine(`creditorBankName`)
         hasher.combine(`creditorBankStreet`)
@@ -1219,6 +1225,7 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopupInfo {
         return try FiatTopupInfo(
             `debitorIban`: FfiConverterString.read(from: &buf), 
+            `creditorReference`: FfiConverterString.read(from: &buf), 
             `creditorIban`: FfiConverterString.read(from: &buf), 
             `creditorBankName`: FfiConverterString.read(from: &buf), 
             `creditorBankStreet`: FfiConverterString.read(from: &buf), 
@@ -1236,6 +1243,7 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
 
     public static func write(_ value: FiatTopupInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.`debitorIban`, into: &buf)
+        FfiConverterString.write(value.`creditorReference`, into: &buf)
         FfiConverterString.write(value.`creditorIban`, into: &buf)
         FfiConverterString.write(value.`creditorBankName`, into: &buf)
         FfiConverterString.write(value.`creditorBankStreet`, into: &buf)
