@@ -514,9 +514,6 @@ public protocol LightningNodeProtocol {
     func `acceptPocketTermsAndConditions`()  throws
     func `registerFiatTopup`(`email`: String?, `userIban`: String, `userCurrency`: TopupCurrency)  throws -> FiatTopupInfo
     func `queryAvailableOffers`()  throws -> [OfferInfo]
-    func `panicDirectly`()  
-    func `panicInBackgroundThread`()  
-    func `panicInTokio`()  
     
 }
 
@@ -756,33 +753,6 @@ public class LightningNode: LightningNodeProtocol {
     )
 }
         )
-    }
-
-    public func `panicDirectly`()  {
-        try! 
-    rustCall() {
-    
-    uniffi_lipalightninglib_fn_method_lightningnode_panic_directly(self.pointer, $0
-    )
-}
-    }
-
-    public func `panicInBackgroundThread`()  {
-        try! 
-    rustCall() {
-    
-    uniffi_lipalightninglib_fn_method_lightningnode_panic_in_background_thread(self.pointer, $0
-    )
-}
-    }
-
-    public func `panicInTokio`()  {
-        try! 
-    rustCall() {
-    
-    uniffi_lipalightninglib_fn_method_lightningnode_panic_in_tokio(self.pointer, $0
-    )
-}
     }
 }
 
@@ -3577,15 +3547,6 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_query_available_offers() != 4503) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi__checksum_method_lightningnode_panic_directly() != 60936) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi__checksum_method_lightningnode_panic_in_background_thread() != 9780) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi__checksum_method_lightningnode_panic_in_tokio() != 40682) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_constructor_lightningnode_new() != 50158) {
