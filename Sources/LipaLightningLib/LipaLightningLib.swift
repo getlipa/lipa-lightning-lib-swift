@@ -2451,7 +2451,7 @@ extension Network: Equatable, Hashable {}
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
-    case `pocket`(`exchangeFee`: FiatValue, `exchangeFeeRatePermyriad`: UInt16)
+    case `pocket`(`topupValue`: FiatValue, `exchangeFee`: FiatValue, `exchangeFeeRatePermyriad`: UInt16)
 }
 
 public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
@@ -2462,6 +2462,7 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
         switch variant {
         
         case 1: return .`pocket`(
+            `topupValue`: try FfiConverterTypeFiatValue.read(from: &buf), 
             `exchangeFee`: try FfiConverterTypeFiatValue.read(from: &buf), 
             `exchangeFeeRatePermyriad`: try FfiConverterUInt16.read(from: &buf)
         )
@@ -2474,8 +2475,9 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
         switch value {
         
         
-        case let .`pocket`(`exchangeFee`,`exchangeFeeRatePermyriad`):
+        case let .`pocket`(`topupValue`,`exchangeFee`,`exchangeFeeRatePermyriad`):
             writeInt(&buf, Int32(1))
+            FfiConverterTypeFiatValue.write(`topupValue`, into: &buf)
             FfiConverterTypeFiatValue.write(`exchangeFee`, into: &buf)
             FfiConverterUInt16.write(`exchangeFeeRatePermyriad`, into: &buf)
             
