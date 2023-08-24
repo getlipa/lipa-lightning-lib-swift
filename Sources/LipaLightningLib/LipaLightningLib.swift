@@ -503,6 +503,7 @@ public protocol LightningNodeProtocol {
     func `queryAvailableOffers`()  throws -> [OfferInfo]
     func `requestOfferCollection`(`offer`: OfferInfo)  throws -> String
     func `registerNotificationToken`(`notificationToken`: String, `languageIso6391`: String, `countryIso31661Alpha2`: String)  throws
+    func `getWalletPubkeyId`()   -> String?
     
 }
 
@@ -764,6 +765,17 @@ public class LightningNode: LightningNodeProtocol {
         FfiConverterString.lower(`countryIso31661Alpha2`),$0
     )
 }
+    }
+
+    public func `getWalletPubkeyId`()  -> String? {
+        return try!  FfiConverterOptionString.lift(
+            try! 
+    rustCall() {
+    
+    uniffi_lipalightninglib_fn_method_lightningnode_get_wallet_pubkey_id(self.pointer, $0
+    )
+}
+        )
     }
 }
 
@@ -1548,15 +1560,17 @@ public struct OfferInfo {
     public var `lnurlw`: String
     public var `createdAt`: Date
     public var `expiresAt`: Date
+    public var `status`: OfferStatus
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`offerKind`: OfferKind, `amount`: Amount, `lnurlw`: String, `createdAt`: Date, `expiresAt`: Date) {
+    public init(`offerKind`: OfferKind, `amount`: Amount, `lnurlw`: String, `createdAt`: Date, `expiresAt`: Date, `status`: OfferStatus) {
         self.`offerKind` = `offerKind`
         self.`amount` = `amount`
         self.`lnurlw` = `lnurlw`
         self.`createdAt` = `createdAt`
         self.`expiresAt` = `expiresAt`
+        self.`status` = `status`
     }
 }
 
@@ -1578,6 +1592,9 @@ extension OfferInfo: Equatable, Hashable {
         if lhs.`expiresAt` != rhs.`expiresAt` {
             return false
         }
+        if lhs.`status` != rhs.`status` {
+            return false
+        }
         return true
     }
 
@@ -1587,6 +1604,7 @@ extension OfferInfo: Equatable, Hashable {
         hasher.combine(`lnurlw`)
         hasher.combine(`createdAt`)
         hasher.combine(`expiresAt`)
+        hasher.combine(`status`)
     }
 }
 
@@ -1598,7 +1616,8 @@ public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
             `amount`: FfiConverterTypeAmount.read(from: &buf), 
             `lnurlw`: FfiConverterString.read(from: &buf), 
             `createdAt`: FfiConverterTimestamp.read(from: &buf), 
-            `expiresAt`: FfiConverterTimestamp.read(from: &buf)
+            `expiresAt`: FfiConverterTimestamp.read(from: &buf), 
+            `status`: FfiConverterTypeOfferStatus.read(from: &buf)
         )
     }
 
@@ -1608,6 +1627,7 @@ public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
         FfiConverterString.write(value.`lnurlw`, into: &buf)
         FfiConverterTimestamp.write(value.`createdAt`, into: &buf)
         FfiConverterTimestamp.write(value.`expiresAt`, into: &buf)
+        FfiConverterTypeOfferStatus.write(value.`status`, into: &buf)
     }
 }
 
@@ -2532,6 +2552,65 @@ public func FfiConverterTypeOfferKind_lower(_ value: OfferKind) -> RustBuffer {
 
 
 extension OfferKind: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum OfferStatus {
+    
+    case `ready`
+    case `failed`
+    case `settled`
+}
+
+public struct FfiConverterTypeOfferStatus: FfiConverterRustBuffer {
+    typealias SwiftType = OfferStatus
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OfferStatus {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .`ready`
+        
+        case 2: return .`failed`
+        
+        case 3: return .`settled`
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: OfferStatus, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .`ready`:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .`failed`:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .`settled`:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeOfferStatus_lift(_ buf: RustBuffer) throws -> OfferStatus {
+    return try FfiConverterTypeOfferStatus.lift(buf)
+}
+
+public func FfiConverterTypeOfferStatus_lower(_ value: OfferStatus) -> RustBuffer {
+    return FfiConverterTypeOfferStatus.lower(value)
+}
+
+
+extension OfferStatus: Equatable, Hashable {}
 
 
 
@@ -3599,6 +3678,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_register_notification_token() != 12567) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_get_wallet_pubkey_id() != 62577) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_constructor_lightningnode_new() != 50158) {
