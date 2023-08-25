@@ -504,6 +504,7 @@ public protocol LightningNodeProtocol {
     func `requestOfferCollection`(`offer`: OfferInfo)  throws -> String
     func `registerNotificationToken`(`notificationToken`: String, `languageIso6391`: String, `countryIso31661Alpha2`: String)  throws
     func `getWalletPubkeyId`()   -> String?
+    func `getPaymentUuid`(`paymentHash`: String)  throws -> String
     
 }
 
@@ -773,6 +774,17 @@ public class LightningNode: LightningNodeProtocol {
     rustCall() {
     
     uniffi_lipalightninglib_fn_method_lightningnode_get_wallet_pubkey_id(self.pointer, $0
+    )
+}
+        )
+    }
+
+    public func `getPaymentUuid`(`paymentHash`: String) throws -> String {
+        return try  FfiConverterString.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_get_payment_uuid(self.pointer, 
+        FfiConverterString.lower(`paymentHash`),$0
     )
 }
         )
@@ -3681,6 +3693,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_get_wallet_pubkey_id() != 62577) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_get_payment_uuid() != 21036) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_constructor_lightningnode_new() != 50158) {
