@@ -481,7 +481,7 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 
 
 public protocol LightningNodeProtocol {
-    func `getNodeInfo`()   -> NodeInfo
+    func `getNodeInfo`()  throws -> NodeInfo
     func `queryLspFee`()  throws -> LspFee
     func `getPaymentAmountLimits`()  throws -> PaymentAmountLimits
     func `calculateLspFee`(`amountSat`: UInt64)  throws -> Amount
@@ -534,11 +534,10 @@ public class LightningNode: LightningNodeProtocol {
     
     
 
-    public func `getNodeInfo`()  -> NodeInfo {
-        return try!  FfiConverterTypeNodeInfo.lift(
-            try! 
-    rustCall() {
-    
+    public func `getNodeInfo`() throws -> NodeInfo {
+        return try  FfiConverterTypeNodeInfo.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_lipalightninglib_fn_method_lightningnode_get_node_info(self.pointer, $0
     )
 }
@@ -976,6 +975,7 @@ public func FfiConverterTypeChannelsInfo_lower(_ value: ChannelsInfo) -> RustBuf
 public struct Config {
     public var `environment`: EnvironmentCode
     public var `seed`: Data
+    public var `inviteCode`: String?
     public var `fiatCurrency`: String
     public var `localPersistencePath`: String
     public var `timezoneConfig`: TzConfig
@@ -983,9 +983,10 @@ public struct Config {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`environment`: EnvironmentCode, `seed`: Data, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `enableFileLogging`: Bool) {
+    public init(`environment`: EnvironmentCode, `seed`: Data, `inviteCode`: String?, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `enableFileLogging`: Bool) {
         self.`environment` = `environment`
         self.`seed` = `seed`
+        self.`inviteCode` = `inviteCode`
         self.`fiatCurrency` = `fiatCurrency`
         self.`localPersistencePath` = `localPersistencePath`
         self.`timezoneConfig` = `timezoneConfig`
@@ -1000,6 +1001,9 @@ extension Config: Equatable, Hashable {
             return false
         }
         if lhs.`seed` != rhs.`seed` {
+            return false
+        }
+        if lhs.`inviteCode` != rhs.`inviteCode` {
             return false
         }
         if lhs.`fiatCurrency` != rhs.`fiatCurrency` {
@@ -1020,6 +1024,7 @@ extension Config: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`environment`)
         hasher.combine(`seed`)
+        hasher.combine(`inviteCode`)
         hasher.combine(`fiatCurrency`)
         hasher.combine(`localPersistencePath`)
         hasher.combine(`timezoneConfig`)
@@ -1033,6 +1038,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         return try Config(
             `environment`: FfiConverterTypeEnvironmentCode.read(from: &buf), 
             `seed`: FfiConverterData.read(from: &buf), 
+            `inviteCode`: FfiConverterOptionString.read(from: &buf), 
             `fiatCurrency`: FfiConverterString.read(from: &buf), 
             `localPersistencePath`: FfiConverterString.read(from: &buf), 
             `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf), 
@@ -1043,6 +1049,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
     public static func write(_ value: Config, into buf: inout [UInt8]) {
         FfiConverterTypeEnvironmentCode.write(value.`environment`, into: &buf)
         FfiConverterData.write(value.`seed`, into: &buf)
+        FfiConverterOptionString.write(value.`inviteCode`, into: &buf)
         FfiConverterString.write(value.`fiatCurrency`, into: &buf)
         FfiConverterString.write(value.`localPersistencePath`, into: &buf)
         FfiConverterTypeTzConfig.write(value.`timezoneConfig`, into: &buf)
@@ -2928,9 +2935,11 @@ public enum RuntimeErrorCode {
     
     case `authServiceUnavailable`
     case `offerServiceUnavailable`
+    case `exchangeRateProviderUnavailable`
     case `esploraServiceUnavailable`
     case `lspServiceUnavailable`
     case `remoteStorageError`
+    case `nodeUnavailable`
     case `nonExistingWallet`
 }
 
@@ -2945,13 +2954,17 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case 2: return .`offerServiceUnavailable`
         
-        case 3: return .`esploraServiceUnavailable`
+        case 3: return .`exchangeRateProviderUnavailable`
         
-        case 4: return .`lspServiceUnavailable`
+        case 4: return .`esploraServiceUnavailable`
         
-        case 5: return .`remoteStorageError`
+        case 5: return .`lspServiceUnavailable`
         
-        case 6: return .`nonExistingWallet`
+        case 6: return .`remoteStorageError`
+        
+        case 7: return .`nodeUnavailable`
+        
+        case 8: return .`nonExistingWallet`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2969,20 +2982,28 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
         
         
-        case .`esploraServiceUnavailable`:
+        case .`exchangeRateProviderUnavailable`:
             writeInt(&buf, Int32(3))
         
         
-        case .`lspServiceUnavailable`:
+        case .`esploraServiceUnavailable`:
             writeInt(&buf, Int32(4))
         
         
-        case .`remoteStorageError`:
+        case .`lspServiceUnavailable`:
             writeInt(&buf, Int32(5))
         
         
-        case .`nonExistingWallet`:
+        case .`remoteStorageError`:
             writeInt(&buf, Int32(6))
+        
+        
+        case .`nodeUnavailable`:
+            writeInt(&buf, Int32(7))
+        
+        
+        case .`nonExistingWallet`:
+            writeInt(&buf, Int32(8))
         
         }
     }
@@ -3633,7 +3654,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 45132) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi__checksum_method_lightningnode_get_node_info() != 55691) {
+    if (uniffi__checksum_method_lightningnode_get_node_info() != 12147) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_query_lsp_fee() != 61148) {
