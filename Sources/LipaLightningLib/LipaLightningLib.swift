@@ -500,7 +500,7 @@ public protocol LightningNodeProtocol {
     func `changeTimezoneConfig`(`timezoneConfig`: TzConfig)  
     func `acceptPocketTermsAndConditions`()  throws
     func `registerFiatTopup`(`email`: String?, `userIban`: String, `userCurrency`: TopupCurrency)  throws -> FiatTopupInfo
-    func `queryAvailableOffers`()  throws -> [OfferInfo]
+    func `queryUncompletedOffers`()  throws -> [OfferInfo]
     func `requestOfferCollection`(`offer`: OfferInfo)  throws -> String
     func `registerNotificationToken`(`notificationToken`: String, `languageIso6391`: String, `countryIso31661Alpha2`: String)  throws
     func `getWalletPubkeyId`()   -> String?
@@ -736,11 +736,11 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func `queryAvailableOffers`() throws -> [OfferInfo] {
+    public func `queryUncompletedOffers`() throws -> [OfferInfo] {
         return try  FfiConverterSequenceTypeOfferInfo.lift(
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
-    uniffi_lipalightninglib_fn_method_lightningnode_query_available_offers(self.pointer, $0
+    uniffi_lipalightninglib_fn_method_lightningnode_query_uncompleted_offers(self.pointer, $0
     )
 }
         )
@@ -2573,6 +2573,7 @@ public enum OfferStatus {
     
     case `ready`
     case `failed`
+    case `refunded`
     case `settled`
 }
 
@@ -2587,7 +2588,9 @@ public struct FfiConverterTypeOfferStatus: FfiConverterRustBuffer {
         
         case 2: return .`failed`
         
-        case 3: return .`settled`
+        case 3: return .`refunded`
+        
+        case 4: return .`settled`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2605,8 +2608,12 @@ public struct FfiConverterTypeOfferStatus: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
         
         
-        case .`settled`:
+        case .`refunded`:
             writeInt(&buf, Int32(3))
+        
+        
+        case .`settled`:
+            writeInt(&buf, Int32(4))
         
         }
     }
@@ -3683,7 +3690,7 @@ private var initializationResult: InitializationResult {
     if (uniffi__checksum_method_lightningnode_register_fiat_topup() != 54306) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi__checksum_method_lightningnode_query_available_offers() != 4503) {
+    if (uniffi__checksum_method_lightningnode_query_uncompleted_offers() != 58970) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_request_offer_collection() != 1522) {
