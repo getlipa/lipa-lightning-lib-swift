@@ -484,8 +484,8 @@ public protocol LightningNodeProtocol {
     func `getNodeInfo`()  throws -> NodeInfo
     func `queryLspFee`()  throws -> LspFee
     func `getPaymentAmountLimits`()  throws -> PaymentAmountLimits
-    func `calculateLspFee`(`amountSat`: UInt64)  throws -> Amount
-    func `createInvoice`(`amountSat`: UInt64, `description`: String, `metadata`: String)  throws -> InvoiceDetails
+    func `calculateLspFee`(`amountSat`: UInt64)  throws -> CalculateLspFeeResponse
+    func `createInvoice`(`amountSat`: UInt64, `lspFeeParams`: OpeningFeeParams?, `description`: String, `metadata`: String)  throws -> InvoiceDetails
     func `decodeInvoice`(`invoice`: String)  throws -> InvoiceDetails
     func `getPaymentMaxRoutingFeeMode`(`amountSat`: UInt64)   -> MaxRoutingFeeMode
     func `payInvoice`(`invoice`: String, `metadata`: String)  throws
@@ -564,8 +564,8 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func `calculateLspFee`(`amountSat`: UInt64) throws -> Amount {
-        return try  FfiConverterTypeAmount.lift(
+    public func `calculateLspFee`(`amountSat`: UInt64) throws -> CalculateLspFeeResponse {
+        return try  FfiConverterTypeCalculateLspFeeResponse.lift(
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_lipalightninglib_fn_method_lightningnode_calculate_lsp_fee(self.pointer, 
@@ -575,12 +575,13 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func `createInvoice`(`amountSat`: UInt64, `description`: String, `metadata`: String) throws -> InvoiceDetails {
+    public func `createInvoice`(`amountSat`: UInt64, `lspFeeParams`: OpeningFeeParams?, `description`: String, `metadata`: String) throws -> InvoiceDetails {
         return try  FfiConverterTypeInvoiceDetails.lift(
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_lipalightninglib_fn_method_lightningnode_create_invoice(self.pointer, 
         FfiConverterUInt64.lower(`amountSat`),
+        FfiConverterOptionTypeOpeningFeeParams.lower(`lspFeeParams`),
         FfiConverterString.lower(`description`),
         FfiConverterString.lower(`metadata`),$0
     )
@@ -882,6 +883,61 @@ public func FfiConverterTypeAmount_lift(_ buf: RustBuffer) throws -> Amount {
 
 public func FfiConverterTypeAmount_lower(_ value: Amount) -> RustBuffer {
     return FfiConverterTypeAmount.lower(value)
+}
+
+
+public struct CalculateLspFeeResponse {
+    public var `lspFee`: Amount
+    public var `lspFeeParams`: OpeningFeeParams?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`lspFee`: Amount, `lspFeeParams`: OpeningFeeParams?) {
+        self.`lspFee` = `lspFee`
+        self.`lspFeeParams` = `lspFeeParams`
+    }
+}
+
+
+extension CalculateLspFeeResponse: Equatable, Hashable {
+    public static func ==(lhs: CalculateLspFeeResponse, rhs: CalculateLspFeeResponse) -> Bool {
+        if lhs.`lspFee` != rhs.`lspFee` {
+            return false
+        }
+        if lhs.`lspFeeParams` != rhs.`lspFeeParams` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`lspFee`)
+        hasher.combine(`lspFeeParams`)
+    }
+}
+
+
+public struct FfiConverterTypeCalculateLspFeeResponse: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CalculateLspFeeResponse {
+        return try CalculateLspFeeResponse(
+            `lspFee`: FfiConverterTypeAmount.read(from: &buf), 
+            `lspFeeParams`: FfiConverterOptionTypeOpeningFeeParams.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CalculateLspFeeResponse, into buf: inout [UInt8]) {
+        FfiConverterTypeAmount.write(value.`lspFee`, into: &buf)
+        FfiConverterOptionTypeOpeningFeeParams.write(value.`lspFeeParams`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeCalculateLspFeeResponse_lift(_ buf: RustBuffer) throws -> CalculateLspFeeResponse {
+    return try FfiConverterTypeCalculateLspFeeResponse.lift(buf)
+}
+
+public func FfiConverterTypeCalculateLspFeeResponse_lower(_ value: CalculateLspFeeResponse) -> RustBuffer {
+    return FfiConverterTypeCalculateLspFeeResponse.lower(value)
 }
 
 
@@ -1657,6 +1713,93 @@ public func FfiConverterTypeOfferInfo_lift(_ buf: RustBuffer) throws -> OfferInf
 
 public func FfiConverterTypeOfferInfo_lower(_ value: OfferInfo) -> RustBuffer {
     return FfiConverterTypeOfferInfo.lower(value)
+}
+
+
+public struct OpeningFeeParams {
+    public var `minMsat`: UInt64
+    public var `proportional`: UInt32
+    public var `validUntil`: String
+    public var `maxIdleTime`: UInt32
+    public var `maxClientToSelfDelay`: UInt32
+    public var `promise`: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`minMsat`: UInt64, `proportional`: UInt32, `validUntil`: String, `maxIdleTime`: UInt32, `maxClientToSelfDelay`: UInt32, `promise`: String) {
+        self.`minMsat` = `minMsat`
+        self.`proportional` = `proportional`
+        self.`validUntil` = `validUntil`
+        self.`maxIdleTime` = `maxIdleTime`
+        self.`maxClientToSelfDelay` = `maxClientToSelfDelay`
+        self.`promise` = `promise`
+    }
+}
+
+
+extension OpeningFeeParams: Equatable, Hashable {
+    public static func ==(lhs: OpeningFeeParams, rhs: OpeningFeeParams) -> Bool {
+        if lhs.`minMsat` != rhs.`minMsat` {
+            return false
+        }
+        if lhs.`proportional` != rhs.`proportional` {
+            return false
+        }
+        if lhs.`validUntil` != rhs.`validUntil` {
+            return false
+        }
+        if lhs.`maxIdleTime` != rhs.`maxIdleTime` {
+            return false
+        }
+        if lhs.`maxClientToSelfDelay` != rhs.`maxClientToSelfDelay` {
+            return false
+        }
+        if lhs.`promise` != rhs.`promise` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`minMsat`)
+        hasher.combine(`proportional`)
+        hasher.combine(`validUntil`)
+        hasher.combine(`maxIdleTime`)
+        hasher.combine(`maxClientToSelfDelay`)
+        hasher.combine(`promise`)
+    }
+}
+
+
+public struct FfiConverterTypeOpeningFeeParams: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OpeningFeeParams {
+        return try OpeningFeeParams(
+            `minMsat`: FfiConverterUInt64.read(from: &buf), 
+            `proportional`: FfiConverterUInt32.read(from: &buf), 
+            `validUntil`: FfiConverterString.read(from: &buf), 
+            `maxIdleTime`: FfiConverterUInt32.read(from: &buf), 
+            `maxClientToSelfDelay`: FfiConverterUInt32.read(from: &buf), 
+            `promise`: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OpeningFeeParams, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.`minMsat`, into: &buf)
+        FfiConverterUInt32.write(value.`proportional`, into: &buf)
+        FfiConverterString.write(value.`validUntil`, into: &buf)
+        FfiConverterUInt32.write(value.`maxIdleTime`, into: &buf)
+        FfiConverterUInt32.write(value.`maxClientToSelfDelay`, into: &buf)
+        FfiConverterString.write(value.`promise`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeOpeningFeeParams_lift(_ buf: RustBuffer) throws -> OpeningFeeParams {
+    return try FfiConverterTypeOpeningFeeParams.lift(buf)
+}
+
+public func FfiConverterTypeOpeningFeeParams_lower(_ value: OpeningFeeParams) -> RustBuffer {
+    return FfiConverterTypeOpeningFeeParams.lower(value)
 }
 
 
@@ -2935,12 +3078,8 @@ public enum RuntimeErrorCode {
     
     case `authServiceUnavailable`
     case `offerServiceUnavailable`
-    case `exchangeRateProviderUnavailable`
-    case `esploraServiceUnavailable`
     case `lspServiceUnavailable`
-    case `remoteStorageError`
     case `nodeUnavailable`
-    case `nonExistingWallet`
 }
 
 public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
@@ -2954,17 +3093,9 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case 2: return .`offerServiceUnavailable`
         
-        case 3: return .`exchangeRateProviderUnavailable`
+        case 3: return .`lspServiceUnavailable`
         
-        case 4: return .`esploraServiceUnavailable`
-        
-        case 5: return .`lspServiceUnavailable`
-        
-        case 6: return .`remoteStorageError`
-        
-        case 7: return .`nodeUnavailable`
-        
-        case 8: return .`nonExistingWallet`
+        case 4: return .`nodeUnavailable`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -2982,28 +3113,12 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
         
         
-        case .`exchangeRateProviderUnavailable`:
+        case .`lspServiceUnavailable`:
             writeInt(&buf, Int32(3))
         
         
-        case .`esploraServiceUnavailable`:
-            writeInt(&buf, Int32(4))
-        
-        
-        case .`lspServiceUnavailable`:
-            writeInt(&buf, Int32(5))
-        
-        
-        case .`remoteStorageError`:
-            writeInt(&buf, Int32(6))
-        
-        
         case .`nodeUnavailable`:
-            writeInt(&buf, Int32(7))
-        
-        
-        case .`nonExistingWallet`:
-            writeInt(&buf, Int32(8))
+            writeInt(&buf, Int32(4))
         
         }
     }
@@ -3466,6 +3581,27 @@ fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterOptionTypeOpeningFeeParams: FfiConverterRustBuffer {
+    typealias SwiftType = OpeningFeeParams?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeOpeningFeeParams.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeOpeningFeeParams.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 fileprivate struct FfiConverterOptionTypeOfferKind: FfiConverterRustBuffer {
     typealias SwiftType = OfferKind?
 
@@ -3663,10 +3799,10 @@ private var initializationResult: InitializationResult {
     if (uniffi__checksum_method_lightningnode_get_payment_amount_limits() != 53157) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi__checksum_method_lightningnode_calculate_lsp_fee() != 14363) {
+    if (uniffi__checksum_method_lightningnode_calculate_lsp_fee() != 23979) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi__checksum_method_lightningnode_create_invoice() != 1149) {
+    if (uniffi__checksum_method_lightningnode_create_invoice() != 20136) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_decode_invoice() != 60020) {
