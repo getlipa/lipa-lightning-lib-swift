@@ -1031,7 +1031,6 @@ public func FfiConverterTypeChannelsInfo_lower(_ value: ChannelsInfo) -> RustBuf
 public struct Config {
     public var `environment`: EnvironmentCode
     public var `seed`: Data
-    public var `inviteCode`: String?
     public var `fiatCurrency`: String
     public var `localPersistencePath`: String
     public var `timezoneConfig`: TzConfig
@@ -1039,10 +1038,9 @@ public struct Config {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`environment`: EnvironmentCode, `seed`: Data, `inviteCode`: String?, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `enableFileLogging`: Bool) {
+    public init(`environment`: EnvironmentCode, `seed`: Data, `fiatCurrency`: String, `localPersistencePath`: String, `timezoneConfig`: TzConfig, `enableFileLogging`: Bool) {
         self.`environment` = `environment`
         self.`seed` = `seed`
-        self.`inviteCode` = `inviteCode`
         self.`fiatCurrency` = `fiatCurrency`
         self.`localPersistencePath` = `localPersistencePath`
         self.`timezoneConfig` = `timezoneConfig`
@@ -1057,9 +1055,6 @@ extension Config: Equatable, Hashable {
             return false
         }
         if lhs.`seed` != rhs.`seed` {
-            return false
-        }
-        if lhs.`inviteCode` != rhs.`inviteCode` {
             return false
         }
         if lhs.`fiatCurrency` != rhs.`fiatCurrency` {
@@ -1080,7 +1075,6 @@ extension Config: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`environment`)
         hasher.combine(`seed`)
-        hasher.combine(`inviteCode`)
         hasher.combine(`fiatCurrency`)
         hasher.combine(`localPersistencePath`)
         hasher.combine(`timezoneConfig`)
@@ -1094,7 +1088,6 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         return try Config(
             `environment`: FfiConverterTypeEnvironmentCode.read(from: &buf), 
             `seed`: FfiConverterData.read(from: &buf), 
-            `inviteCode`: FfiConverterOptionString.read(from: &buf), 
             `fiatCurrency`: FfiConverterString.read(from: &buf), 
             `localPersistencePath`: FfiConverterString.read(from: &buf), 
             `timezoneConfig`: FfiConverterTypeTzConfig.read(from: &buf), 
@@ -1105,7 +1098,6 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
     public static func write(_ value: Config, into buf: inout [UInt8]) {
         FfiConverterTypeEnvironmentCode.write(value.`environment`, into: &buf)
         FfiConverterData.write(value.`seed`, into: &buf)
-        FfiConverterOptionString.write(value.`inviteCode`, into: &buf)
         FfiConverterString.write(value.`fiatCurrency`, into: &buf)
         FfiConverterString.write(value.`localPersistencePath`, into: &buf)
         FfiConverterTypeTzConfig.write(value.`timezoneConfig`, into: &buf)
@@ -3080,6 +3072,7 @@ public enum RuntimeErrorCode {
     case `offerServiceUnavailable`
     case `lspServiceUnavailable`
     case `nodeUnavailable`
+    case `failedFundMigration`
 }
 
 public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
@@ -3096,6 +3089,8 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         case 3: return .`lspServiceUnavailable`
         
         case 4: return .`nodeUnavailable`
+        
+        case 5: return .`failedFundMigration`
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -3119,6 +3114,10 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case .`nodeUnavailable`:
             writeInt(&buf, Int32(4))
+        
+        
+        case .`failedFundMigration`:
+            writeInt(&buf, Int32(5))
         
         }
     }
