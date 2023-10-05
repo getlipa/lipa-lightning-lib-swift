@@ -505,6 +505,9 @@ public protocol LightningNodeProtocol {
     func `registerNotificationToken`(`notificationToken`: String, `languageIso6391`: String, `countryIso31661Alpha2`: String)  throws
     func `getWalletPubkeyId`()   -> String?
     func `getPaymentUuid`(`paymentHash`: String)  throws -> String
+    func `queryOnchainFee`()  throws -> UInt32
+    func `sweep`(`address`: String, `onchainFee`: UInt32)  throws -> String
+    func `logDebugInfo`()  throws
     
 }
 
@@ -788,6 +791,36 @@ public class LightningNode: LightningNodeProtocol {
     )
 }
         )
+    }
+
+    public func `queryOnchainFee`() throws -> UInt32 {
+        return try  FfiConverterUInt32.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_query_onchain_fee(self.pointer, $0
+    )
+}
+        )
+    }
+
+    public func `sweep`(`address`: String, `onchainFee`: UInt32) throws -> String {
+        return try  FfiConverterString.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_sweep(self.pointer, 
+        FfiConverterString.lower(`address`),
+        FfiConverterUInt32.lower(`onchainFee`),$0
+    )
+}
+        )
+    }
+
+    public func `logDebugInfo`() throws {
+        try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_log_debug_info(self.pointer, $0
+    )
+}
     }
 }
 
@@ -1179,6 +1212,7 @@ public func FfiConverterTypeExchangeRate_lower(_ value: ExchangeRate) -> RustBuf
 
 
 public struct FiatTopupInfo {
+    public var `orderId`: String
     public var `debitorIban`: String
     public var `creditorReference`: String
     public var `creditorIban`: String
@@ -1196,7 +1230,8 @@ public struct FiatTopupInfo {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`debitorIban`: String, `creditorReference`: String, `creditorIban`: String, `creditorBankName`: String, `creditorBankStreet`: String, `creditorBankPostalCode`: String, `creditorBankTown`: String, `creditorBankCountry`: String, `creditorBankBic`: String, `creditorName`: String, `creditorStreet`: String, `creditorPostalCode`: String, `creditorTown`: String, `creditorCountry`: String) {
+    public init(`orderId`: String, `debitorIban`: String, `creditorReference`: String, `creditorIban`: String, `creditorBankName`: String, `creditorBankStreet`: String, `creditorBankPostalCode`: String, `creditorBankTown`: String, `creditorBankCountry`: String, `creditorBankBic`: String, `creditorName`: String, `creditorStreet`: String, `creditorPostalCode`: String, `creditorTown`: String, `creditorCountry`: String) {
+        self.`orderId` = `orderId`
         self.`debitorIban` = `debitorIban`
         self.`creditorReference` = `creditorReference`
         self.`creditorIban` = `creditorIban`
@@ -1217,6 +1252,9 @@ public struct FiatTopupInfo {
 
 extension FiatTopupInfo: Equatable, Hashable {
     public static func ==(lhs: FiatTopupInfo, rhs: FiatTopupInfo) -> Bool {
+        if lhs.`orderId` != rhs.`orderId` {
+            return false
+        }
         if lhs.`debitorIban` != rhs.`debitorIban` {
             return false
         }
@@ -1263,6 +1301,7 @@ extension FiatTopupInfo: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
+        hasher.combine(`orderId`)
         hasher.combine(`debitorIban`)
         hasher.combine(`creditorReference`)
         hasher.combine(`creditorIban`)
@@ -1284,6 +1323,7 @@ extension FiatTopupInfo: Equatable, Hashable {
 public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopupInfo {
         return try FiatTopupInfo(
+            `orderId`: FfiConverterString.read(from: &buf), 
             `debitorIban`: FfiConverterString.read(from: &buf), 
             `creditorReference`: FfiConverterString.read(from: &buf), 
             `creditorIban`: FfiConverterString.read(from: &buf), 
@@ -1302,6 +1342,7 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
     }
 
     public static func write(_ value: FiatTopupInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.`orderId`, into: &buf)
         FfiConverterString.write(value.`debitorIban`, into: &buf)
         FfiConverterString.write(value.`creditorReference`, into: &buf)
         FfiConverterString.write(value.`creditorIban`, into: &buf)
@@ -1561,13 +1602,15 @@ public func FfiConverterTypeLspFee_lower(_ value: LspFee) -> RustBuffer {
 public struct NodeInfo {
     public var `nodePubkey`: String
     public var `peers`: [String]
+    public var `onchainBalance`: Amount
     public var `channelsInfo`: ChannelsInfo
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`nodePubkey`: String, `peers`: [String], `channelsInfo`: ChannelsInfo) {
+    public init(`nodePubkey`: String, `peers`: [String], `onchainBalance`: Amount, `channelsInfo`: ChannelsInfo) {
         self.`nodePubkey` = `nodePubkey`
         self.`peers` = `peers`
+        self.`onchainBalance` = `onchainBalance`
         self.`channelsInfo` = `channelsInfo`
     }
 }
@@ -1581,6 +1624,9 @@ extension NodeInfo: Equatable, Hashable {
         if lhs.`peers` != rhs.`peers` {
             return false
         }
+        if lhs.`onchainBalance` != rhs.`onchainBalance` {
+            return false
+        }
         if lhs.`channelsInfo` != rhs.`channelsInfo` {
             return false
         }
@@ -1590,6 +1636,7 @@ extension NodeInfo: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(`nodePubkey`)
         hasher.combine(`peers`)
+        hasher.combine(`onchainBalance`)
         hasher.combine(`channelsInfo`)
     }
 }
@@ -1600,6 +1647,7 @@ public struct FfiConverterTypeNodeInfo: FfiConverterRustBuffer {
         return try NodeInfo(
             `nodePubkey`: FfiConverterString.read(from: &buf), 
             `peers`: FfiConverterSequenceString.read(from: &buf), 
+            `onchainBalance`: FfiConverterTypeAmount.read(from: &buf), 
             `channelsInfo`: FfiConverterTypeChannelsInfo.read(from: &buf)
         )
     }
@@ -1607,6 +1655,7 @@ public struct FfiConverterTypeNodeInfo: FfiConverterRustBuffer {
     public static func write(_ value: NodeInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.`nodePubkey`, into: &buf)
         FfiConverterSequenceString.write(value.`peers`, into: &buf)
+        FfiConverterTypeAmount.write(value.`onchainBalance`, into: &buf)
         FfiConverterTypeChannelsInfo.write(value.`channelsInfo`, into: &buf)
     }
 }
@@ -3859,6 +3908,15 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_get_payment_uuid() != 21036) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_query_onchain_fee() != 41435) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_sweep() != 55829) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_log_debug_info() != 32127) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_constructor_lightningnode_new() != 50158) {
