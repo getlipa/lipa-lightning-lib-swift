@@ -507,6 +507,7 @@ public protocol LightningNodeProtocol {
     func `getPaymentUuid`(`paymentHash`: String)  throws -> String
     func `queryOnchainFee`()  throws -> UInt32
     func `sweep`(`address`: String, `onchainFee`: UInt32)  throws -> String
+    func `hideTopup`(`id`: String)  throws
     func `logDebugInfo`()  throws
     
 }
@@ -813,6 +814,15 @@ public class LightningNode: LightningNodeProtocol {
     )
 }
         )
+    }
+
+    public func `hideTopup`(`id`: String) throws {
+        try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_lipalightninglib_fn_method_lightningnode_hide_topup(self.pointer, 
+        FfiConverterString.lower(`id`),$0
+    )
+}
     }
 
     public func `logDebugInfo`() throws {
@@ -3914,6 +3924,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_sweep() != 55829) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi__checksum_method_lightningnode_hide_topup() != 39078) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi__checksum_method_lightningnode_log_debug_info() != 32127) {
