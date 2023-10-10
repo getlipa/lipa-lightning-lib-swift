@@ -985,20 +985,14 @@ public func FfiConverterTypeCalculateLspFeeResponse_lower(_ value: CalculateLspF
 
 
 public struct ChannelsInfo {
-    public var `numChannels`: UInt16
-    public var `numUsableChannels`: UInt16
     public var `localBalance`: Amount
-    public var `totalChannelCapacities`: Amount
     public var `inboundCapacity`: Amount
     public var `outboundCapacity`: Amount
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`numChannels`: UInt16, `numUsableChannels`: UInt16, `localBalance`: Amount, `totalChannelCapacities`: Amount, `inboundCapacity`: Amount, `outboundCapacity`: Amount) {
-        self.`numChannels` = `numChannels`
-        self.`numUsableChannels` = `numUsableChannels`
+    public init(`localBalance`: Amount, `inboundCapacity`: Amount, `outboundCapacity`: Amount) {
         self.`localBalance` = `localBalance`
-        self.`totalChannelCapacities` = `totalChannelCapacities`
         self.`inboundCapacity` = `inboundCapacity`
         self.`outboundCapacity` = `outboundCapacity`
     }
@@ -1007,16 +1001,7 @@ public struct ChannelsInfo {
 
 extension ChannelsInfo: Equatable, Hashable {
     public static func ==(lhs: ChannelsInfo, rhs: ChannelsInfo) -> Bool {
-        if lhs.`numChannels` != rhs.`numChannels` {
-            return false
-        }
-        if lhs.`numUsableChannels` != rhs.`numUsableChannels` {
-            return false
-        }
         if lhs.`localBalance` != rhs.`localBalance` {
-            return false
-        }
-        if lhs.`totalChannelCapacities` != rhs.`totalChannelCapacities` {
             return false
         }
         if lhs.`inboundCapacity` != rhs.`inboundCapacity` {
@@ -1029,10 +1014,7 @@ extension ChannelsInfo: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(`numChannels`)
-        hasher.combine(`numUsableChannels`)
         hasher.combine(`localBalance`)
-        hasher.combine(`totalChannelCapacities`)
         hasher.combine(`inboundCapacity`)
         hasher.combine(`outboundCapacity`)
     }
@@ -1042,20 +1024,14 @@ extension ChannelsInfo: Equatable, Hashable {
 public struct FfiConverterTypeChannelsInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChannelsInfo {
         return try ChannelsInfo(
-            `numChannels`: FfiConverterUInt16.read(from: &buf), 
-            `numUsableChannels`: FfiConverterUInt16.read(from: &buf), 
             `localBalance`: FfiConverterTypeAmount.read(from: &buf), 
-            `totalChannelCapacities`: FfiConverterTypeAmount.read(from: &buf), 
             `inboundCapacity`: FfiConverterTypeAmount.read(from: &buf), 
             `outboundCapacity`: FfiConverterTypeAmount.read(from: &buf)
         )
     }
 
     public static func write(_ value: ChannelsInfo, into buf: inout [UInt8]) {
-        FfiConverterUInt16.write(value.`numChannels`, into: &buf)
-        FfiConverterUInt16.write(value.`numUsableChannels`, into: &buf)
         FfiConverterTypeAmount.write(value.`localBalance`, into: &buf)
-        FfiConverterTypeAmount.write(value.`totalChannelCapacities`, into: &buf)
         FfiConverterTypeAmount.write(value.`inboundCapacity`, into: &buf)
         FfiConverterTypeAmount.write(value.`outboundCapacity`, into: &buf)
     }
@@ -1862,7 +1838,6 @@ public struct Payment {
     public var `amount`: Amount
     public var `invoiceDetails`: InvoiceDetails
     public var `createdAt`: TzTime
-    public var `latestStateChangeAt`: TzTime
     public var `description`: String
     public var `preimage`: String?
     public var `networkFees`: Amount?
@@ -1872,7 +1847,7 @@ public struct Payment {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `failReason`: PayErrorCode?, `hash`: String, `amount`: Amount, `invoiceDetails`: InvoiceDetails, `createdAt`: TzTime, `latestStateChangeAt`: TzTime, `description`: String, `preimage`: String?, `networkFees`: Amount?, `lspFees`: Amount?, `offer`: OfferKind?, `metadata`: String) {
+    public init(`paymentType`: PaymentType, `paymentState`: PaymentState, `failReason`: PayErrorCode?, `hash`: String, `amount`: Amount, `invoiceDetails`: InvoiceDetails, `createdAt`: TzTime, `description`: String, `preimage`: String?, `networkFees`: Amount?, `lspFees`: Amount?, `offer`: OfferKind?, `metadata`: String) {
         self.`paymentType` = `paymentType`
         self.`paymentState` = `paymentState`
         self.`failReason` = `failReason`
@@ -1880,7 +1855,6 @@ public struct Payment {
         self.`amount` = `amount`
         self.`invoiceDetails` = `invoiceDetails`
         self.`createdAt` = `createdAt`
-        self.`latestStateChangeAt` = `latestStateChangeAt`
         self.`description` = `description`
         self.`preimage` = `preimage`
         self.`networkFees` = `networkFees`
@@ -1914,9 +1888,6 @@ extension Payment: Equatable, Hashable {
         if lhs.`createdAt` != rhs.`createdAt` {
             return false
         }
-        if lhs.`latestStateChangeAt` != rhs.`latestStateChangeAt` {
-            return false
-        }
         if lhs.`description` != rhs.`description` {
             return false
         }
@@ -1946,7 +1917,6 @@ extension Payment: Equatable, Hashable {
         hasher.combine(`amount`)
         hasher.combine(`invoiceDetails`)
         hasher.combine(`createdAt`)
-        hasher.combine(`latestStateChangeAt`)
         hasher.combine(`description`)
         hasher.combine(`preimage`)
         hasher.combine(`networkFees`)
@@ -1967,7 +1937,6 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
             `amount`: FfiConverterTypeAmount.read(from: &buf), 
             `invoiceDetails`: FfiConverterTypeInvoiceDetails.read(from: &buf), 
             `createdAt`: FfiConverterTypeTzTime.read(from: &buf), 
-            `latestStateChangeAt`: FfiConverterTypeTzTime.read(from: &buf), 
             `description`: FfiConverterString.read(from: &buf), 
             `preimage`: FfiConverterOptionString.read(from: &buf), 
             `networkFees`: FfiConverterOptionTypeAmount.read(from: &buf), 
@@ -1985,7 +1954,6 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterTypeAmount.write(value.`amount`, into: &buf)
         FfiConverterTypeInvoiceDetails.write(value.`invoiceDetails`, into: &buf)
         FfiConverterTypeTzTime.write(value.`createdAt`, into: &buf)
-        FfiConverterTypeTzTime.write(value.`latestStateChangeAt`, into: &buf)
         FfiConverterString.write(value.`description`, into: &buf)
         FfiConverterOptionString.write(value.`preimage`, into: &buf)
         FfiConverterOptionTypeAmount.write(value.`networkFees`, into: &buf)
