@@ -2688,7 +2688,7 @@ extension Network: Equatable, Hashable {}
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
-    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16)
+    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, error: PocketOfferError?)
 }
 
 public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
@@ -2703,7 +2703,8 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
             exchangeRate: try FfiConverterTypeExchangeRate.read(from: &buf), 
             topupValueMinorUnits: try FfiConverterUInt64.read(from: &buf), 
             exchangeFeeMinorUnits: try FfiConverterUInt64.read(from: &buf), 
-            exchangeFeeRatePermyriad: try FfiConverterUInt16.read(from: &buf)
+            exchangeFeeRatePermyriad: try FfiConverterUInt16.read(from: &buf), 
+            error: try FfiConverterOptionTypePocketOfferError.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -2714,13 +2715,14 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
         switch value {
         
         
-        case let .pocket(id,exchangeRate,topupValueMinorUnits,exchangeFeeMinorUnits,exchangeFeeRatePermyriad):
+        case let .pocket(id,exchangeRate,topupValueMinorUnits,exchangeFeeMinorUnits,exchangeFeeRatePermyriad,error):
             writeInt(&buf, Int32(1))
             FfiConverterString.write(id, into: &buf)
             FfiConverterTypeExchangeRate.write(exchangeRate, into: &buf)
             FfiConverterUInt64.write(topupValueMinorUnits, into: &buf)
             FfiConverterUInt64.write(exchangeFeeMinorUnits, into: &buf)
             FfiConverterUInt16.write(exchangeFeeRatePermyriad, into: &buf)
+            FfiConverterOptionTypePocketOfferError.write(error, into: &buf)
             
         }
     }
@@ -3097,6 +3099,158 @@ extension PaymentType: Equatable, Hashable {}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum PermanentFailureCode {
+    
+    case thresholdExceeded
+    case orderInactive
+    case companiesUnsupported
+    case countryUnsupported
+    case otherRiskDetected
+    case customerRequested
+    case accountNotMatching
+    case payoutExpired
+}
+
+public struct FfiConverterTypePermanentFailureCode: FfiConverterRustBuffer {
+    typealias SwiftType = PermanentFailureCode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PermanentFailureCode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .thresholdExceeded
+        
+        case 2: return .orderInactive
+        
+        case 3: return .companiesUnsupported
+        
+        case 4: return .countryUnsupported
+        
+        case 5: return .otherRiskDetected
+        
+        case 6: return .customerRequested
+        
+        case 7: return .accountNotMatching
+        
+        case 8: return .payoutExpired
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PermanentFailureCode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .thresholdExceeded:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .orderInactive:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .companiesUnsupported:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .countryUnsupported:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .otherRiskDetected:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .customerRequested:
+            writeInt(&buf, Int32(6))
+        
+        
+        case .accountNotMatching:
+            writeInt(&buf, Int32(7))
+        
+        
+        case .payoutExpired:
+            writeInt(&buf, Int32(8))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypePermanentFailureCode_lift(_ buf: RustBuffer) throws -> PermanentFailureCode {
+    return try FfiConverterTypePermanentFailureCode.lift(buf)
+}
+
+public func FfiConverterTypePermanentFailureCode_lower(_ value: PermanentFailureCode) -> RustBuffer {
+    return FfiConverterTypePermanentFailureCode.lower(value)
+}
+
+
+extension PermanentFailureCode: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum PocketOfferError {
+    
+    case temporaryFailure(code: TemporaryFailureCode)
+    case permanentFailure(code: PermanentFailureCode)
+}
+
+public struct FfiConverterTypePocketOfferError: FfiConverterRustBuffer {
+    typealias SwiftType = PocketOfferError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PocketOfferError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .temporaryFailure(
+            code: try FfiConverterTypeTemporaryFailureCode.read(from: &buf)
+        )
+        
+        case 2: return .permanentFailure(
+            code: try FfiConverterTypePermanentFailureCode.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PocketOfferError, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .temporaryFailure(code):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypeTemporaryFailureCode.write(code, into: &buf)
+            
+        
+        case let .permanentFailure(code):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypePermanentFailureCode.write(code, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypePocketOfferError_lift(_ buf: RustBuffer) throws -> PocketOfferError {
+    return try FfiConverterTypePocketOfferError.lift(buf)
+}
+
+public func FfiConverterTypePocketOfferError_lower(_ value: PocketOfferError) -> RustBuffer {
+    return FfiConverterTypePocketOfferError.lower(value)
+}
+
+
+extension PocketOfferError: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum RuntimeErrorCode {
     
     case authServiceUnavailable
@@ -3217,6 +3371,75 @@ public struct FfiConverterTypeSimpleError: FfiConverterRustBuffer {
 extension SimpleError: Equatable, Hashable {}
 
 extension SimpleError: Error { }
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum TemporaryFailureCode {
+    
+    case noRoute
+    case invoiceExpired
+    case unexpected
+    case unknown(msg: String)
+}
+
+public struct FfiConverterTypeTemporaryFailureCode: FfiConverterRustBuffer {
+    typealias SwiftType = TemporaryFailureCode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TemporaryFailureCode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .noRoute
+        
+        case 2: return .invoiceExpired
+        
+        case 3: return .unexpected
+        
+        case 4: return .unknown(
+            msg: try FfiConverterString.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TemporaryFailureCode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .noRoute:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .invoiceExpired:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .unexpected:
+            writeInt(&buf, Int32(3))
+        
+        
+        case let .unknown(msg):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(msg, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeTemporaryFailureCode_lift(_ buf: RustBuffer) throws -> TemporaryFailureCode {
+    return try FfiConverterTypeTemporaryFailureCode.lift(buf)
+}
+
+public func FfiConverterTypeTemporaryFailureCode_lower(_ value: TemporaryFailureCode) -> RustBuffer {
+    return FfiConverterTypeTemporaryFailureCode.lower(value)
+}
+
+
+extension TemporaryFailureCode: Equatable, Hashable {}
+
+
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -3690,6 +3913,27 @@ fileprivate struct FfiConverterOptionTypePayErrorCode: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypePayErrorCode.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterOptionTypePocketOfferError: FfiConverterRustBuffer {
+    typealias SwiftType = PocketOfferError?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePocketOfferError.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePocketOfferError.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
