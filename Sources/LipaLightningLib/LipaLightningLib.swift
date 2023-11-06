@@ -507,13 +507,13 @@ public protocol LightningNodeProtocol {
     func hideTopup(id: String)  throws
     func listCurrencyCodes()   -> [String]
     func logDebugInfo()  throws
-    func payInvoice(invoice: String, metadata: String)  throws
+    func payInvoice(invoiceDetails: InvoiceDetails, metadata: String)  throws
     func payLnurlp(amountSat: UInt64, lnurlPayRequestData: LnUrlPayRequestData)  throws -> String
-    func payOpenInvoice(invoice: String, amountSat: UInt64, metadata: String)  throws
+    func payOpenInvoice(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: String)  throws
     func queryLspFee()  throws -> LspFee
     func queryOnchainFeeRate()  throws -> UInt32
     func queryUncompletedOffers()  throws -> [OfferInfo]
-    func registerFiatTopup(email: String?, userIban: String, userCurrency: TopupCurrency)  throws -> FiatTopupInfo
+    func registerFiatTopup(email: String?, userIban: String, userCurrency: String)  throws -> FiatTopupInfo
     func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String)  throws
     func requestOfferCollection(offer: OfferInfo)  throws -> String
     func resolveFailedSwap(failedSwapAddress: String, toAddress: String, onchainFeeRate: UInt32)  throws -> String
@@ -776,11 +776,11 @@ public class LightningNode: LightningNodeProtocol {
 }
     }
 
-    public func payInvoice(invoice: String, metadata: String) throws {
+    public func payInvoice(invoiceDetails: InvoiceDetails, metadata: String) throws {
         try 
     rustCallWithError(FfiConverterTypePayError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_pay_invoice(self.pointer, 
-        FfiConverterString.lower(invoice),
+        FfiConverterTypeInvoiceDetails.lower(invoiceDetails),
         FfiConverterString.lower(metadata),$0
     )
 }
@@ -798,11 +798,11 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func payOpenInvoice(invoice: String, amountSat: UInt64, metadata: String) throws {
+    public func payOpenInvoice(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: String) throws {
         try 
     rustCallWithError(FfiConverterTypePayError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_pay_open_invoice(self.pointer, 
-        FfiConverterString.lower(invoice),
+        FfiConverterTypeInvoiceDetails.lower(invoiceDetails),
         FfiConverterUInt64.lower(amountSat),
         FfiConverterString.lower(metadata),$0
     )
@@ -839,14 +839,14 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func registerFiatTopup(email: String?, userIban: String, userCurrency: TopupCurrency) throws -> FiatTopupInfo {
+    public func registerFiatTopup(email: String?, userIban: String, userCurrency: String) throws -> FiatTopupInfo {
         return try  FfiConverterTypeFiatTopupInfo.lift(
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_register_fiat_topup(self.pointer, 
         FfiConverterOptionString.lower(email),
         FfiConverterString.lower(userIban),
-        FfiConverterTypeTopupCurrency.lower(userCurrency),$0
+        FfiConverterString.lower(userCurrency),$0
     )
 }
         )
@@ -3845,65 +3845,6 @@ extension TemporaryFailureCode: Equatable, Hashable {}
 
 
 
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-public enum TopupCurrency {
-    
-    case eur
-    case chf
-    case gbp
-}
-
-public struct FfiConverterTypeTopupCurrency: FfiConverterRustBuffer {
-    typealias SwiftType = TopupCurrency
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TopupCurrency {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .eur
-        
-        case 2: return .chf
-        
-        case 3: return .gbp
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: TopupCurrency, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case .eur:
-            writeInt(&buf, Int32(1))
-        
-        
-        case .chf:
-            writeInt(&buf, Int32(2))
-        
-        
-        case .gbp:
-            writeInt(&buf, Int32(3))
-        
-        }
-    }
-}
-
-
-public func FfiConverterTypeTopupCurrency_lift(_ buf: RustBuffer) throws -> TopupCurrency {
-    return try FfiConverterTypeTopupCurrency.lift(buf)
-}
-
-public func FfiConverterTypeTopupCurrency_lower(_ value: TopupCurrency) -> RustBuffer {
-    return FfiConverterTypeTopupCurrency.lower(value)
-}
-
-
-extension TopupCurrency: Equatable, Hashable {}
-
-
-
 fileprivate extension NSLock {
     func withLock<T>(f: () throws -> T) rethrows -> T {
         self.lock()
@@ -4577,13 +4518,13 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_log_debug_info() != 32021) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_invoice() != 28301) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_invoice() != 29249) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_lnurlp() != 36530) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_open_invoice() != 15570) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_open_invoice() != 21669) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_lsp_fee() != 32123) {
@@ -4595,7 +4536,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_uncompleted_offers() != 12739) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_fiat_topup() != 8599) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_fiat_topup() != 14793) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_notification_token() != 50051) {
