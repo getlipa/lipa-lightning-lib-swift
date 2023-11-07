@@ -492,7 +492,6 @@ public protocol LightningNodeProtocol {
     func changeTimezoneConfig(timezoneConfig: TzConfig)  
     func createInvoice(amountSat: UInt64, lspFeeParams: OpeningFeeParams?, description: String, metadata: String)  throws -> InvoiceDetails
     func decodeData(data: String)  throws -> DecodedData
-    func decodeInvoice(invoice: String)  throws -> InvoiceDetails
     func foreground()  
     func generateSwapAddress(lspFeeParams: OpeningFeeParams?)  throws -> SwapAddressInfo
     func getExchangeRate()   -> ExchangeRate?
@@ -612,20 +611,9 @@ public class LightningNode: LightningNodeProtocol {
     public func decodeData(data: String) throws -> DecodedData {
         return try  FfiConverterTypeDecodedData.lift(
             try 
-    rustCallWithError(FfiConverterTypeLnError.lift) {
+    rustCallWithError(FfiConverterTypeDecodeDataError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_decode_data(self.pointer, 
         FfiConverterString.lower(data),$0
-    )
-}
-        )
-    }
-
-    public func decodeInvoice(invoice: String) throws -> InvoiceDetails {
-        return try  FfiConverterTypeInvoiceDetails.lift(
-            try 
-    rustCallWithError(FfiConverterTypeDecodeInvoiceError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_decode_invoice(self.pointer, 
-        FfiConverterString.lower(invoice),$0
     )
 }
         )
@@ -2558,75 +2546,73 @@ public func FfiConverterTypeTzTime_lower(_ value: TzTime) -> RustBuffer {
     return FfiConverterTypeTzTime.lower(value)
 }
 
-public enum DecodeInvoiceError {
+public enum DecodeDataError {
 
     
     
-    case ParseError(msg: String)
-    case SemanticError(msg: String)
-    case NetworkMismatch(expected: Network, found: Network)
+    case LnUrlError(msg: String)
+    case Unsupported(typ: UnsupportedDataType)
+    case Unrecognized(msg: String)
 
     fileprivate static func uniffiErrorHandler(_ error: RustBuffer) throws -> Error {
-        return try FfiConverterTypeDecodeInvoiceError.lift(error)
+        return try FfiConverterTypeDecodeDataError.lift(error)
     }
 }
 
 
-public struct FfiConverterTypeDecodeInvoiceError: FfiConverterRustBuffer {
-    typealias SwiftType = DecodeInvoiceError
+public struct FfiConverterTypeDecodeDataError: FfiConverterRustBuffer {
+    typealias SwiftType = DecodeDataError
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DecodeInvoiceError {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DecodeDataError {
         let variant: Int32 = try readInt(&buf)
         switch variant {
 
         
 
         
-        case 1: return .ParseError(
+        case 1: return .LnUrlError(
             msg: try FfiConverterString.read(from: &buf)
             )
-        case 2: return .SemanticError(
-            msg: try FfiConverterString.read(from: &buf)
+        case 2: return .Unsupported(
+            typ: try FfiConverterTypeUnsupportedDataType.read(from: &buf)
             )
-        case 3: return .NetworkMismatch(
-            expected: try FfiConverterTypeNetwork.read(from: &buf), 
-            found: try FfiConverterTypeNetwork.read(from: &buf)
+        case 3: return .Unrecognized(
+            msg: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
 
-    public static func write(_ value: DecodeInvoiceError, into buf: inout [UInt8]) {
+    public static func write(_ value: DecodeDataError, into buf: inout [UInt8]) {
         switch value {
 
         
 
         
         
-        case let .ParseError(msg):
+        case let .LnUrlError(msg):
             writeInt(&buf, Int32(1))
             FfiConverterString.write(msg, into: &buf)
             
         
-        case let .SemanticError(msg):
+        case let .Unsupported(typ):
             writeInt(&buf, Int32(2))
-            FfiConverterString.write(msg, into: &buf)
+            FfiConverterTypeUnsupportedDataType.write(typ, into: &buf)
             
         
-        case let .NetworkMismatch(expected,found):
+        case let .Unrecognized(msg):
             writeInt(&buf, Int32(3))
-            FfiConverterTypeNetwork.write(expected, into: &buf)
-            FfiConverterTypeNetwork.write(found, into: &buf)
+            FfiConverterString.write(msg, into: &buf)
             
         }
     }
 }
 
 
-extension DecodeInvoiceError: Equatable, Hashable {}
+extension DecodeDataError: Equatable, Hashable {}
 
-extension DecodeInvoiceError: Error { }
+extension DecodeDataError: Error { }
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -3845,6 +3831,79 @@ extension TemporaryFailureCode: Equatable, Hashable {}
 
 
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum UnsupportedDataType {
+    
+    case bitcoinAddress
+    case lnUrlAuth
+    case lnUrlWithdraw
+    case nodeId
+    case url
+}
+
+public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
+    typealias SwiftType = UnsupportedDataType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UnsupportedDataType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .bitcoinAddress
+        
+        case 2: return .lnUrlAuth
+        
+        case 3: return .lnUrlWithdraw
+        
+        case 4: return .nodeId
+        
+        case 5: return .url
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: UnsupportedDataType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .bitcoinAddress:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .lnUrlAuth:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .lnUrlWithdraw:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .nodeId:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .url:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeUnsupportedDataType_lift(_ buf: RustBuffer) throws -> UnsupportedDataType {
+    return try FfiConverterTypeUnsupportedDataType.lift(buf)
+}
+
+public func FfiConverterTypeUnsupportedDataType_lower(_ value: UnsupportedDataType) -> RustBuffer {
+    return FfiConverterTypeUnsupportedDataType.lower(value)
+}
+
+
+extension UnsupportedDataType: Equatable, Hashable {}
+
+
+
 fileprivate extension NSLock {
     func withLock<T>(f: () throws -> T) rethrows -> T {
         self.lock()
@@ -4470,10 +4529,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_create_invoice() != 54850) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_decode_data() != 25610) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_decode_invoice() != 15690) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_decode_data() != 60450) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_foreground() != 21792) {
