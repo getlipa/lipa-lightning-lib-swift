@@ -516,6 +516,7 @@ public protocol LightningNodeProtocol {
     func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String)  throws
     func requestOfferCollection(offer: OfferInfo)  throws -> String
     func resolveFailedSwap(failedSwapAddress: String, toAddress: String, onchainFeeRate: UInt32)  throws -> String
+    func retrieveLatestFiatTopupInfo()  throws -> FiatTopupInfo?
     func sweep(address: String, onchainFeeRate: UInt32)  throws -> String
     
 }
@@ -870,6 +871,16 @@ public class LightningNode: LightningNodeProtocol {
         FfiConverterString.lower(failedSwapAddress),
         FfiConverterString.lower(toAddress),
         FfiConverterUInt32.lower(onchainFeeRate),$0
+    )
+}
+        )
+    }
+
+    public func retrieveLatestFiatTopupInfo() throws -> FiatTopupInfo? {
+        return try  FfiConverterOptionTypeFiatTopupInfo.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_retrieve_latest_fiat_topup_info(self.pointer, $0
     )
 }
         )
@@ -1330,10 +1341,11 @@ public struct FiatTopupInfo {
     public var creditorPostalCode: String
     public var creditorTown: String
     public var creditorCountry: String
+    public var currency: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(orderId: String, debitorIban: String, creditorReference: String, creditorIban: String, creditorBankName: String, creditorBankStreet: String, creditorBankPostalCode: String, creditorBankTown: String, creditorBankCountry: String, creditorBankBic: String, creditorName: String, creditorStreet: String, creditorPostalCode: String, creditorTown: String, creditorCountry: String) {
+    public init(orderId: String, debitorIban: String, creditorReference: String, creditorIban: String, creditorBankName: String, creditorBankStreet: String, creditorBankPostalCode: String, creditorBankTown: String, creditorBankCountry: String, creditorBankBic: String, creditorName: String, creditorStreet: String, creditorPostalCode: String, creditorTown: String, creditorCountry: String, currency: String) {
         self.orderId = orderId
         self.debitorIban = debitorIban
         self.creditorReference = creditorReference
@@ -1349,6 +1361,7 @@ public struct FiatTopupInfo {
         self.creditorPostalCode = creditorPostalCode
         self.creditorTown = creditorTown
         self.creditorCountry = creditorCountry
+        self.currency = currency
     }
 }
 
@@ -1400,6 +1413,9 @@ extension FiatTopupInfo: Equatable, Hashable {
         if lhs.creditorCountry != rhs.creditorCountry {
             return false
         }
+        if lhs.currency != rhs.currency {
+            return false
+        }
         return true
     }
 
@@ -1419,6 +1435,7 @@ extension FiatTopupInfo: Equatable, Hashable {
         hasher.combine(creditorPostalCode)
         hasher.combine(creditorTown)
         hasher.combine(creditorCountry)
+        hasher.combine(currency)
     }
 }
 
@@ -1440,7 +1457,8 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
             creditorStreet: FfiConverterString.read(from: &buf), 
             creditorPostalCode: FfiConverterString.read(from: &buf), 
             creditorTown: FfiConverterString.read(from: &buf), 
-            creditorCountry: FfiConverterString.read(from: &buf)
+            creditorCountry: FfiConverterString.read(from: &buf), 
+            currency: FfiConverterString.read(from: &buf)
         )
     }
 
@@ -1460,6 +1478,7 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
         FfiConverterString.write(value.creditorPostalCode, into: &buf)
         FfiConverterString.write(value.creditorTown, into: &buf)
         FfiConverterString.write(value.creditorCountry, into: &buf)
+        FfiConverterString.write(value.currency, into: &buf)
     }
 }
 
@@ -3010,72 +3029,6 @@ extension MnemonicError: Error { }
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-public enum Network {
-    
-    case bitcoin
-    case testnet
-    case signet
-    case regtest
-}
-
-public struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
-    typealias SwiftType = Network
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Network {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .bitcoin
-        
-        case 2: return .testnet
-        
-        case 3: return .signet
-        
-        case 4: return .regtest
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: Network, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case .bitcoin:
-            writeInt(&buf, Int32(1))
-        
-        
-        case .testnet:
-            writeInt(&buf, Int32(2))
-        
-        
-        case .signet:
-            writeInt(&buf, Int32(3))
-        
-        
-        case .regtest:
-            writeInt(&buf, Int32(4))
-        
-        }
-    }
-}
-
-
-public func FfiConverterTypeNetwork_lift(_ buf: RustBuffer) throws -> Network {
-    return try FfiConverterTypeNetwork.lift(buf)
-}
-
-public func FfiConverterTypeNetwork_lower(_ value: Network) -> RustBuffer {
-    return FfiConverterTypeNetwork.lower(value)
-}
-
-
-extension Network: Equatable, Hashable {}
-
-
-
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
     case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, error: PocketOfferError?)
@@ -3646,6 +3599,8 @@ public enum RuntimeErrorCode {
     case authServiceUnavailable
     case offerServiceUnavailable
     case lspServiceUnavailable
+    case backupServiceUnavailable
+    case backupNotFound
     case nodeUnavailable
     case failedFundMigration
 }
@@ -3663,9 +3618,13 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case 3: return .lspServiceUnavailable
         
-        case 4: return .nodeUnavailable
+        case 4: return .backupServiceUnavailable
         
-        case 5: return .failedFundMigration
+        case 5: return .backupNotFound
+        
+        case 6: return .nodeUnavailable
+        
+        case 7: return .failedFundMigration
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -3687,12 +3646,20 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(3))
         
         
-        case .nodeUnavailable:
+        case .backupServiceUnavailable:
             writeInt(&buf, Int32(4))
         
         
-        case .failedFundMigration:
+        case .backupNotFound:
             writeInt(&buf, Int32(5))
+        
+        
+        case .nodeUnavailable:
+            writeInt(&buf, Int32(6))
+        
+        
+        case .failedFundMigration:
+            writeInt(&buf, Int32(7))
         
         }
     }
@@ -4238,6 +4205,27 @@ fileprivate struct FfiConverterOptionTypeExchangeRate: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterOptionTypeFiatTopupInfo: FfiConverterRustBuffer {
+    typealias SwiftType = FiatTopupInfo?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFiatTopupInfo.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFiatTopupInfo.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
     typealias SwiftType = FiatValue?
 
@@ -4602,6 +4590,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_resolve_failed_swap() != 33836) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_retrieve_latest_fiat_topup_info() != 13472) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 38276) {
