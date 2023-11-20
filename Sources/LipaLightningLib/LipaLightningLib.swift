@@ -510,15 +510,17 @@ public protocol LightningNodeProtocol {
     func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64)  throws -> String
     func payOpenInvoice(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: PaymentMetadata)  throws
     func prepareResolveFailedSwap(failedSwapInfo: FailedSwapInfo, toAddress: String, onchainFeeRate: UInt32)  throws -> ResolveFailedSwapInfo
+    func prepareSweep(address: String, onchainFeeRate: UInt32)  throws -> SweepInfo
     func queryLspFee()  throws -> LspFee
     func queryOnchainFeeRate()  throws -> UInt32
     func queryUncompletedOffers()  throws -> [OfferInfo]
     func registerFiatTopup(email: String?, userIban: String, userCurrency: String)  throws -> FiatTopupInfo
     func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String)  throws
     func requestOfferCollection(offer: OfferInfo)  throws -> String
+    func resetFiatTopup()  throws
     func resolveFailedSwap(resolveFailedSwapInfo: ResolveFailedSwapInfo)  throws -> String
     func retrieveLatestFiatTopupInfo()  throws -> FiatTopupInfo?
-    func sweep(address: String, onchainFeeRate: UInt32)  throws -> String
+    func sweep(sweepInfo: SweepInfo)  throws -> String
     
 }
 
@@ -812,6 +814,18 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
+    public func prepareSweep(address: String, onchainFeeRate: UInt32) throws -> SweepInfo {
+        return try  FfiConverterTypeSweepInfo.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_prepare_sweep(self.pointer, 
+        FfiConverterString.lower(address),
+        FfiConverterUInt32.lower(onchainFeeRate),$0
+    )
+}
+        )
+    }
+
     public func queryLspFee() throws -> LspFee {
         return try  FfiConverterTypeLspFee.lift(
             try 
@@ -877,6 +891,14 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
+    public func resetFiatTopup() throws {
+        try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_reset_fiat_topup(self.pointer, $0
+    )
+}
+    }
+
     public func resolveFailedSwap(resolveFailedSwapInfo: ResolveFailedSwapInfo) throws -> String {
         return try  FfiConverterString.lift(
             try 
@@ -898,13 +920,12 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func sweep(address: String, onchainFeeRate: UInt32) throws -> String {
+    public func sweep(sweepInfo: SweepInfo) throws -> String {
         return try  FfiConverterString.lift(
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_sweep(self.pointer, 
-        FfiConverterString.lower(address),
-        FfiConverterUInt32.lower(onchainFeeRate),$0
+        FfiConverterTypeSweepInfo.lower(sweepInfo),$0
     )
 }
         )
@@ -2701,6 +2722,69 @@ public func FfiConverterTypeSwapInfo_lift(_ buf: RustBuffer) throws -> SwapInfo 
 
 public func FfiConverterTypeSwapInfo_lower(_ value: SwapInfo) -> RustBuffer {
     return FfiConverterTypeSwapInfo.lower(value)
+}
+
+
+public struct SweepInfo {
+    public var address: String
+    public var onchainFeeRate: UInt32
+    public var onchainFeeSat: Amount
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(address: String, onchainFeeRate: UInt32, onchainFeeSat: Amount) {
+        self.address = address
+        self.onchainFeeRate = onchainFeeRate
+        self.onchainFeeSat = onchainFeeSat
+    }
+}
+
+
+extension SweepInfo: Equatable, Hashable {
+    public static func ==(lhs: SweepInfo, rhs: SweepInfo) -> Bool {
+        if lhs.address != rhs.address {
+            return false
+        }
+        if lhs.onchainFeeRate != rhs.onchainFeeRate {
+            return false
+        }
+        if lhs.onchainFeeSat != rhs.onchainFeeSat {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(address)
+        hasher.combine(onchainFeeRate)
+        hasher.combine(onchainFeeSat)
+    }
+}
+
+
+public struct FfiConverterTypeSweepInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SweepInfo {
+        return try SweepInfo(
+            address: FfiConverterString.read(from: &buf), 
+            onchainFeeRate: FfiConverterUInt32.read(from: &buf), 
+            onchainFeeSat: FfiConverterTypeAmount.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SweepInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.address, into: &buf)
+        FfiConverterUInt32.write(value.onchainFeeRate, into: &buf)
+        FfiConverterTypeAmount.write(value.onchainFeeSat, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeSweepInfo_lift(_ buf: RustBuffer) throws -> SweepInfo {
+    return try FfiConverterTypeSweepInfo.lift(buf)
+}
+
+public func FfiConverterTypeSweepInfo_lower(_ value: SweepInfo) -> RustBuffer {
+    return FfiConverterTypeSweepInfo.lower(value)
 }
 
 
@@ -5149,6 +5233,9 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_resolve_failed_swap() != 43856) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_sweep() != 48035) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_lsp_fee() != 32123) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -5167,13 +5254,16 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_request_offer_collection() != 59716) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_reset_fiat_topup() != 18498) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_resolve_failed_swap() != 2974) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_retrieve_latest_fiat_topup_info() != 13472) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 38276) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 54288) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_constructor_lightningnode_new() != 348) {
