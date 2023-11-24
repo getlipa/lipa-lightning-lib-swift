@@ -2210,6 +2210,7 @@ public struct Payment {
     public var failReason: PayErrorCode?
     public var hash: String
     public var amount: Amount
+    public var requestedAmount: Amount
     public var invoiceDetails: InvoiceDetails
     public var createdAt: TzTime
     public var description: String
@@ -2221,12 +2222,13 @@ public struct Payment {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(paymentType: PaymentType, paymentState: PaymentState, failReason: PayErrorCode?, hash: String, amount: Amount, invoiceDetails: InvoiceDetails, createdAt: TzTime, description: String, preimage: String?, networkFees: Amount?, lspFees: Amount?, offer: OfferKind?, swap: SwapInfo?) {
+    public init(paymentType: PaymentType, paymentState: PaymentState, failReason: PayErrorCode?, hash: String, amount: Amount, requestedAmount: Amount, invoiceDetails: InvoiceDetails, createdAt: TzTime, description: String, preimage: String?, networkFees: Amount?, lspFees: Amount?, offer: OfferKind?, swap: SwapInfo?) {
         self.paymentType = paymentType
         self.paymentState = paymentState
         self.failReason = failReason
         self.hash = hash
         self.amount = amount
+        self.requestedAmount = requestedAmount
         self.invoiceDetails = invoiceDetails
         self.createdAt = createdAt
         self.description = description
@@ -2254,6 +2256,9 @@ extension Payment: Equatable, Hashable {
             return false
         }
         if lhs.amount != rhs.amount {
+            return false
+        }
+        if lhs.requestedAmount != rhs.requestedAmount {
             return false
         }
         if lhs.invoiceDetails != rhs.invoiceDetails {
@@ -2289,6 +2294,7 @@ extension Payment: Equatable, Hashable {
         hasher.combine(failReason)
         hasher.combine(hash)
         hasher.combine(amount)
+        hasher.combine(requestedAmount)
         hasher.combine(invoiceDetails)
         hasher.combine(createdAt)
         hasher.combine(description)
@@ -2309,6 +2315,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
             failReason: FfiConverterOptionTypePayErrorCode.read(from: &buf), 
             hash: FfiConverterString.read(from: &buf), 
             amount: FfiConverterTypeAmount.read(from: &buf), 
+            requestedAmount: FfiConverterTypeAmount.read(from: &buf), 
             invoiceDetails: FfiConverterTypeInvoiceDetails.read(from: &buf), 
             createdAt: FfiConverterTypeTzTime.read(from: &buf), 
             description: FfiConverterString.read(from: &buf), 
@@ -2326,6 +2333,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterOptionTypePayErrorCode.write(value.failReason, into: &buf)
         FfiConverterString.write(value.hash, into: &buf)
         FfiConverterTypeAmount.write(value.amount, into: &buf)
+        FfiConverterTypeAmount.write(value.requestedAmount, into: &buf)
         FfiConverterTypeInvoiceDetails.write(value.invoiceDetails, into: &buf)
         FfiConverterTypeTzTime.write(value.createdAt, into: &buf)
         FfiConverterString.write(value.description, into: &buf)
