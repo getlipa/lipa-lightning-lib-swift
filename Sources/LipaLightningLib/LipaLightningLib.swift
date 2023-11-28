@@ -1904,6 +1904,148 @@ public func FfiConverterTypeLnUrlPayRequestData_lower(_ value: LnUrlPayRequestDa
 }
 
 
+public struct LnUrlWithdrawDetails {
+    public var minWithdrawable: Amount
+    public var maxWithdrawable: Amount
+    public var requestData: LnUrlWithdrawRequestData
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(minWithdrawable: Amount, maxWithdrawable: Amount, requestData: LnUrlWithdrawRequestData) {
+        self.minWithdrawable = minWithdrawable
+        self.maxWithdrawable = maxWithdrawable
+        self.requestData = requestData
+    }
+}
+
+
+extension LnUrlWithdrawDetails: Equatable, Hashable {
+    public static func ==(lhs: LnUrlWithdrawDetails, rhs: LnUrlWithdrawDetails) -> Bool {
+        if lhs.minWithdrawable != rhs.minWithdrawable {
+            return false
+        }
+        if lhs.maxWithdrawable != rhs.maxWithdrawable {
+            return false
+        }
+        if lhs.requestData != rhs.requestData {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(minWithdrawable)
+        hasher.combine(maxWithdrawable)
+        hasher.combine(requestData)
+    }
+}
+
+
+public struct FfiConverterTypeLnUrlWithdrawDetails: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlWithdrawDetails {
+        return try LnUrlWithdrawDetails(
+            minWithdrawable: FfiConverterTypeAmount.read(from: &buf), 
+            maxWithdrawable: FfiConverterTypeAmount.read(from: &buf), 
+            requestData: FfiConverterTypeLnUrlWithdrawRequestData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LnUrlWithdrawDetails, into buf: inout [UInt8]) {
+        FfiConverterTypeAmount.write(value.minWithdrawable, into: &buf)
+        FfiConverterTypeAmount.write(value.maxWithdrawable, into: &buf)
+        FfiConverterTypeLnUrlWithdrawRequestData.write(value.requestData, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeLnUrlWithdrawDetails_lift(_ buf: RustBuffer) throws -> LnUrlWithdrawDetails {
+    return try FfiConverterTypeLnUrlWithdrawDetails.lift(buf)
+}
+
+public func FfiConverterTypeLnUrlWithdrawDetails_lower(_ value: LnUrlWithdrawDetails) -> RustBuffer {
+    return FfiConverterTypeLnUrlWithdrawDetails.lower(value)
+}
+
+
+public struct LnUrlWithdrawRequestData {
+    public var callback: String
+    public var k1: String
+    public var defaultDescription: String
+    public var minWithdrawable: UInt64
+    public var maxWithdrawable: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(callback: String, k1: String, defaultDescription: String, minWithdrawable: UInt64, maxWithdrawable: UInt64) {
+        self.callback = callback
+        self.k1 = k1
+        self.defaultDescription = defaultDescription
+        self.minWithdrawable = minWithdrawable
+        self.maxWithdrawable = maxWithdrawable
+    }
+}
+
+
+extension LnUrlWithdrawRequestData: Equatable, Hashable {
+    public static func ==(lhs: LnUrlWithdrawRequestData, rhs: LnUrlWithdrawRequestData) -> Bool {
+        if lhs.callback != rhs.callback {
+            return false
+        }
+        if lhs.k1 != rhs.k1 {
+            return false
+        }
+        if lhs.defaultDescription != rhs.defaultDescription {
+            return false
+        }
+        if lhs.minWithdrawable != rhs.minWithdrawable {
+            return false
+        }
+        if lhs.maxWithdrawable != rhs.maxWithdrawable {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(callback)
+        hasher.combine(k1)
+        hasher.combine(defaultDescription)
+        hasher.combine(minWithdrawable)
+        hasher.combine(maxWithdrawable)
+    }
+}
+
+
+public struct FfiConverterTypeLnUrlWithdrawRequestData: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlWithdrawRequestData {
+        return try LnUrlWithdrawRequestData(
+            callback: FfiConverterString.read(from: &buf), 
+            k1: FfiConverterString.read(from: &buf), 
+            defaultDescription: FfiConverterString.read(from: &buf), 
+            minWithdrawable: FfiConverterUInt64.read(from: &buf), 
+            maxWithdrawable: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LnUrlWithdrawRequestData, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.callback, into: &buf)
+        FfiConverterString.write(value.k1, into: &buf)
+        FfiConverterString.write(value.defaultDescription, into: &buf)
+        FfiConverterUInt64.write(value.minWithdrawable, into: &buf)
+        FfiConverterUInt64.write(value.maxWithdrawable, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeLnUrlWithdrawRequestData_lift(_ buf: RustBuffer) throws -> LnUrlWithdrawRequestData {
+    return try FfiConverterTypeLnUrlWithdrawRequestData.lift(buf)
+}
+
+public func FfiConverterTypeLnUrlWithdrawRequestData_lower(_ value: LnUrlWithdrawRequestData) -> RustBuffer {
+    return FfiConverterTypeLnUrlWithdrawRequestData.lower(value)
+}
+
+
 public struct LspFee {
     public var channelMinimumFee: Amount
     public var channelFeePermyriad: UInt64
@@ -2987,6 +3129,7 @@ public enum DecodedData {
     
     case bolt11Invoice(invoiceDetails: InvoiceDetails)
     case lnUrlPay(lnurlPayDetails: LnUrlPayDetails)
+    case lnUrlWithdraw(lnurlWithdrawDetails: LnUrlWithdrawDetails)
 }
 
 public struct FfiConverterTypeDecodedData: FfiConverterRustBuffer {
@@ -3002,6 +3145,10 @@ public struct FfiConverterTypeDecodedData: FfiConverterRustBuffer {
         
         case 2: return .lnUrlPay(
             lnurlPayDetails: try FfiConverterTypeLnUrlPayDetails.read(from: &buf)
+        )
+        
+        case 3: return .lnUrlWithdraw(
+            lnurlWithdrawDetails: try FfiConverterTypeLnUrlWithdrawDetails.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -3020,6 +3167,11 @@ public struct FfiConverterTypeDecodedData: FfiConverterRustBuffer {
         case let .lnUrlPay(lnurlPayDetails):
             writeInt(&buf, Int32(2))
             FfiConverterTypeLnUrlPayDetails.write(lnurlPayDetails, into: &buf)
+            
+        
+        case let .lnUrlWithdraw(lnurlWithdrawDetails):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypeLnUrlWithdrawDetails.write(lnurlWithdrawDetails, into: &buf)
             
         }
     }
@@ -3321,6 +3473,7 @@ public enum LnUrlPayErrorCode {
     case routeTooExpensive
     case unexpectedError
     case serviceConnectivity
+    case invalidNetwork
 }
 
 public struct FfiConverterTypeLnUrlPayErrorCode: FfiConverterRustBuffer {
@@ -3343,6 +3496,8 @@ public struct FfiConverterTypeLnUrlPayErrorCode: FfiConverterRustBuffer {
         case 6: return .unexpectedError
         
         case 7: return .serviceConnectivity
+        
+        case 8: return .invalidNetwork
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -3378,6 +3533,10 @@ public struct FfiConverterTypeLnUrlPayErrorCode: FfiConverterRustBuffer {
         
         case .serviceConnectivity:
             writeInt(&buf, Int32(7))
+        
+        
+        case .invalidNetwork:
+            writeInt(&buf, Int32(8))
         
         }
     }
@@ -4450,9 +4609,9 @@ public enum UnsupportedDataType {
     
     case bitcoinAddress
     case lnUrlAuth
-    case lnUrlWithdraw
     case nodeId
     case url
+    case network(network: String)
 }
 
 public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
@@ -4466,11 +4625,13 @@ public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
         
         case 2: return .lnUrlAuth
         
-        case 3: return .lnUrlWithdraw
+        case 3: return .nodeId
         
-        case 4: return .nodeId
+        case 4: return .url
         
-        case 5: return .url
+        case 5: return .network(
+            network: try FfiConverterString.read(from: &buf)
+        )
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -4488,17 +4649,18 @@ public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
         
         
-        case .lnUrlWithdraw:
+        case .nodeId:
             writeInt(&buf, Int32(3))
         
         
-        case .nodeId:
+        case .url:
             writeInt(&buf, Int32(4))
         
         
-        case .url:
+        case let .network(network):
             writeInt(&buf, Int32(5))
-        
+            FfiConverterString.write(network, into: &buf)
+            
         }
     }
 }
