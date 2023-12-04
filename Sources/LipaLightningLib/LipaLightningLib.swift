@@ -501,6 +501,7 @@ public protocol LightningNodeProtocol {
     func getPaymentAmountLimits()  throws -> PaymentAmountLimits
     func getPaymentMaxRoutingFeeMode(amountSat: UInt64)   -> MaxRoutingFeeMode
     func getPaymentUuid(paymentHash: String)  throws -> String
+    func getTermsAndConditionsStatus(termsAndConditions: TermsAndConditions)  throws -> TermsAndConditionsStatus
     func getUnresolvedFailedSwaps()  throws -> [FailedSwapInfo]
     func getWalletPubkeyId()   -> String?
     func hideTopup(id: String)  throws
@@ -714,6 +715,17 @@ public class LightningNode: LightningNodeProtocol {
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_payment_uuid(self.pointer, 
         FfiConverterString.lower(paymentHash),$0
+    )
+}
+        )
+    }
+
+    public func getTermsAndConditionsStatus(termsAndConditions: TermsAndConditions) throws -> TermsAndConditionsStatus {
+        return try  FfiConverterTypeTermsAndConditionsStatus.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_terms_and_conditions_status(self.pointer, 
+        FfiConverterTypeTermsAndConditions.lower(termsAndConditions),$0
     )
 }
         )
@@ -2938,6 +2950,61 @@ public func FfiConverterTypeSweepInfo_lower(_ value: SweepInfo) -> RustBuffer {
 }
 
 
+public struct TermsAndConditionsStatus {
+    public var acceptedAt: Date?
+    public var termsAndConditions: TermsAndConditions
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(acceptedAt: Date?, termsAndConditions: TermsAndConditions) {
+        self.acceptedAt = acceptedAt
+        self.termsAndConditions = termsAndConditions
+    }
+}
+
+
+extension TermsAndConditionsStatus: Equatable, Hashable {
+    public static func ==(lhs: TermsAndConditionsStatus, rhs: TermsAndConditionsStatus) -> Bool {
+        if lhs.acceptedAt != rhs.acceptedAt {
+            return false
+        }
+        if lhs.termsAndConditions != rhs.termsAndConditions {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(acceptedAt)
+        hasher.combine(termsAndConditions)
+    }
+}
+
+
+public struct FfiConverterTypeTermsAndConditionsStatus: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TermsAndConditionsStatus {
+        return try TermsAndConditionsStatus(
+            acceptedAt: FfiConverterOptionTimestamp.read(from: &buf), 
+            termsAndConditions: FfiConverterTypeTermsAndConditions.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: TermsAndConditionsStatus, into buf: inout [UInt8]) {
+        FfiConverterOptionTimestamp.write(value.acceptedAt, into: &buf)
+        FfiConverterTypeTermsAndConditions.write(value.termsAndConditions, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeTermsAndConditionsStatus_lift(_ buf: RustBuffer) throws -> TermsAndConditionsStatus {
+    return try FfiConverterTypeTermsAndConditionsStatus.lift(buf)
+}
+
+public func FfiConverterTypeTermsAndConditionsStatus_lower(_ value: TermsAndConditionsStatus) -> RustBuffer {
+    return FfiConverterTypeTermsAndConditionsStatus.lower(value)
+}
+
+
 public struct TzConfig {
     public var timezoneId: String
     public var timezoneUtcOffsetSecs: Int32
@@ -4605,6 +4672,58 @@ extension TemporaryFailureCode: Equatable, Hashable {}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum TermsAndConditions {
+    
+    case lipa
+    case pocket
+}
+
+public struct FfiConverterTypeTermsAndConditions: FfiConverterRustBuffer {
+    typealias SwiftType = TermsAndConditions
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TermsAndConditions {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .lipa
+        
+        case 2: return .pocket
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TermsAndConditions, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .lipa:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .pocket:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeTermsAndConditions_lift(_ buf: RustBuffer) throws -> TermsAndConditions {
+    return try FfiConverterTypeTermsAndConditions.lift(buf)
+}
+
+public func FfiConverterTypeTermsAndConditions_lower(_ value: TermsAndConditions) -> RustBuffer {
+    return FfiConverterTypeTermsAndConditions.lower(value)
+}
+
+
+extension TermsAndConditions: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum UnsupportedDataType {
     
     case bitcoinAddress
@@ -5267,6 +5386,17 @@ public func generateSecret(passphrase: String) throws -> Secret {
     )
 }
 
+public func getTermsAndConditionsStatus(environment: EnvironmentCode, seed: Data, termsAndConditions: TermsAndConditions) throws -> TermsAndConditionsStatus {
+    return try  FfiConverterTypeTermsAndConditionsStatus.lift(
+        try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_func_get_terms_and_conditions_status(
+        FfiConverterTypeEnvironmentCode.lower(environment),
+        FfiConverterData.lower(seed),
+        FfiConverterTypeTermsAndConditions.lower(termsAndConditions),$0)
+}
+    )
+}
+
 public func mnemonicToSecret(mnemonicString: [String], passphrase: String) throws -> Secret {
     return try  FfiConverterTypeSecret.lift(
         try rustCallWithError(FfiConverterTypeMnemonicError.lift) {
@@ -5317,6 +5447,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_generate_secret() != 21258) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 37907) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 57197) {
@@ -5374,6 +5507,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_payment_uuid() != 30652) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_terms_and_conditions_status() != 56486) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_unresolved_failed_swaps() != 8758) {
