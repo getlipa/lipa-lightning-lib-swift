@@ -506,6 +506,7 @@ public protocol LightningNodeProtocol {
     func getWalletPubkeyId()   -> String?
     func hideTopup(id: String)  throws
     func listCurrencyCodes()   -> [String]
+    func listLightningAddresses()  throws -> [String]
     func logDebugInfo()  throws
     func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata)  throws
     func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64)  throws -> String
@@ -767,6 +768,16 @@ public class LightningNode: LightningNodeProtocol {
     rustCall() {
     
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_currency_codes(self.pointer, $0
+    )
+}
+        )
+    }
+
+    public func listLightningAddresses() throws -> [String] {
+        return try  FfiConverterSequenceString.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_lightning_addresses(self.pointer, $0
     )
 }
         )
@@ -2373,10 +2384,11 @@ public struct Payment {
     public var lspFees: Amount?
     public var offer: OfferKind?
     public var swap: SwapInfo?
+    public var lightningAddress: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(paymentType: PaymentType, paymentState: PaymentState, failReason: PayErrorCode?, hash: String, amount: Amount, requestedAmount: Amount, invoiceDetails: InvoiceDetails, createdAt: TzTime, description: String, preimage: String?, networkFees: Amount?, lspFees: Amount?, offer: OfferKind?, swap: SwapInfo?) {
+    public init(paymentType: PaymentType, paymentState: PaymentState, failReason: PayErrorCode?, hash: String, amount: Amount, requestedAmount: Amount, invoiceDetails: InvoiceDetails, createdAt: TzTime, description: String, preimage: String?, networkFees: Amount?, lspFees: Amount?, offer: OfferKind?, swap: SwapInfo?, lightningAddress: String?) {
         self.paymentType = paymentType
         self.paymentState = paymentState
         self.failReason = failReason
@@ -2391,6 +2403,7 @@ public struct Payment {
         self.lspFees = lspFees
         self.offer = offer
         self.swap = swap
+        self.lightningAddress = lightningAddress
     }
 }
 
@@ -2439,6 +2452,9 @@ extension Payment: Equatable, Hashable {
         if lhs.swap != rhs.swap {
             return false
         }
+        if lhs.lightningAddress != rhs.lightningAddress {
+            return false
+        }
         return true
     }
 
@@ -2457,6 +2473,7 @@ extension Payment: Equatable, Hashable {
         hasher.combine(lspFees)
         hasher.combine(offer)
         hasher.combine(swap)
+        hasher.combine(lightningAddress)
     }
 }
 
@@ -2477,7 +2494,8 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
             networkFees: FfiConverterOptionTypeAmount.read(from: &buf), 
             lspFees: FfiConverterOptionTypeAmount.read(from: &buf), 
             offer: FfiConverterOptionTypeOfferKind.read(from: &buf), 
-            swap: FfiConverterOptionTypeSwapInfo.read(from: &buf)
+            swap: FfiConverterOptionTypeSwapInfo.read(from: &buf), 
+            lightningAddress: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -2496,6 +2514,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterOptionTypeAmount.write(value.lspFees, into: &buf)
         FfiConverterOptionTypeOfferKind.write(value.offer, into: &buf)
         FfiConverterOptionTypeSwapInfo.write(value.swap, into: &buf)
+        FfiConverterOptionString.write(value.lightningAddress, into: &buf)
     }
 }
 
@@ -5522,6 +5541,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_currency_codes() != 24226) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_lightning_addresses() != 15848) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_log_debug_info() != 32021) {
