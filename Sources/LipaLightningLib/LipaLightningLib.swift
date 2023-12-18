@@ -487,6 +487,7 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 public protocol LightningNodeProtocol {
     func acceptPocketTermsAndConditions()  throws
     func background()  
+    func calculateLightningPayoutFee(offer: OfferInfo)  throws -> Amount
     func calculateLspFee(amountSat: UInt64)  throws -> CalculateLspFeeResponse
     func changeFiatCurrency(fiatCurrency: String)  
     func changeTimezoneConfig(timezoneConfig: TzConfig)  
@@ -567,6 +568,17 @@ public class LightningNode: LightningNodeProtocol {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_background(self.pointer, $0
     )
 }
+    }
+
+    public func calculateLightningPayoutFee(offer: OfferInfo) throws -> Amount {
+        return try  FfiConverterTypeAmount.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_calculate_lightning_payout_fee(self.pointer, 
+        FfiConverterTypeOfferInfo.lower(offer),$0
+    )
+}
+        )
     }
 
     public func calculateLspFee(amountSat: UInt64) throws -> CalculateLspFeeResponse {
@@ -3781,7 +3793,7 @@ extension MnemonicError: Error { }
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
-    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, error: PocketOfferError?)
+    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, topupValueSats: UInt64, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, lightningPayoutFee: Amount?, error: PocketOfferError?)
 }
 
 public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
@@ -3795,8 +3807,10 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
             id: try FfiConverterString.read(from: &buf), 
             exchangeRate: try FfiConverterTypeExchangeRate.read(from: &buf), 
             topupValueMinorUnits: try FfiConverterUInt64.read(from: &buf), 
+            topupValueSats: try FfiConverterUInt64.read(from: &buf), 
             exchangeFeeMinorUnits: try FfiConverterUInt64.read(from: &buf), 
             exchangeFeeRatePermyriad: try FfiConverterUInt16.read(from: &buf), 
+            lightningPayoutFee: try FfiConverterOptionTypeAmount.read(from: &buf), 
             error: try FfiConverterOptionTypePocketOfferError.read(from: &buf)
         )
         
@@ -3808,13 +3822,15 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
         switch value {
         
         
-        case let .pocket(id,exchangeRate,topupValueMinorUnits,exchangeFeeMinorUnits,exchangeFeeRatePermyriad,error):
+        case let .pocket(id,exchangeRate,topupValueMinorUnits,topupValueSats,exchangeFeeMinorUnits,exchangeFeeRatePermyriad,lightningPayoutFee,error):
             writeInt(&buf, Int32(1))
             FfiConverterString.write(id, into: &buf)
             FfiConverterTypeExchangeRate.write(exchangeRate, into: &buf)
             FfiConverterUInt64.write(topupValueMinorUnits, into: &buf)
+            FfiConverterUInt64.write(topupValueSats, into: &buf)
             FfiConverterUInt64.write(exchangeFeeMinorUnits, into: &buf)
             FfiConverterUInt16.write(exchangeFeeRatePermyriad, into: &buf)
+            FfiConverterOptionTypeAmount.write(lightningPayoutFee, into: &buf)
             FfiConverterOptionTypePocketOfferError.write(error, into: &buf)
             
         }
@@ -5484,6 +5500,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_background() != 28178) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_calculate_lightning_payout_fee() != 11953) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_calculate_lsp_fee() != 45291) {
