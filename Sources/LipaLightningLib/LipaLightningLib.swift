@@ -496,7 +496,7 @@ public protocol LightningNodeProtocol {
     func foreground()  
     func generateSwapAddress(lspFeeParams: OpeningFeeParams?)  throws -> SwapAddressInfo
     func getExchangeRate()   -> ExchangeRate?
-    func getLatestPayments(numberOfPayments: UInt32)  throws -> [Payment]
+    func getLatestPayments(numberOfPayments: UInt32)  throws -> ListPaymentsResponse
     func getNodeInfo()  throws -> NodeInfo
     func getPayment(hash: String)  throws -> Payment
     func getPaymentAmountLimits()  throws -> PaymentAmountLimits
@@ -668,8 +668,8 @@ public class LightningNode: LightningNodeProtocol {
         )
     }
 
-    public func getLatestPayments(numberOfPayments: UInt32) throws -> [Payment] {
-        return try  FfiConverterSequenceTypePayment.lift(
+    public func getLatestPayments(numberOfPayments: UInt32) throws -> ListPaymentsResponse {
+        return try  FfiConverterTypeListPaymentsResponse.lift(
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_latest_payments(self.pointer, 
@@ -1778,6 +1778,61 @@ public func FfiConverterTypeInvoiceDetails_lift(_ buf: RustBuffer) throws -> Inv
 
 public func FfiConverterTypeInvoiceDetails_lower(_ value: InvoiceDetails) -> RustBuffer {
     return FfiConverterTypeInvoiceDetails.lower(value)
+}
+
+
+public struct ListPaymentsResponse {
+    public var pendingPayments: [Payment]
+    public var completedPayments: [Payment]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(pendingPayments: [Payment], completedPayments: [Payment]) {
+        self.pendingPayments = pendingPayments
+        self.completedPayments = completedPayments
+    }
+}
+
+
+extension ListPaymentsResponse: Equatable, Hashable {
+    public static func ==(lhs: ListPaymentsResponse, rhs: ListPaymentsResponse) -> Bool {
+        if lhs.pendingPayments != rhs.pendingPayments {
+            return false
+        }
+        if lhs.completedPayments != rhs.completedPayments {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(pendingPayments)
+        hasher.combine(completedPayments)
+    }
+}
+
+
+public struct FfiConverterTypeListPaymentsResponse: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ListPaymentsResponse {
+        return try ListPaymentsResponse(
+            pendingPayments: FfiConverterSequenceTypePayment.read(from: &buf), 
+            completedPayments: FfiConverterSequenceTypePayment.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ListPaymentsResponse, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypePayment.write(value.pendingPayments, into: &buf)
+        FfiConverterSequenceTypePayment.write(value.completedPayments, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeListPaymentsResponse_lift(_ buf: RustBuffer) throws -> ListPaymentsResponse {
+    return try FfiConverterTypeListPaymentsResponse.lift(buf)
+}
+
+public func FfiConverterTypeListPaymentsResponse_lower(_ value: ListPaymentsResponse) -> RustBuffer {
+    return FfiConverterTypeListPaymentsResponse.lower(value)
 }
 
 
@@ -5529,7 +5584,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_exchange_rate() != 49547) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_latest_payments() != 59043) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_latest_payments() != 58495) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_node_info() != 317) {
