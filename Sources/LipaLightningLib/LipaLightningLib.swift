@@ -496,6 +496,8 @@ public protocol LightningNodeProtocol {
     func foreground()  
     func generateSwapAddress(lspFeeParams: OpeningFeeParams?)  throws -> SwapAddressInfo
     func getExchangeRate()   -> ExchangeRate?
+    func getHealthStatus()  throws -> BreezHealthCheckStatus
+    func getInvoiceAffordability(amountSat: UInt64)  throws -> InvoiceAffordability
     func getLatestPayments(numberOfPayments: UInt32)  throws -> ListPaymentsResponse
     func getNodeInfo()  throws -> NodeInfo
     func getPayment(hash: String)  throws -> Payment
@@ -663,6 +665,27 @@ public class LightningNode: LightningNodeProtocol {
     rustCall() {
     
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_exchange_rate(self.pointer, $0
+    )
+}
+        )
+    }
+
+    public func getHealthStatus() throws -> BreezHealthCheckStatus {
+        return try  FfiConverterTypeBreezHealthCheckStatus.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_health_status(self.pointer, $0
+    )
+}
+        )
+    }
+
+    public func getInvoiceAffordability(amountSat: UInt64) throws -> InvoiceAffordability {
+        return try  FfiConverterTypeInvoiceAffordability.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_invoice_affordability(self.pointer, 
+        FfiConverterUInt64.lower(amountSat),$0
     )
 }
         )
@@ -3208,6 +3231,65 @@ public func FfiConverterTypeTzTime_lower(_ value: TzTime) -> RustBuffer {
     return FfiConverterTypeTzTime.lower(value)
 }
 
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum BreezHealthCheckStatus {
+    
+    case operational
+    case maintenance
+    case serviceDisruption
+}
+
+public struct FfiConverterTypeBreezHealthCheckStatus: FfiConverterRustBuffer {
+    typealias SwiftType = BreezHealthCheckStatus
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BreezHealthCheckStatus {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .operational
+        
+        case 2: return .maintenance
+        
+        case 3: return .serviceDisruption
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: BreezHealthCheckStatus, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .operational:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .maintenance:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .serviceDisruption:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeBreezHealthCheckStatus_lift(_ buf: RustBuffer) throws -> BreezHealthCheckStatus {
+    return try FfiConverterTypeBreezHealthCheckStatus.lift(buf)
+}
+
+public func FfiConverterTypeBreezHealthCheckStatus_lower(_ value: BreezHealthCheckStatus) -> RustBuffer {
+    return FfiConverterTypeBreezHealthCheckStatus.lower(value)
+}
+
+
+extension BreezHealthCheckStatus: Equatable, Hashable {}
+
+
+
 public enum DecodeDataError {
 
     
@@ -3407,6 +3489,65 @@ public func FfiConverterTypeEnvironmentCode_lower(_ value: EnvironmentCode) -> R
 
 
 extension EnvironmentCode: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum InvoiceAffordability {
+    
+    case notEnoughFunds
+    case unaffordableFees
+    case affordable
+}
+
+public struct FfiConverterTypeInvoiceAffordability: FfiConverterRustBuffer {
+    typealias SwiftType = InvoiceAffordability
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> InvoiceAffordability {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .notEnoughFunds
+        
+        case 2: return .unaffordableFees
+        
+        case 3: return .affordable
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: InvoiceAffordability, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .notEnoughFunds:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .unaffordableFees:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .affordable:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeInvoiceAffordability_lift(_ buf: RustBuffer) throws -> InvoiceAffordability {
+    return try FfiConverterTypeInvoiceAffordability.lift(buf)
+}
+
+public func FfiConverterTypeInvoiceAffordability_lower(_ value: InvoiceAffordability) -> RustBuffer {
+    return FfiConverterTypeInvoiceAffordability.lower(value)
+}
+
+
+extension InvoiceAffordability: Equatable, Hashable {}
 
 
 
@@ -4960,6 +5101,7 @@ public protocol EventsCallback : AnyObject {
     func paymentSent(paymentHash: String, paymentPreimage: String) 
     func paymentFailed(paymentHash: String) 
     func channelClosed(channelId: String, reason: String) 
+    func breezHealthStatusChangedTo(status: BreezHealthCheckStatus) 
     
 }
 
@@ -5008,6 +5150,17 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
             try swiftCallbackInterface.channelClosed(
                     channelId:  try FfiConverterString.read(from: &reader), 
                     reason:  try FfiConverterString.read(from: &reader)
+                    )
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+        return try makeCall()
+    }
+
+    func invokeBreezHealthStatusChangedTo(_ swiftCallbackInterface: EventsCallback, _ argsData: UnsafePointer<UInt8>, _ argsLen: Int32, _ out_buf: UnsafeMutablePointer<RustBuffer>) throws -> Int32 {
+        var reader = createReader(data: Data(bytes: argsData, count: Int(argsLen)))
+        func makeCall() throws -> Int32 {
+            try swiftCallbackInterface.breezHealthStatusChangedTo(
+                    status:  try FfiConverterTypeBreezHealthCheckStatus.read(from: &reader)
                     )
             return UNIFFI_CALLBACK_SUCCESS
         }
@@ -5073,6 +5226,20 @@ fileprivate let foreignCallbackCallbackInterfaceEventsCallback : ForeignCallback
             }
             do {
                 return try invokeChannelClosed(cb, argsData, argsLen, out_buf)
+            } catch let error {
+                out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                return UNIFFI_CALLBACK_UNEXPECTED_ERROR
+            }
+        case 5:
+            let cb: EventsCallback
+            do {
+                cb = try FfiConverterCallbackInterfaceEventsCallback.lift(handle)
+            } catch {
+                out_buf.pointee = FfiConverterString.lower("EventsCallback: Invalid handle")
+                return UNIFFI_CALLBACK_UNEXPECTED_ERROR
+            }
+            do {
+                return try invokeBreezHealthStatusChangedTo(cb, argsData, argsLen, out_buf)
             } catch let error {
                 out_buf.pointee = FfiConverterString.lower(String(describing: error))
                 return UNIFFI_CALLBACK_UNEXPECTED_ERROR
@@ -5584,6 +5751,12 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_exchange_rate() != 49547) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_health_status() != 10724) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_invoice_affordability() != 56290) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_latest_payments() != 58495) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -5681,6 +5854,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_channel_closed() != 22287) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_breez_health_status_changed_to() != 56698) {
         return InitializationResult.apiChecksumMismatch
     }
 
