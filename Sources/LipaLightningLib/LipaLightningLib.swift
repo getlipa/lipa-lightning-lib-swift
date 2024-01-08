@@ -3989,7 +3989,7 @@ extension MnemonicError: Error { }
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
-    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, topupValueSats: UInt64, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, lightningPayoutFee: Amount?, error: PocketOfferError?)
+    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, topupValueSats: UInt64?, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, lightningPayoutFee: Amount?, error: PocketOfferError?)
 }
 
 public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
@@ -4003,7 +4003,7 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
             id: try FfiConverterString.read(from: &buf), 
             exchangeRate: try FfiConverterTypeExchangeRate.read(from: &buf), 
             topupValueMinorUnits: try FfiConverterUInt64.read(from: &buf), 
-            topupValueSats: try FfiConverterUInt64.read(from: &buf), 
+            topupValueSats: try FfiConverterOptionUInt64.read(from: &buf), 
             exchangeFeeMinorUnits: try FfiConverterUInt64.read(from: &buf), 
             exchangeFeeRatePermyriad: try FfiConverterUInt16.read(from: &buf), 
             lightningPayoutFee: try FfiConverterOptionTypeAmount.read(from: &buf), 
@@ -4023,7 +4023,7 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
             FfiConverterString.write(id, into: &buf)
             FfiConverterTypeExchangeRate.write(exchangeRate, into: &buf)
             FfiConverterUInt64.write(topupValueMinorUnits, into: &buf)
-            FfiConverterUInt64.write(topupValueSats, into: &buf)
+            FfiConverterOptionUInt64.write(topupValueSats, into: &buf)
             FfiConverterUInt64.write(exchangeFeeMinorUnits, into: &buf)
             FfiConverterUInt16.write(exchangeFeeRatePermyriad, into: &buf)
             FfiConverterOptionTypeAmount.write(lightningPayoutFee, into: &buf)
@@ -5302,6 +5302,27 @@ extension FfiConverterCallbackInterfaceEventsCallback : FfiConverter {
     public static func write(_ v: SwiftType, into buf: inout [UInt8]) {
         ensureCallbackinitialized();
         writeInt(&buf, lower(v))
+    }
+}
+
+fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
+    typealias SwiftType = UInt64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt64.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
     }
 }
 
