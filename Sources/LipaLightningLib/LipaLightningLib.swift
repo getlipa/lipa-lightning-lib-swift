@@ -3679,8 +3679,8 @@ public func FfiConverterTypeTzTime_lower(_ value: TzTime) -> RustBuffer {
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum Activity {
     
-    case payment(payment: Payment)
-    case channelClose(channelClose: ChannelClose)
+    case paymentActivity(payment: Payment)
+    case channelCloseActivity(channelClose: ChannelClose)
 }
 
 public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
@@ -3690,11 +3690,11 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         let variant: Int32 = try readInt(&buf)
         switch variant {
         
-        case 1: return .payment(
+        case 1: return .paymentActivity(
             payment: try FfiConverterTypePayment.read(from: &buf)
         )
         
-        case 2: return .channelClose(
+        case 2: return .channelCloseActivity(
             channelClose: try FfiConverterTypeChannelClose.read(from: &buf)
         )
         
@@ -3706,12 +3706,12 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         switch value {
         
         
-        case let .payment(payment):
+        case let .paymentActivity(payment):
             writeInt(&buf, Int32(1))
             FfiConverterTypePayment.write(payment, into: &buf)
             
         
-        case let .channelClose(channelClose):
+        case let .channelCloseActivity(channelClose):
             writeInt(&buf, Int32(2))
             FfiConverterTypeChannelClose.write(channelClose, into: &buf)
             
