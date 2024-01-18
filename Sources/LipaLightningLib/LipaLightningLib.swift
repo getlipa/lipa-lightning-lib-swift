@@ -2823,11 +2823,11 @@ public struct Payment {
     public var lspFees: Amount?
     public var offer: OfferKind?
     public var swap: SwapInfo?
-    public var lightningAddress: String?
+    public var recipient: Recipient?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(paymentType: PaymentType, paymentState: PaymentState, failReason: PayErrorCode?, hash: String, amount: Amount, requestedAmount: Amount, invoiceDetails: InvoiceDetails, createdAt: TzTime, description: String, preimage: String?, networkFees: Amount?, lspFees: Amount?, offer: OfferKind?, swap: SwapInfo?, lightningAddress: String?) {
+    public init(paymentType: PaymentType, paymentState: PaymentState, failReason: PayErrorCode?, hash: String, amount: Amount, requestedAmount: Amount, invoiceDetails: InvoiceDetails, createdAt: TzTime, description: String, preimage: String?, networkFees: Amount?, lspFees: Amount?, offer: OfferKind?, swap: SwapInfo?, recipient: Recipient?) {
         self.paymentType = paymentType
         self.paymentState = paymentState
         self.failReason = failReason
@@ -2842,7 +2842,7 @@ public struct Payment {
         self.lspFees = lspFees
         self.offer = offer
         self.swap = swap
-        self.lightningAddress = lightningAddress
+        self.recipient = recipient
     }
 }
 
@@ -2891,7 +2891,7 @@ extension Payment: Equatable, Hashable {
         if lhs.swap != rhs.swap {
             return false
         }
-        if lhs.lightningAddress != rhs.lightningAddress {
+        if lhs.recipient != rhs.recipient {
             return false
         }
         return true
@@ -2912,7 +2912,7 @@ extension Payment: Equatable, Hashable {
         hasher.combine(lspFees)
         hasher.combine(offer)
         hasher.combine(swap)
-        hasher.combine(lightningAddress)
+        hasher.combine(recipient)
     }
 }
 
@@ -2934,7 +2934,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
             lspFees: FfiConverterOptionTypeAmount.read(from: &buf), 
             offer: FfiConverterOptionTypeOfferKind.read(from: &buf), 
             swap: FfiConverterOptionTypeSwapInfo.read(from: &buf), 
-            lightningAddress: FfiConverterOptionString.read(from: &buf)
+            recipient: FfiConverterOptionTypeRecipient.read(from: &buf)
         )
     }
 
@@ -2953,7 +2953,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterOptionTypeAmount.write(value.lspFees, into: &buf)
         FfiConverterOptionTypeOfferKind.write(value.offer, into: &buf)
         FfiConverterOptionTypeSwapInfo.write(value.swap, into: &buf)
-        FfiConverterOptionString.write(value.lightningAddress, into: &buf)
+        FfiConverterOptionTypeRecipient.write(value.recipient, into: &buf)
     }
 }
 
@@ -5259,6 +5259,61 @@ extension PocketOfferError: Equatable, Hashable {}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum Recipient {
+    
+    case lightningAddress(address: String)
+    case unknown
+}
+
+public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
+    typealias SwiftType = Recipient
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Recipient {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .lightningAddress(
+            address: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .unknown
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Recipient, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .lightningAddress(address):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(address, into: &buf)
+            
+        
+        case .unknown:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeRecipient_lift(_ buf: RustBuffer) throws -> Recipient {
+    return try FfiConverterTypeRecipient.lift(buf)
+}
+
+public func FfiConverterTypeRecipient_lower(_ value: Recipient) -> RustBuffer {
+    return FfiConverterTypeRecipient.lower(value)
+}
+
+
+extension Recipient: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum RuntimeErrorCode {
     
     case authServiceUnavailable
@@ -6231,6 +6286,27 @@ fileprivate struct FfiConverterOptionTypePocketOfferError: FfiConverterRustBuffe
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypePocketOfferError.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterOptionTypeRecipient: FfiConverterRustBuffer {
+    typealias SwiftType = Recipient?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRecipient.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRecipient.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
