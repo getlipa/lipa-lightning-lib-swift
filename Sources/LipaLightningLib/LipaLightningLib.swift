@@ -349,6 +349,19 @@ fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     }
 }
 
+fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
+    typealias FfiType = Int64
+    typealias SwiftType = Int64
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Int64 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Int64, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
 fileprivate struct FfiConverterBool : FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -485,7 +498,7 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 
 
 public protocol LightningNodeProtocol {
-    func acceptPocketTermsAndConditions()  throws
+    func acceptPocketTermsAndConditions(version: Int64)  throws
     func background()  
     func calculateLightningPayoutFee(offer: OfferInfo)  throws -> Amount
     func calculateLspFee(amountSat: UInt64)  throws -> CalculateLspFeeResponse
@@ -560,10 +573,11 @@ public class LightningNode: LightningNodeProtocol {
     
     
 
-    public func acceptPocketTermsAndConditions() throws {
+    public func acceptPocketTermsAndConditions(version: Int64) throws {
         try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_accept_pocket_terms_and_conditions(self.pointer, $0
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_accept_pocket_terms_and_conditions(self.pointer, 
+        FfiConverterInt64.lower(version),$0
     )
 }
     }
@@ -3514,12 +3528,14 @@ public func FfiConverterTypeSweepInfo_lower(_ value: SweepInfo) -> RustBuffer {
 public struct TermsAndConditionsStatus {
     public var acceptedAt: Date?
     public var termsAndConditions: TermsAndConditions
+    public var version: Int64
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(acceptedAt: Date?, termsAndConditions: TermsAndConditions) {
+    public init(acceptedAt: Date?, termsAndConditions: TermsAndConditions, version: Int64) {
         self.acceptedAt = acceptedAt
         self.termsAndConditions = termsAndConditions
+        self.version = version
     }
 }
 
@@ -3532,12 +3548,16 @@ extension TermsAndConditionsStatus: Equatable, Hashable {
         if lhs.termsAndConditions != rhs.termsAndConditions {
             return false
         }
+        if lhs.version != rhs.version {
+            return false
+        }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(acceptedAt)
         hasher.combine(termsAndConditions)
+        hasher.combine(version)
     }
 }
 
@@ -3546,13 +3566,15 @@ public struct FfiConverterTypeTermsAndConditionsStatus: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TermsAndConditionsStatus {
         return try TermsAndConditionsStatus(
             acceptedAt: FfiConverterOptionTimestamp.read(from: &buf), 
-            termsAndConditions: FfiConverterTypeTermsAndConditions.read(from: &buf)
+            termsAndConditions: FfiConverterTypeTermsAndConditions.read(from: &buf), 
+            version: FfiConverterInt64.read(from: &buf)
         )
     }
 
     public static func write(_ value: TermsAndConditionsStatus, into buf: inout [UInt8]) {
         FfiConverterOptionTimestamp.write(value.acceptedAt, into: &buf)
         FfiConverterTypeTermsAndConditions.write(value.termsAndConditions, into: &buf)
+        FfiConverterInt64.write(value.version, into: &buf)
     }
 }
 
@@ -6408,11 +6430,12 @@ fileprivate struct FfiConverterSequenceTypeActivity: FfiConverterRustBuffer {
     }
 }
 
-public func acceptTermsAndConditions(environment: EnvironmentCode, seed: Data) throws {
+public func acceptTermsAndConditions(environment: EnvironmentCode, seed: Data, version: Int64) throws {
     try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_accept_terms_and_conditions(
         FfiConverterTypeEnvironmentCode.lower(environment),
-        FfiConverterData.lower(seed),$0)
+        FfiConverterData.lower(seed),
+        FfiConverterInt64.lower(version),$0)
 }
 }
 
@@ -6484,7 +6507,7 @@ private var initializationResult: InitializationResult {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_accept_terms_and_conditions() != 8141) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_accept_terms_and_conditions() != 30772) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_generate_secret() != 21258) {
@@ -6502,7 +6525,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_func_words_by_prefix() != 60220) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 23597) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 11051) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_background() != 28178) {
