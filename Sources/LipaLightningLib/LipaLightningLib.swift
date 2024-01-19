@@ -2209,13 +2209,15 @@ public func FfiConverterTypeListActivitiesResponse_lower(_ value: ListActivities
 
 
 public struct LnUrlPayDetails {
+    public var domain: String
     public var minSendable: Amount
     public var maxSendable: Amount
     public var requestData: LnUrlPayRequestData
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(minSendable: Amount, maxSendable: Amount, requestData: LnUrlPayRequestData) {
+    public init(domain: String, minSendable: Amount, maxSendable: Amount, requestData: LnUrlPayRequestData) {
+        self.domain = domain
         self.minSendable = minSendable
         self.maxSendable = maxSendable
         self.requestData = requestData
@@ -2225,6 +2227,9 @@ public struct LnUrlPayDetails {
 
 extension LnUrlPayDetails: Equatable, Hashable {
     public static func ==(lhs: LnUrlPayDetails, rhs: LnUrlPayDetails) -> Bool {
+        if lhs.domain != rhs.domain {
+            return false
+        }
         if lhs.minSendable != rhs.minSendable {
             return false
         }
@@ -2238,6 +2243,7 @@ extension LnUrlPayDetails: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
+        hasher.combine(domain)
         hasher.combine(minSendable)
         hasher.combine(maxSendable)
         hasher.combine(requestData)
@@ -2248,6 +2254,7 @@ extension LnUrlPayDetails: Equatable, Hashable {
 public struct FfiConverterTypeLnUrlPayDetails: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlPayDetails {
         return try LnUrlPayDetails(
+            domain: FfiConverterString.read(from: &buf), 
             minSendable: FfiConverterTypeAmount.read(from: &buf), 
             maxSendable: FfiConverterTypeAmount.read(from: &buf), 
             requestData: FfiConverterTypeLnUrlPayRequestData.read(from: &buf)
@@ -2255,6 +2262,7 @@ public struct FfiConverterTypeLnUrlPayDetails: FfiConverterRustBuffer {
     }
 
     public static func write(_ value: LnUrlPayDetails, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.domain, into: &buf)
         FfiConverterTypeAmount.write(value.minSendable, into: &buf)
         FfiConverterTypeAmount.write(value.maxSendable, into: &buf)
         FfiConverterTypeLnUrlPayRequestData.write(value.requestData, into: &buf)
