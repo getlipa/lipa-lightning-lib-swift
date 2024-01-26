@@ -3505,17 +3505,17 @@ public func FfiConverterTypeSwapAddressInfo_lower(_ value: SwapAddressInfo) -> R
 public struct SwapInfo {
     public var bitcoinAddress: String
     public var createdAt: TzTime
-    public var paidSats: UInt64
+    public var paidMsats: UInt64
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
     public init(
         bitcoinAddress: String, 
         createdAt: TzTime, 
-        paidSats: UInt64) {
+        paidMsats: UInt64) {
         self.bitcoinAddress = bitcoinAddress
         self.createdAt = createdAt
-        self.paidSats = paidSats
+        self.paidMsats = paidMsats
     }
 }
 
@@ -3528,7 +3528,7 @@ extension SwapInfo: Equatable, Hashable {
         if lhs.createdAt != rhs.createdAt {
             return false
         }
-        if lhs.paidSats != rhs.paidSats {
+        if lhs.paidMsats != rhs.paidMsats {
             return false
         }
         return true
@@ -3537,7 +3537,7 @@ extension SwapInfo: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(bitcoinAddress)
         hasher.combine(createdAt)
-        hasher.combine(paidSats)
+        hasher.combine(paidMsats)
     }
 }
 
@@ -3548,14 +3548,14 @@ public struct FfiConverterTypeSwapInfo: FfiConverterRustBuffer {
             try SwapInfo(
                 bitcoinAddress: FfiConverterString.read(from: &buf), 
                 createdAt: FfiConverterTypeTzTime.read(from: &buf), 
-                paidSats: FfiConverterUInt64.read(from: &buf)
+                paidMsats: FfiConverterUInt64.read(from: &buf)
         )
     }
 
     public static func write(_ value: SwapInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.bitcoinAddress, into: &buf)
         FfiConverterTypeTzTime.write(value.createdAt, into: &buf)
-        FfiConverterUInt64.write(value.paidSats, into: &buf)
+        FfiConverterUInt64.write(value.paidMsats, into: &buf)
     }
 }
 
