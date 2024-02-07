@@ -523,6 +523,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func generateSwapAddress(lspFeeParams: OpeningFeeParams?) throws  -> SwapAddressInfo
     
+    func getAnalyticsConfig() throws  -> AnalyticsConfig
+    
     func getChannelCloseResolvingFees() throws  -> ChannelCloseResolvingFees
     
     func getExchangeRate()  -> ExchangeRate?
@@ -588,6 +590,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func resolveFailedSwap(resolveFailedSwapInfo: ResolveFailedSwapInfo) throws  -> String
     
     func retrieveLatestFiatTopupInfo() throws  -> FiatTopupInfo?
+    
+    func setAnalyticsConfig(config: AnalyticsConfig) throws 
     
     func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
     
@@ -724,6 +728,15 @@ public class LightningNode:
     rustCallWithError(FfiConverterTypeSwapError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_generate_swap_address(self.uniffiClonePointer(), 
         FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
+    )
+}
+        )
+    }
+    public func getAnalyticsConfig() throws  -> AnalyticsConfig {
+        return try  FfiConverterTypeAnalyticsConfig.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_analytics_config(self.uniffiClonePointer(), $0
     )
 }
         )
@@ -1043,6 +1056,14 @@ public class LightningNode:
     )
 }
         )
+    }
+    public func setAnalyticsConfig(config: AnalyticsConfig) throws  {
+        try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_set_analytics_config(self.uniffiClonePointer(), 
+        FfiConverterTypeAnalyticsConfig.lower(config),$0
+    )
+}
     }
     public func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String {
         return try  FfiConverterString.lift(
@@ -3985,6 +4006,58 @@ extension Activity: Equatable, Hashable {}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum AnalyticsConfig {
+    
+    case enabled
+    case disabled
+}
+
+public struct FfiConverterTypeAnalyticsConfig: FfiConverterRustBuffer {
+    typealias SwiftType = AnalyticsConfig
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AnalyticsConfig {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .enabled
+        
+        case 2: return .disabled
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: AnalyticsConfig, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .enabled:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .disabled:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeAnalyticsConfig_lift(_ buf: RustBuffer) throws -> AnalyticsConfig {
+    return try FfiConverterTypeAnalyticsConfig.lift(buf)
+}
+
+public func FfiConverterTypeAnalyticsConfig_lower(_ value: AnalyticsConfig) -> RustBuffer {
+    return FfiConverterTypeAnalyticsConfig.lower(value)
+}
+
+
+extension AnalyticsConfig: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum BreezHealthCheckStatus {
     
     case operational
@@ -5045,6 +5118,65 @@ public func FfiConverterTypeOfferStatus_lower(_ value: OfferStatus) -> RustBuffe
 extension OfferStatus: Equatable, Hashable {}
 
 
+
+
+public enum ParseError {
+
+    
+    
+    case Incomplete
+    case InvalidCharacter(
+        at: UInt32
+    )
+
+    fileprivate static func uniffiErrorHandler(_ error: RustBuffer) throws -> Error {
+        return try FfiConverterTypeParseError.lift(error)
+    }
+}
+
+
+public struct FfiConverterTypeParseError: FfiConverterRustBuffer {
+    typealias SwiftType = ParseError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ParseError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Incomplete
+        case 2: return .InvalidCharacter(
+            at: try FfiConverterUInt32.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ParseError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case .Incomplete:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .InvalidCharacter(at):
+            writeInt(&buf, Int32(2))
+            FfiConverterUInt32.write(at, into: &buf)
+            
+        }
+    }
+}
+
+
+extension ParseError: Equatable, Hashable {}
+
+extension ParseError: Error { }
 
 
 public enum PayError {
@@ -6743,6 +6875,14 @@ public func mnemonicToSecret(mnemonicString: [String], passphrase: String) throw
 }
     )
 }
+public func parseLightningAddress(address: String) throws  {
+    try rustCallWithError(FfiConverterTypeParseError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_func_parse_lightning_address(
+        FfiConverterString.lower(address),$0)
+}
+}
+
+
 public func recoverLightningNode(environment: EnvironmentCode, seed: Data, localPersistencePath: String, enableFileLogging: Bool) throws  {
     try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_recover_lightning_node(
@@ -6790,6 +6930,9 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 23900) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_func_parse_lightning_address() != 40400) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 3892) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -6827,6 +6970,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_generate_swap_address() != 19541) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_analytics_config() != 15582) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_channel_close_resolving_fees() != 52527) {
@@ -6926,6 +7072,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_retrieve_latest_fiat_topup_info() != 55765) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_analytics_config() != 38927) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_onchain_to_lightning() != 56740) {
