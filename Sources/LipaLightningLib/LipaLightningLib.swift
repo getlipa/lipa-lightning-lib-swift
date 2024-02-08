@@ -549,11 +549,13 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func getUnresolvedFailedSwaps() throws  -> [FailedSwapInfo]
     
-    func getWalletPubkeyId()  -> String?
+    func getWalletPubkeyId() throws  -> String
     
     func hideTopup(id: String) throws 
     
     func isClearWalletFeasible() throws  -> Bool
+    
+    func listActionRequiredItems() throws  -> [ActionRequiredItem]
     
     func listCurrencyCodes()  -> [String]
     
@@ -857,11 +859,10 @@ public class LightningNode:
 }
         )
     }
-    public func getWalletPubkeyId()  -> String? {
-        return try!  FfiConverterOptionString.lift(
-            try! 
-    rustCall() {
-    
+    public func getWalletPubkeyId() throws  -> String {
+        return try  FfiConverterString.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_wallet_pubkey_id(self.uniffiClonePointer(), $0
     )
 }
@@ -880,6 +881,15 @@ public class LightningNode:
             try 
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_is_clear_wallet_feasible(self.uniffiClonePointer(), $0
+    )
+}
+        )
+    }
+    public func listActionRequiredItems() throws  -> [ActionRequiredItem] {
+        return try  FfiConverterSequenceTypeActionRequiredItem.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_action_required_items(self.uniffiClonePointer(), $0
     )
 }
         )
@@ -3944,6 +3954,80 @@ public func FfiConverterTypeTzTime_lower(_ value: TzTime) -> RustBuffer {
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum ActionRequiredItem {
+    
+    case uncompletedOffer(
+        offer: OfferInfo
+    )
+    case unresolvedFailedSwap(
+        failedSwap: FailedSwapInfo
+    )
+    case channelClosesFundsAvailable(
+        availableFunds: Amount
+    )
+}
+
+public struct FfiConverterTypeActionRequiredItem: FfiConverterRustBuffer {
+    typealias SwiftType = ActionRequiredItem
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ActionRequiredItem {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .uncompletedOffer(
+            offer: try FfiConverterTypeOfferInfo.read(from: &buf)
+        )
+        
+        case 2: return .unresolvedFailedSwap(
+            failedSwap: try FfiConverterTypeFailedSwapInfo.read(from: &buf)
+        )
+        
+        case 3: return .channelClosesFundsAvailable(
+            availableFunds: try FfiConverterTypeAmount.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ActionRequiredItem, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .uncompletedOffer(offer):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypeOfferInfo.write(offer, into: &buf)
+            
+        
+        case let .unresolvedFailedSwap(failedSwap):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeFailedSwapInfo.write(failedSwap, into: &buf)
+            
+        
+        case let .channelClosesFundsAvailable(availableFunds):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypeAmount.write(availableFunds, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeActionRequiredItem_lift(_ buf: RustBuffer) throws -> ActionRequiredItem {
+    return try FfiConverterTypeActionRequiredItem.lift(buf)
+}
+
+public func FfiConverterTypeActionRequiredItem_lower(_ value: ActionRequiredItem) -> RustBuffer {
+    return FfiConverterTypeActionRequiredItem.lower(value)
+}
+
+
+extension ActionRequiredItem: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum Activity {
     
     case paymentActivity(
@@ -6817,6 +6901,28 @@ fileprivate struct FfiConverterSequenceTypeOfferInfo: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterSequenceTypeActionRequiredItem: FfiConverterRustBuffer {
+    typealias SwiftType = [ActionRequiredItem]
+
+    public static func write(_ value: [ActionRequiredItem], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeActionRequiredItem.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ActionRequiredItem] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ActionRequiredItem]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeActionRequiredItem.read(from: &buf))
+        }
+        return seq
+    }
+}
+
 fileprivate struct FfiConverterSequenceTypeActivity: FfiConverterRustBuffer {
     typealias SwiftType = [Activity]
 
@@ -7011,13 +7117,16 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_unresolved_failed_swaps() != 55743) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_wallet_pubkey_id() != 48212) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_wallet_pubkey_id() != 64850) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_topup() != 9954) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_is_clear_wallet_feasible() != 27512) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_action_required_items() != 17350) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_currency_codes() != 24404) {
