@@ -5068,6 +5068,59 @@ extension Network: Equatable, Hashable {}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum Notification {
+    
+    case bolt11PaymentReceived(
+        amountSat: UInt64, 
+        paymentHash: String
+    )
+}
+
+public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
+    typealias SwiftType = Notification
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Notification {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .bolt11PaymentReceived(
+            amountSat: try FfiConverterUInt64.read(from: &buf), 
+            paymentHash: try FfiConverterString.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Notification, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .bolt11PaymentReceived(amountSat,paymentHash):
+            writeInt(&buf, Int32(1))
+            FfiConverterUInt64.write(amountSat, into: &buf)
+            FfiConverterString.write(paymentHash, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeNotification_lift(_ buf: RustBuffer) throws -> Notification {
+    return try FfiConverterTypeNotification.lift(buf)
+}
+
+public func FfiConverterTypeNotification_lower(_ value: Notification) -> RustBuffer {
+    return FfiConverterTypeNotification.lower(value)
+}
+
+
+extension Notification: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 public enum OfferKind {
     
     case pocket(
@@ -5795,6 +5848,9 @@ public enum Recipient {
     case lightningAddress(
         address: String
     )
+    case lnUrlPayDomain(
+        domain: String
+    )
     case unknown
 }
 
@@ -5809,7 +5865,11 @@ public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
             address: try FfiConverterString.read(from: &buf)
         )
         
-        case 2: return .unknown
+        case 2: return .lnUrlPayDomain(
+            domain: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .unknown
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -5824,8 +5884,13 @@ public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
             FfiConverterString.write(address, into: &buf)
             
         
-        case .unknown:
+        case let .lnUrlPayDomain(domain):
             writeInt(&buf, Int32(2))
+            FfiConverterString.write(domain, into: &buf)
+            
+        
+        case .unknown:
+            writeInt(&buf, Int32(3))
         
         }
     }
@@ -5842,6 +5907,63 @@ public func FfiConverterTypeRecipient_lower(_ value: Recipient) -> RustBuffer {
 
 
 extension Recipient: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+public enum RecommendedAction {
+    
+    case none
+    case showNotification(
+        notification: Notification
+    )
+}
+
+public struct FfiConverterTypeRecommendedAction: FfiConverterRustBuffer {
+    typealias SwiftType = RecommendedAction
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RecommendedAction {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .none
+        
+        case 2: return .showNotification(
+            notification: try FfiConverterTypeNotification.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: RecommendedAction, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .none:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .showNotification(notification):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeNotification.write(notification, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeRecommendedAction_lift(_ buf: RustBuffer) throws -> RecommendedAction {
+    return try FfiConverterTypeRecommendedAction.lift(buf)
+}
+
+public func FfiConverterTypeRecommendedAction_lower(_ value: RecommendedAction) -> RustBuffer {
+    return FfiConverterTypeRecommendedAction.lower(value)
+}
+
+
+extension RecommendedAction: Equatable, Hashable {}
 
 
 
@@ -6972,6 +7094,15 @@ public func getTermsAndConditionsStatus(environment: EnvironmentCode, seed: Data
 }
     )
 }
+public func handleNotification(config: Config, notificationPayload: String) throws  -> RecommendedAction {
+    return try  FfiConverterTypeRecommendedAction.lift(
+        try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_func_handle_notification(
+        FfiConverterTypeConfig.lower(config),
+        FfiConverterString.lower(notificationPayload),$0)
+}
+    )
+}
 public func mnemonicToSecret(mnemonicString: [String], passphrase: String) throws  -> Secret {
     return try  FfiConverterTypeSecret.lift(
         try rustCallWithError(FfiConverterTypeMnemonicError.lift) {
@@ -7031,6 +7162,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 32529) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 48833) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 23900) {
