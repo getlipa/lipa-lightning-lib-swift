@@ -595,6 +595,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func setAnalyticsConfig(config: AnalyticsConfig) throws 
     
+    func setPaymentPersonalNote(paymentHash: String, note: String) throws 
+    
     func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
     
     func sweep(sweepInfo: SweepInfo) throws  -> String
@@ -1072,6 +1074,15 @@ public class LightningNode:
     rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_set_analytics_config(self.uniffiClonePointer(), 
         FfiConverterTypeAnalyticsConfig.lower(config),$0
+    )
+}
+    }
+    public func setPaymentPersonalNote(paymentHash: String, note: String) throws  {
+        try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_set_payment_personal_note(self.uniffiClonePointer(), 
+        FfiConverterString.lower(paymentHash),
+        FfiConverterString.lower(note),$0
     )
 }
     }
@@ -3030,6 +3041,7 @@ public struct Payment {
     public var offer: OfferKind?
     public var swap: SwapInfo?
     public var recipient: Recipient?
+    public var personalNote: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
@@ -3048,7 +3060,8 @@ public struct Payment {
         lspFees: Amount?, 
         offer: OfferKind?, 
         swap: SwapInfo?, 
-        recipient: Recipient?) {
+        recipient: Recipient?, 
+        personalNote: String?) {
         self.paymentType = paymentType
         self.paymentState = paymentState
         self.failReason = failReason
@@ -3064,6 +3077,7 @@ public struct Payment {
         self.offer = offer
         self.swap = swap
         self.recipient = recipient
+        self.personalNote = personalNote
     }
 }
 
@@ -3115,6 +3129,9 @@ extension Payment: Equatable, Hashable {
         if lhs.recipient != rhs.recipient {
             return false
         }
+        if lhs.personalNote != rhs.personalNote {
+            return false
+        }
         return true
     }
 
@@ -3134,6 +3151,7 @@ extension Payment: Equatable, Hashable {
         hasher.combine(offer)
         hasher.combine(swap)
         hasher.combine(recipient)
+        hasher.combine(personalNote)
     }
 }
 
@@ -3156,7 +3174,8 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
                 lspFees: FfiConverterOptionTypeAmount.read(from: &buf), 
                 offer: FfiConverterOptionTypeOfferKind.read(from: &buf), 
                 swap: FfiConverterOptionTypeSwapInfo.read(from: &buf), 
-                recipient: FfiConverterOptionTypeRecipient.read(from: &buf)
+                recipient: FfiConverterOptionTypeRecipient.read(from: &buf), 
+                personalNote: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -3176,6 +3195,7 @@ public struct FfiConverterTypePayment: FfiConverterRustBuffer {
         FfiConverterOptionTypeOfferKind.write(value.offer, into: &buf)
         FfiConverterOptionTypeSwapInfo.write(value.swap, into: &buf)
         FfiConverterOptionTypeRecipient.write(value.recipient, into: &buf)
+        FfiConverterOptionString.write(value.personalNote, into: &buf)
     }
 }
 
@@ -7318,6 +7338,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_analytics_config() != 38927) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_payment_personal_note() != 48745) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_onchain_to_lightning() != 56740) {
