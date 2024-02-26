@@ -583,6 +583,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func registerFiatTopup(email: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
     
+    func registerLightningAddress() throws  -> String
+    
     func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String) throws 
     
     func requestOfferCollection(offer: OfferInfo) throws  -> String
@@ -1019,6 +1021,15 @@ public class LightningNode:
         FfiConverterOptionString.lower(email),
         FfiConverterString.lower(userIban),
         FfiConverterString.lower(userCurrency),$0
+    )
+}
+        )
+    }
+    public func registerLightningAddress() throws  -> String {
+        return try  FfiConverterString.lift(
+            try 
+    rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_register_lightning_address(self.uniffiClonePointer(), $0
     )
 }
         )
@@ -7320,6 +7331,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_fiat_topup() != 12958) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_lightning_address() != 46966) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_notification_token() != 23769) {
