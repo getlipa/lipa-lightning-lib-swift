@@ -6436,6 +6436,8 @@ public protocol EventsCallback : AnyObject {
     
     func breezHealthStatusChangedTo(status: BreezHealthCheckStatus) 
     
+    func synced() 
+    
 }
 fileprivate extension NSLock {
     func withLock<T>(f: () throws -> T) rethrows -> T {
@@ -6565,6 +6567,15 @@ fileprivate let uniffiCallbackHandlerEventsCallback : ForeignCallback =
         return try makeCall()
     }
 
+    func invokeSynced(_ swiftCallbackInterface: EventsCallback, _ argsData: UnsafePointer<UInt8>, _ argsLen: Int32, _ out_buf: UnsafeMutablePointer<RustBuffer>) throws -> Int32 {
+        func makeCall() throws -> Int32 {
+            swiftCallbackInterface.synced(
+                    )
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+        return try makeCall()
+    }
+
 
     switch method {
         case IDX_CALLBACK_FREE:
@@ -6623,6 +6634,17 @@ fileprivate let uniffiCallbackHandlerEventsCallback : ForeignCallback =
             }
             do {
                 return try invokeBreezHealthStatusChangedTo(cb, argsData, argsLen, out_buf)
+            } catch let error {
+                out_buf.pointee = FfiConverterString.lower(String(describing: error))
+                return UNIFFI_CALLBACK_UNEXPECTED_ERROR
+            }
+        case 6:
+            guard let cb = FfiConverterCallbackInterfaceEventsCallback.handleMap.get(handle: handle) else {
+                out_buf.pointee = FfiConverterString.lower("No callback in handlemap; this is a Uniffi bug")
+                return UNIFFI_CALLBACK_UNEXPECTED_ERROR
+            }
+            do {
+                return try invokeSynced(cb, argsData, argsLen, out_buf)
             } catch let error {
                 out_buf.pointee = FfiConverterString.lower(String(describing: error))
                 return UNIFFI_CALLBACK_UNEXPECTED_ERROR
@@ -7379,6 +7401,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_breez_health_status_changed_to() != 40320) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_synced() != 49179) {
         return InitializationResult.apiChecksumMismatch
     }
 
