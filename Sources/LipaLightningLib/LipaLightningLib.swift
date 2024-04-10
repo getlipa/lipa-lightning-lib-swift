@@ -377,6 +377,7 @@ fileprivate class UniffiHandleMap<T> {
     }
 }
 
+
 // Public interface members begin here.
 
 
@@ -689,6 +690,7 @@ public protocol LightningNodeProtocol : AnyObject {
     func sweep(sweepInfo: SweepInfo) throws  -> String
     
 }
+
 open class LightningNode:
     LightningNodeProtocol {
     fileprivate let pointer: UnsafeMutableRawPointer!
@@ -717,8 +719,9 @@ open class LightningNode:
     public func uniffiClonePointer() -> UnsafeMutableRawPointer {
         return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_lightningnode(self.pointer, $0) }
     }
-public convenience init(config: Config, eventsCallback: EventsCallback) {
-    let pointer = throws try rustCallWithError(FfiConverterTypeLnError.lift) {
+public convenience init(config: Config, eventsCallback: EventsCallback)throws  {
+    let pointer =
+        try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_constructor_lightningnode_new(
         FfiConverterTypeConfig.lower(config),
         FfiConverterCallbackInterfaceEventsCallback.lower(eventsCallback),$0
@@ -6421,6 +6424,7 @@ public protocol EventsCallback : AnyObject {
     func synced() 
     
 }
+
 // Magic number for the Rust proxy to call using the same mechanism as every other method,
 // to free the callback once it's dropped by Rust.
 private let IDX_CALLBACK_FREE: Int32 = 0
