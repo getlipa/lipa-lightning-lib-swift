@@ -3555,14 +3555,14 @@ public func FfiConverterTypeSwapAddressInfo_lower(_ value: SwapAddressInfo) -> R
 public struct SwapInfo {
     public var bitcoinAddress: String
     public var createdAt: TzTime
-    public var paidMsats: UInt64
+    public var paidAmount: Amount
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(bitcoinAddress: String, createdAt: TzTime, paidMsats: UInt64) {
+    public init(bitcoinAddress: String, createdAt: TzTime, paidAmount: Amount) {
         self.bitcoinAddress = bitcoinAddress
         self.createdAt = createdAt
-        self.paidMsats = paidMsats
+        self.paidAmount = paidAmount
     }
 }
 
@@ -3576,7 +3576,7 @@ extension SwapInfo: Equatable, Hashable {
         if lhs.createdAt != rhs.createdAt {
             return false
         }
-        if lhs.paidMsats != rhs.paidMsats {
+        if lhs.paidAmount != rhs.paidAmount {
             return false
         }
         return true
@@ -3585,7 +3585,7 @@ extension SwapInfo: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(bitcoinAddress)
         hasher.combine(createdAt)
-        hasher.combine(paidMsats)
+        hasher.combine(paidAmount)
     }
 }
 
@@ -3596,14 +3596,14 @@ public struct FfiConverterTypeSwapInfo: FfiConverterRustBuffer {
             try SwapInfo(
                 bitcoinAddress: FfiConverterString.read(from: &buf), 
                 createdAt: FfiConverterTypeTzTime.read(from: &buf), 
-                paidMsats: FfiConverterUInt64.read(from: &buf)
+                paidAmount: FfiConverterTypeAmount.read(from: &buf)
         )
     }
 
     public static func write(_ value: SwapInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.bitcoinAddress, into: &buf)
         FfiConverterTypeTzTime.write(value.createdAt, into: &buf)
-        FfiConverterUInt64.write(value.paidMsats, into: &buf)
+        FfiConverterTypeAmount.write(value.paidAmount, into: &buf)
     }
 }
 
@@ -4039,7 +4039,7 @@ public enum Activity {
     )
     case offerClaim(incomingPaymentInfo: IncomingPaymentInfo, offerKind: OfferKind
     )
-    case swap(incomingPaymentInfo: IncomingPaymentInfo, swapInfo: SwapInfo
+    case swap(incomingPaymentInfo: IncomingPaymentInfo?, swapInfo: SwapInfo
     )
     case channelClose(channelCloseInfo: ChannelCloseInfo
     )
@@ -4062,7 +4062,7 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         case 3: return .offerClaim(incomingPaymentInfo: try FfiConverterTypeIncomingPaymentInfo.read(from: &buf), offerKind: try FfiConverterTypeOfferKind.read(from: &buf)
         )
         
-        case 4: return .swap(incomingPaymentInfo: try FfiConverterTypeIncomingPaymentInfo.read(from: &buf), swapInfo: try FfiConverterTypeSwapInfo.read(from: &buf)
+        case 4: return .swap(incomingPaymentInfo: try FfiConverterOptionTypeIncomingPaymentInfo.read(from: &buf), swapInfo: try FfiConverterTypeSwapInfo.read(from: &buf)
         )
         
         case 5: return .channelClose(channelCloseInfo: try FfiConverterTypeChannelCloseInfo.read(from: &buf)
@@ -4094,7 +4094,7 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         
         case let .swap(incomingPaymentInfo,swapInfo):
             writeInt(&buf, Int32(4))
-            FfiConverterTypeIncomingPaymentInfo.write(incomingPaymentInfo, into: &buf)
+            FfiConverterOptionTypeIncomingPaymentInfo.write(incomingPaymentInfo, into: &buf)
             FfiConverterTypeSwapInfo.write(swapInfo, into: &buf)
             
         
@@ -6776,6 +6776,27 @@ fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeFiatValue.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterOptionTypeIncomingPaymentInfo: FfiConverterRustBuffer {
+    typealias SwiftType = IncomingPaymentInfo?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeIncomingPaymentInfo.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeIncomingPaymentInfo.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
