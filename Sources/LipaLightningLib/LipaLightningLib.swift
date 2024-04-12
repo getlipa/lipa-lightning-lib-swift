@@ -651,7 +651,7 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata) throws 
     
-    func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64) throws  -> String
+    func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64, comment: String?) throws  -> String
     
     func payOpenInvoice(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: PaymentMetadata) throws 
     
@@ -986,11 +986,12 @@ open func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata)t
 }
 }
     
-open func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64)throws  -> String {
+open func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64, comment: String?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnUrlPayError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_pay_lnurlp(self.uniffiClonePointer(),
         FfiConverterTypeLnUrlPayRequestData.lower(lnurlPayRequestData),
-        FfiConverterUInt64.lower(amountSat),$0
+        FfiConverterUInt64.lower(amountSat),
+        FfiConverterOptionString.lower(comment),$0
     )
 })
 }
@@ -2406,16 +2407,18 @@ public struct LnUrlPayDetails {
     public var longDescription: String?
     public var minSendable: Amount
     public var maxSendable: Amount
+    public var maxCommentLength: UInt16
     public var requestData: LnUrlPayRequestData
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(domain: String, shortDescription: String, longDescription: String?, minSendable: Amount, maxSendable: Amount, requestData: LnUrlPayRequestData) {
+    public init(domain: String, shortDescription: String, longDescription: String?, minSendable: Amount, maxSendable: Amount, maxCommentLength: UInt16, requestData: LnUrlPayRequestData) {
         self.domain = domain
         self.shortDescription = shortDescription
         self.longDescription = longDescription
         self.minSendable = minSendable
         self.maxSendable = maxSendable
+        self.maxCommentLength = maxCommentLength
         self.requestData = requestData
     }
 }
@@ -2439,6 +2442,9 @@ extension LnUrlPayDetails: Equatable, Hashable {
         if lhs.maxSendable != rhs.maxSendable {
             return false
         }
+        if lhs.maxCommentLength != rhs.maxCommentLength {
+            return false
+        }
         if lhs.requestData != rhs.requestData {
             return false
         }
@@ -2451,6 +2457,7 @@ extension LnUrlPayDetails: Equatable, Hashable {
         hasher.combine(longDescription)
         hasher.combine(minSendable)
         hasher.combine(maxSendable)
+        hasher.combine(maxCommentLength)
         hasher.combine(requestData)
     }
 }
@@ -2465,6 +2472,7 @@ public struct FfiConverterTypeLnUrlPayDetails: FfiConverterRustBuffer {
                 longDescription: FfiConverterOptionString.read(from: &buf), 
                 minSendable: FfiConverterTypeAmount.read(from: &buf), 
                 maxSendable: FfiConverterTypeAmount.read(from: &buf), 
+                maxCommentLength: FfiConverterUInt16.read(from: &buf), 
                 requestData: FfiConverterTypeLnUrlPayRequestData.read(from: &buf)
         )
     }
@@ -2475,6 +2483,7 @@ public struct FfiConverterTypeLnUrlPayDetails: FfiConverterRustBuffer {
         FfiConverterOptionString.write(value.longDescription, into: &buf)
         FfiConverterTypeAmount.write(value.minSendable, into: &buf)
         FfiConverterTypeAmount.write(value.maxSendable, into: &buf)
+        FfiConverterUInt16.write(value.maxCommentLength, into: &buf)
         FfiConverterTypeLnUrlPayRequestData.write(value.requestData, into: &buf)
     }
 }
@@ -7187,7 +7196,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_invoice() != 55741) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_lnurlp() != 19760) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_lnurlp() != 19853) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_open_invoice() != 20722) {
