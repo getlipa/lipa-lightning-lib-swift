@@ -2505,17 +2505,21 @@ public struct LnUrlPayRequestData {
     public var metadataStr: String
     public var commentAllowed: UInt16
     public var domain: String
+    public var allowsNostr: Bool
+    public var nostrPubkey: String?
     public var lnAddress: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(callback: String, minSendable: UInt64, maxSendable: UInt64, metadataStr: String, commentAllowed: UInt16, domain: String, lnAddress: String?) {
+    public init(callback: String, minSendable: UInt64, maxSendable: UInt64, metadataStr: String, commentAllowed: UInt16, domain: String, allowsNostr: Bool, nostrPubkey: String?, lnAddress: String?) {
         self.callback = callback
         self.minSendable = minSendable
         self.maxSendable = maxSendable
         self.metadataStr = metadataStr
         self.commentAllowed = commentAllowed
         self.domain = domain
+        self.allowsNostr = allowsNostr
+        self.nostrPubkey = nostrPubkey
         self.lnAddress = lnAddress
     }
 }
@@ -2542,6 +2546,12 @@ extension LnUrlPayRequestData: Equatable, Hashable {
         if lhs.domain != rhs.domain {
             return false
         }
+        if lhs.allowsNostr != rhs.allowsNostr {
+            return false
+        }
+        if lhs.nostrPubkey != rhs.nostrPubkey {
+            return false
+        }
         if lhs.lnAddress != rhs.lnAddress {
             return false
         }
@@ -2555,6 +2565,8 @@ extension LnUrlPayRequestData: Equatable, Hashable {
         hasher.combine(metadataStr)
         hasher.combine(commentAllowed)
         hasher.combine(domain)
+        hasher.combine(allowsNostr)
+        hasher.combine(nostrPubkey)
         hasher.combine(lnAddress)
     }
 }
@@ -2570,6 +2582,8 @@ public struct FfiConverterTypeLnUrlPayRequestData: FfiConverterRustBuffer {
                 metadataStr: FfiConverterString.read(from: &buf), 
                 commentAllowed: FfiConverterUInt16.read(from: &buf), 
                 domain: FfiConverterString.read(from: &buf), 
+                allowsNostr: FfiConverterBool.read(from: &buf), 
+                nostrPubkey: FfiConverterOptionString.read(from: &buf), 
                 lnAddress: FfiConverterOptionString.read(from: &buf)
         )
     }
@@ -2581,6 +2595,8 @@ public struct FfiConverterTypeLnUrlPayRequestData: FfiConverterRustBuffer {
         FfiConverterString.write(value.metadataStr, into: &buf)
         FfiConverterUInt16.write(value.commentAllowed, into: &buf)
         FfiConverterString.write(value.domain, into: &buf)
+        FfiConverterBool.write(value.allowsNostr, into: &buf)
+        FfiConverterOptionString.write(value.nostrPubkey, into: &buf)
         FfiConverterOptionString.write(value.lnAddress, into: &buf)
     }
 }
@@ -5167,6 +5183,8 @@ public enum Notification {
     
     case bolt11PaymentReceived(amountSat: UInt64, paymentHash: String
     )
+    case onchainPaymentSwappedIn(amountSat: UInt64, paymentHash: String
+    )
 }
 
 
@@ -5180,6 +5198,9 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
         case 1: return .bolt11PaymentReceived(amountSat: try FfiConverterUInt64.read(from: &buf), paymentHash: try FfiConverterString.read(from: &buf)
         )
         
+        case 2: return .onchainPaymentSwappedIn(amountSat: try FfiConverterUInt64.read(from: &buf), paymentHash: try FfiConverterString.read(from: &buf)
+        )
+        
         default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
@@ -5190,6 +5211,12 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
         
         case let .bolt11PaymentReceived(amountSat,paymentHash):
             writeInt(&buf, Int32(1))
+            FfiConverterUInt64.write(amountSat, into: &buf)
+            FfiConverterString.write(paymentHash, into: &buf)
+            
+        
+        case let .onchainPaymentSwappedIn(amountSat,paymentHash):
+            writeInt(&buf, Int32(2))
             FfiConverterUInt64.write(amountSat, into: &buf)
             FfiConverterString.write(paymentHash, into: &buf)
             
@@ -5209,6 +5236,131 @@ public func FfiConverterTypeNotification_lower(_ value: Notification) -> RustBuf
 
 
 extension Notification: Equatable, Hashable {}
+
+
+
+
+public enum NotificationHandlingError {
+
+    
+    
+    case InvalidInput(msg: String
+    )
+    case RuntimeError(code: NotificationHandlingErrorCode, msg: String
+    )
+    case PermanentFailure(msg: String
+    )
+}
+
+
+public struct FfiConverterTypeNotificationHandlingError: FfiConverterRustBuffer {
+    typealias SwiftType = NotificationHandlingError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NotificationHandlingError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .InvalidInput(
+            msg: try FfiConverterString.read(from: &buf)
+            )
+        case 2: return .RuntimeError(
+            code: try FfiConverterTypeNotificationHandlingErrorCode.read(from: &buf), 
+            msg: try FfiConverterString.read(from: &buf)
+            )
+        case 3: return .PermanentFailure(
+            msg: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: NotificationHandlingError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .InvalidInput(msg):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(msg, into: &buf)
+            
+        
+        case let .RuntimeError(code,msg):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeNotificationHandlingErrorCode.write(code, into: &buf)
+            FfiConverterString.write(msg, into: &buf)
+            
+        
+        case let .PermanentFailure(msg):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(msg, into: &buf)
+            
+        }
+    }
+}
+
+
+extension NotificationHandlingError: Equatable, Hashable {}
+
+extension NotificationHandlingError: Error { }
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum NotificationHandlingErrorCode {
+    
+    case nodeUnavailable
+    case inProgressSwapNotFound
+}
+
+
+public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuffer {
+    typealias SwiftType = NotificationHandlingErrorCode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NotificationHandlingErrorCode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .nodeUnavailable
+        
+        case 2: return .inProgressSwapNotFound
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: NotificationHandlingErrorCode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .nodeUnavailable:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .inProgressSwapNotFound:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeNotificationHandlingErrorCode_lift(_ buf: RustBuffer) throws -> NotificationHandlingErrorCode {
+    return try FfiConverterTypeNotificationHandlingErrorCode.lift(buf)
+}
+
+public func FfiConverterTypeNotificationHandlingErrorCode_lower(_ value: NotificationHandlingErrorCode) -> RustBuffer {
+    return FfiConverterTypeNotificationHandlingErrorCode.lower(value)
+}
+
+
+
+extension NotificationHandlingErrorCode: Equatable, Hashable {}
 
 
 
@@ -7041,7 +7193,7 @@ public func getTermsAndConditionsStatus(environment: EnvironmentCode, seed: Data
 })
 }
 public func handleNotification(config: Config, notificationPayload: String)throws  -> RecommendedAction {
-    return try  FfiConverterTypeRecommendedAction.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    return try  FfiConverterTypeRecommendedAction.lift(try rustCallWithError(FfiConverterTypeNotificationHandlingError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_handle_notification(
         FfiConverterTypeConfig.lower(config),
         FfiConverterString.lower(notificationPayload),$0
@@ -7103,7 +7255,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 32529) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 48833) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 51899) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 23900) {
