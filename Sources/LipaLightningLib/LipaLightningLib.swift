@@ -6580,6 +6580,8 @@ public protocol EventsCallback : AnyObject {
     
     func channelClosed(channelId: String, reason: String) 
     
+    func swapReceived(paymentHash: String) 
+    
     func breezHealthStatusChangedTo(status: BreezHealthCheckStatus) 
     
     func synced() 
@@ -6689,6 +6691,30 @@ fileprivate struct UniffiCallbackInterfaceEventsCallback {
                 return uniffiObj.channelClosed(
                      channelId: try FfiConverterString.lift(channelId),
                      reason: try FfiConverterString.lift(reason)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        swapReceived: { (
+            uniffiHandle: UInt64,
+            paymentHash: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterCallbackInterfaceEventsCallback.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.swapReceived(
+                     paymentHash: try FfiConverterString.lift(paymentHash)
                 )
             }
 
@@ -7439,6 +7465,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_channel_closed() != 22287) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_swap_received() != 19106) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_breez_health_status_changed_to() != 40320) {
