@@ -661,6 +661,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func prepareSweep(address: String, onchainFeeRate: UInt32) throws  -> SweepInfo
     
+    func queryLightningAddress() throws  -> String?
+    
     func queryLspFee() throws  -> LspFee
     
     func queryOnchainFeeRate() throws  -> UInt32
@@ -1027,6 +1029,13 @@ open func prepareSweep(address: String, onchainFeeRate: UInt32)throws  -> SweepI
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_prepare_sweep(self.uniffiClonePointer(),
         FfiConverterString.lower(address),
         FfiConverterUInt32.lower(onchainFeeRate),$0
+    )
+})
+}
+    
+open func queryLightningAddress()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_query_lightning_address(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -3069,13 +3078,15 @@ public struct OutgoingPaymentInfo {
     public var paymentInfo: PaymentInfo
     public var networkFees: Amount
     public var recipient: Recipient
+    public var commentForRecipient: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(paymentInfo: PaymentInfo, networkFees: Amount, recipient: Recipient) {
+    public init(paymentInfo: PaymentInfo, networkFees: Amount, recipient: Recipient, commentForRecipient: String?) {
         self.paymentInfo = paymentInfo
         self.networkFees = networkFees
         self.recipient = recipient
+        self.commentForRecipient = commentForRecipient
     }
 }
 
@@ -3092,6 +3103,9 @@ extension OutgoingPaymentInfo: Equatable, Hashable {
         if lhs.recipient != rhs.recipient {
             return false
         }
+        if lhs.commentForRecipient != rhs.commentForRecipient {
+            return false
+        }
         return true
     }
 
@@ -3099,6 +3113,7 @@ extension OutgoingPaymentInfo: Equatable, Hashable {
         hasher.combine(paymentInfo)
         hasher.combine(networkFees)
         hasher.combine(recipient)
+        hasher.combine(commentForRecipient)
     }
 }
 
@@ -3109,7 +3124,8 @@ public struct FfiConverterTypeOutgoingPaymentInfo: FfiConverterRustBuffer {
             try OutgoingPaymentInfo(
                 paymentInfo: FfiConverterTypePaymentInfo.read(from: &buf), 
                 networkFees: FfiConverterTypeAmount.read(from: &buf), 
-                recipient: FfiConverterTypeRecipient.read(from: &buf)
+                recipient: FfiConverterTypeRecipient.read(from: &buf), 
+                commentForRecipient: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -3117,6 +3133,7 @@ public struct FfiConverterTypeOutgoingPaymentInfo: FfiConverterRustBuffer {
         FfiConverterTypePaymentInfo.write(value.paymentInfo, into: &buf)
         FfiConverterTypeAmount.write(value.networkFees, into: &buf)
         FfiConverterTypeRecipient.write(value.recipient, into: &buf)
+        FfiConverterOptionString.write(value.commentForRecipient, into: &buf)
     }
 }
 
@@ -7408,6 +7425,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_sweep() != 23224) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_lightning_address() != 22893) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_lsp_fee() != 32663) {
