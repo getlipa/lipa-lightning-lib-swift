@@ -691,6 +691,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func sweep(sweepInfo: SweepInfo) throws  -> String
     
+    func withdrawLnurlw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amountSat: UInt64) throws  -> String
+    
 }
 
 open class LightningNode:
@@ -1144,6 +1146,15 @@ open func sweep(sweepInfo: SweepInfo)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_sweep(self.uniffiClonePointer(),
         FfiConverterTypeSweepInfo.lower(sweepInfo),$0
+    )
+})
+}
+    
+open func withdrawLnurlw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amountSat: UInt64)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnUrlWithdrawError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_withdraw_lnurlw(self.uniffiClonePointer(),
+        FfiConverterTypeLnUrlWithdrawRequestData.lower(lnurlWithdrawRequestData),
+        FfiConverterUInt64.lower(amountSat),$0
     )
 })
 }
@@ -4987,6 +4998,138 @@ extension LnUrlPayErrorCode: Equatable, Hashable {}
 
 
 
+
+public enum LnUrlWithdrawError {
+
+    
+    
+    case InvalidInput(msg: String
+    )
+    case RuntimeError(code: LnUrlWithdrawErrorCode, msg: String
+    )
+    case PermanentFailure(msg: String
+    )
+}
+
+
+public struct FfiConverterTypeLnUrlWithdrawError: FfiConverterRustBuffer {
+    typealias SwiftType = LnUrlWithdrawError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlWithdrawError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .InvalidInput(
+            msg: try FfiConverterString.read(from: &buf)
+            )
+        case 2: return .RuntimeError(
+            code: try FfiConverterTypeLnUrlWithdrawErrorCode.read(from: &buf), 
+            msg: try FfiConverterString.read(from: &buf)
+            )
+        case 3: return .PermanentFailure(
+            msg: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: LnUrlWithdrawError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .InvalidInput(msg):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(msg, into: &buf)
+            
+        
+        case let .RuntimeError(code,msg):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeLnUrlWithdrawErrorCode.write(code, into: &buf)
+            FfiConverterString.write(msg, into: &buf)
+            
+        
+        case let .PermanentFailure(msg):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(msg, into: &buf)
+            
+        }
+    }
+}
+
+
+extension LnUrlWithdrawError: Equatable, Hashable {}
+
+extension LnUrlWithdrawError: Error { }
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum LnUrlWithdrawErrorCode {
+    
+    case lnUrlServerError
+    case serviceConnectivity
+    case unexpectedError
+}
+
+
+public struct FfiConverterTypeLnUrlWithdrawErrorCode: FfiConverterRustBuffer {
+    typealias SwiftType = LnUrlWithdrawErrorCode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlWithdrawErrorCode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .lnUrlServerError
+        
+        case 2: return .serviceConnectivity
+        
+        case 3: return .unexpectedError
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: LnUrlWithdrawErrorCode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .lnUrlServerError:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .serviceConnectivity:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .unexpectedError:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeLnUrlWithdrawErrorCode_lift(_ buf: RustBuffer) throws -> LnUrlWithdrawErrorCode {
+    return try FfiConverterTypeLnUrlWithdrawErrorCode.lift(buf)
+}
+
+public func FfiConverterTypeLnUrlWithdrawErrorCode_lower(_ value: LnUrlWithdrawErrorCode) -> RustBuffer {
+    return FfiConverterTypeLnUrlWithdrawErrorCode.lower(value)
+}
+
+
+
+extension LnUrlWithdrawErrorCode: Equatable, Hashable {}
+
+
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
@@ -7470,6 +7613,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 63698) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_withdraw_lnurlw() != 52161) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_constructor_lightningnode_new() != 11021) {
