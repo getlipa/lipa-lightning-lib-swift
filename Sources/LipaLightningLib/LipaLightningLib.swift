@@ -3745,15 +3745,15 @@ public func FfiConverterTypeSwapToLightningFees_lower(_ value: SwapToLightningFe
 public struct SweepInfo {
     public var address: String
     public var onchainFeeRate: UInt32
-    public var onchainFeeSat: Amount
+    public var onchainFeeAmount: Amount
     public var amount: Amount
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(address: String, onchainFeeRate: UInt32, onchainFeeSat: Amount, amount: Amount) {
+    public init(address: String, onchainFeeRate: UInt32, onchainFeeAmount: Amount, amount: Amount) {
         self.address = address
         self.onchainFeeRate = onchainFeeRate
-        self.onchainFeeSat = onchainFeeSat
+        self.onchainFeeAmount = onchainFeeAmount
         self.amount = amount
     }
 }
@@ -3768,7 +3768,7 @@ extension SweepInfo: Equatable, Hashable {
         if lhs.onchainFeeRate != rhs.onchainFeeRate {
             return false
         }
-        if lhs.onchainFeeSat != rhs.onchainFeeSat {
+        if lhs.onchainFeeAmount != rhs.onchainFeeAmount {
             return false
         }
         if lhs.amount != rhs.amount {
@@ -3780,7 +3780,7 @@ extension SweepInfo: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(address)
         hasher.combine(onchainFeeRate)
-        hasher.combine(onchainFeeSat)
+        hasher.combine(onchainFeeAmount)
         hasher.combine(amount)
     }
 }
@@ -3792,7 +3792,7 @@ public struct FfiConverterTypeSweepInfo: FfiConverterRustBuffer {
             try SweepInfo(
                 address: FfiConverterString.read(from: &buf), 
                 onchainFeeRate: FfiConverterUInt32.read(from: &buf), 
-                onchainFeeSat: FfiConverterTypeAmount.read(from: &buf), 
+                onchainFeeAmount: FfiConverterTypeAmount.read(from: &buf), 
                 amount: FfiConverterTypeAmount.read(from: &buf)
         )
     }
@@ -3800,7 +3800,7 @@ public struct FfiConverterTypeSweepInfo: FfiConverterRustBuffer {
     public static func write(_ value: SweepInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.address, into: &buf)
         FfiConverterUInt32.write(value.onchainFeeRate, into: &buf)
-        FfiConverterTypeAmount.write(value.onchainFeeSat, into: &buf)
+        FfiConverterTypeAmount.write(value.onchainFeeAmount, into: &buf)
         FfiConverterTypeAmount.write(value.amount, into: &buf)
     }
 }
