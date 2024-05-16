@@ -645,9 +645,11 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func listCurrencyCodes()  -> [String]
     
-    func listLightningAddresses() throws  -> [String]
+    func listRecipients() throws  -> [Recipient]
     
     func logDebugInfo() throws 
+    
+    func parsePhoneNumber(phoneNumber: String, allowedCountriesCountryIso31661Alpha2: [String]) throws  -> String
     
     func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata) throws 
     
@@ -969,9 +971,9 @@ open func listCurrencyCodes() -> [String] {
 })
 }
     
-open func listLightningAddresses()throws  -> [String] {
-    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_lightning_addresses(self.uniffiClonePointer(),$0
+open func listRecipients()throws  -> [Recipient] {
+    return try  FfiConverterSequenceTypeRecipient.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_recipients(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -980,6 +982,15 @@ open func logDebugInfo()throws  {try rustCallWithError(FfiConverterTypeLnError.l
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_log_debug_info(self.uniffiClonePointer(),$0
     )
 }
+}
+    
+open func parsePhoneNumber(phoneNumber: String, allowedCountriesCountryIso31661Alpha2: [String])throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeParsePhoneNumberError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_parse_phone_number(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),
+        FfiConverterSequenceString.lower(allowedCountriesCountryIso31661Alpha2),$0
+    )
+})
 }
     
 open func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata)throws  {try rustCallWithError(FfiConverterTypePayError.lift) {
@@ -5753,6 +5764,74 @@ extension ParseError: Equatable, Hashable {}
 extension ParseError: Error { }
 
 
+public enum ParsePhoneNumberError {
+
+    
+    
+    case ParsingError
+    case MissingCountryCode
+    case InvalidCountryCode
+    case InvalidPhoneNumber
+    case UnsupportedCountry
+}
+
+
+public struct FfiConverterTypeParsePhoneNumberError: FfiConverterRustBuffer {
+    typealias SwiftType = ParsePhoneNumberError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ParsePhoneNumberError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .ParsingError
+        case 2: return .MissingCountryCode
+        case 3: return .InvalidCountryCode
+        case 4: return .InvalidPhoneNumber
+        case 5: return .UnsupportedCountry
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ParsePhoneNumberError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case .ParsingError:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .MissingCountryCode:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .InvalidCountryCode:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .InvalidPhoneNumber:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .UnsupportedCountry:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+extension ParsePhoneNumberError: Equatable, Hashable {}
+
+extension ParsePhoneNumberError: Error { }
+
+
 public enum PayError {
 
     
@@ -6238,6 +6317,8 @@ public enum Recipient {
     )
     case lnUrlPayDomain(domain: String
     )
+    case phoneNumber(e164: String
+    )
     case unknown
 }
 
@@ -6255,7 +6336,10 @@ public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
         case 2: return .lnUrlPayDomain(domain: try FfiConverterString.read(from: &buf)
         )
         
-        case 3: return .unknown
+        case 3: return .phoneNumber(e164: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 4: return .unknown
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -6275,8 +6359,13 @@ public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
             FfiConverterString.write(domain, into: &buf)
             
         
-        case .unknown:
+        case let .phoneNumber(e164):
             writeInt(&buf, Int32(3))
+            FfiConverterString.write(e164, into: &buf)
+            
+        
+        case .unknown:
+            writeInt(&buf, Int32(4))
         
         }
     }
@@ -7364,6 +7453,28 @@ fileprivate struct FfiConverterSequenceTypeActivity: FfiConverterRustBuffer {
         return seq
     }
 }
+
+fileprivate struct FfiConverterSequenceTypeRecipient: FfiConverterRustBuffer {
+    typealias SwiftType = [Recipient]
+
+    public static func write(_ value: [Recipient], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRecipient.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Recipient] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Recipient]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRecipient.read(from: &buf))
+        }
+        return seq
+    }
+}
 public func acceptTermsAndConditions(environment: EnvironmentCode, seed: Data, version: Int64)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_accept_terms_and_conditions(
         FfiConverterTypeEnvironmentCode.lower(environment),
@@ -7556,10 +7667,13 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_currency_codes() != 24404) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_lightning_addresses() != 40035) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_recipients() != 10482) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_log_debug_info() != 60092) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_parse_phone_number() != 42233) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_invoice() != 55741) {
