@@ -2149,13 +2149,17 @@ public struct IncomingPaymentInfo {
     public var paymentInfo: PaymentInfo
     public var requestedAmount: Amount
     public var lspFees: Amount
+    public var receivedOn: Recipient?
+    public var receivedLnurlComment: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(paymentInfo: PaymentInfo, requestedAmount: Amount, lspFees: Amount) {
+    public init(paymentInfo: PaymentInfo, requestedAmount: Amount, lspFees: Amount, receivedOn: Recipient?, receivedLnurlComment: String?) {
         self.paymentInfo = paymentInfo
         self.requestedAmount = requestedAmount
         self.lspFees = lspFees
+        self.receivedOn = receivedOn
+        self.receivedLnurlComment = receivedLnurlComment
     }
 }
 
@@ -2172,6 +2176,12 @@ extension IncomingPaymentInfo: Equatable, Hashable {
         if lhs.lspFees != rhs.lspFees {
             return false
         }
+        if lhs.receivedOn != rhs.receivedOn {
+            return false
+        }
+        if lhs.receivedLnurlComment != rhs.receivedLnurlComment {
+            return false
+        }
         return true
     }
 
@@ -2179,6 +2189,8 @@ extension IncomingPaymentInfo: Equatable, Hashable {
         hasher.combine(paymentInfo)
         hasher.combine(requestedAmount)
         hasher.combine(lspFees)
+        hasher.combine(receivedOn)
+        hasher.combine(receivedLnurlComment)
     }
 }
 
@@ -2189,7 +2201,9 @@ public struct FfiConverterTypeIncomingPaymentInfo: FfiConverterRustBuffer {
             try IncomingPaymentInfo(
                 paymentInfo: FfiConverterTypePaymentInfo.read(from: &buf), 
                 requestedAmount: FfiConverterTypeAmount.read(from: &buf), 
-                lspFees: FfiConverterTypeAmount.read(from: &buf)
+                lspFees: FfiConverterTypeAmount.read(from: &buf), 
+                receivedOn: FfiConverterOptionTypeRecipient.read(from: &buf), 
+                receivedLnurlComment: FfiConverterOptionString.read(from: &buf)
         )
     }
 
@@ -2197,6 +2211,8 @@ public struct FfiConverterTypeIncomingPaymentInfo: FfiConverterRustBuffer {
         FfiConverterTypePaymentInfo.write(value.paymentInfo, into: &buf)
         FfiConverterTypeAmount.write(value.requestedAmount, into: &buf)
         FfiConverterTypeAmount.write(value.lspFees, into: &buf)
+        FfiConverterOptionTypeRecipient.write(value.receivedOn, into: &buf)
+        FfiConverterOptionString.write(value.receivedLnurlComment, into: &buf)
     }
 }
 
@@ -5345,6 +5361,8 @@ public enum Notification {
     )
     case onchainPaymentSwappedIn(amountSat: UInt64, paymentHash: String
     )
+    case lnurlInvoiceCreated(amountSat: UInt64
+    )
 }
 
 
@@ -5359,6 +5377,9 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
         )
         
         case 2: return .onchainPaymentSwappedIn(amountSat: try FfiConverterUInt64.read(from: &buf), paymentHash: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .lnurlInvoiceCreated(amountSat: try FfiConverterUInt64.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -5379,6 +5400,11 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
             FfiConverterUInt64.write(amountSat, into: &buf)
             FfiConverterString.write(paymentHash, into: &buf)
+            
+        
+        case let .lnurlInvoiceCreated(amountSat):
+            writeInt(&buf, Int32(3))
+            FfiConverterUInt64.write(amountSat, into: &buf)
             
         }
     }
@@ -5477,6 +5503,8 @@ public enum NotificationHandlingErrorCode {
     case nodeUnavailable
     case inProgressSwapNotFound
     case expectedPaymentNotReceived
+    case insufficientInboundLiquidity
+    case lipaServiceUnavailable
 }
 
 
@@ -5492,6 +5520,10 @@ public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuf
         case 2: return .inProgressSwapNotFound
         
         case 3: return .expectedPaymentNotReceived
+        
+        case 4: return .insufficientInboundLiquidity
+        
+        case 5: return .lipaServiceUnavailable
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -5511,6 +5543,14 @@ public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuf
         
         case .expectedPaymentNotReceived:
             writeInt(&buf, Int32(3))
+        
+        
+        case .insufficientInboundLiquidity:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .lipaServiceUnavailable:
+            writeInt(&buf, Int32(5))
         
         }
     }
@@ -7189,6 +7229,27 @@ fileprivate struct FfiConverterOptionTypePocketOfferError: FfiConverterRustBuffe
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypePocketOfferError.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterOptionTypeRecipient: FfiConverterRustBuffer {
+    typealias SwiftType = Recipient?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeRecipient.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeRecipient.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
