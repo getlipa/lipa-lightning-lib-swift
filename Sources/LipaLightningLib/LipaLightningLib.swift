@@ -649,7 +649,7 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func logDebugInfo() throws 
     
-    func parsePhoneNumber(phoneNumber: String, allowedCountriesCountryIso31661Alpha2: [String]) throws  -> String
+    func parsePhoneNumberToLightningAddress(phoneNumber: String) throws  -> String
     
     func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata) throws 
     
@@ -671,6 +671,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func queryUncompletedOffers() throws  -> [OfferInfo]
     
+    func queryVerifiedPhoneNumber() throws  -> String?
+    
     func registerFiatTopup(email: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
     
     func registerLightningAddress() throws  -> String
@@ -678,6 +680,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String) throws 
     
     func requestOfferCollection(offer: OfferInfo) throws  -> String
+    
+    func requestPhoneNumberVerification(phoneNumber: String) throws 
     
     func resetFiatTopup() throws 
     
@@ -692,6 +696,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
     
     func sweep(sweepInfo: SweepInfo) throws  -> String
+    
+    func verifyPhoneNumber(phoneNumber: String, otp: String) throws 
     
     func withdrawLnurlw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amountSat: UInt64) throws  -> String
     
@@ -984,11 +990,10 @@ open func logDebugInfo()throws  {try rustCallWithError(FfiConverterTypeLnError.l
 }
 }
     
-open func parsePhoneNumber(phoneNumber: String, allowedCountriesCountryIso31661Alpha2: [String])throws  -> String {
+open func parsePhoneNumberToLightningAddress(phoneNumber: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeParsePhoneNumberError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_parse_phone_number(self.uniffiClonePointer(),
-        FfiConverterString.lower(phoneNumber),
-        FfiConverterSequenceString.lower(allowedCountriesCountryIso31661Alpha2),$0
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_parse_phone_number_to_lightning_address(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),$0
     )
 })
 }
@@ -1074,6 +1079,13 @@ open func queryUncompletedOffers()throws  -> [OfferInfo] {
 })
 }
     
+open func queryVerifiedPhoneNumber()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_query_verified_phone_number(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func registerFiatTopup(email: String?, userIban: String, userCurrency: String)throws  -> FiatTopupInfo {
     return try  FfiConverterTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_register_fiat_topup(self.uniffiClonePointer(),
@@ -1106,6 +1118,13 @@ open func requestOfferCollection(offer: OfferInfo)throws  -> String {
         FfiConverterTypeOfferInfo.lower(offer),$0
     )
 })
+}
+    
+open func requestPhoneNumberVerification(phoneNumber: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_request_phone_number_verification(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),$0
+    )
+}
 }
     
 open func resetFiatTopup()throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
@@ -1159,6 +1178,14 @@ open func sweep(sweepInfo: SweepInfo)throws  -> String {
         FfiConverterTypeSweepInfo.lower(sweepInfo),$0
     )
 })
+}
+    
+open func verifyPhoneNumber(phoneNumber: String, otp: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_verify_phone_number(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),
+        FfiConverterString.lower(otp),$0
+    )
+}
 }
     
 open func withdrawLnurlw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amountSat: UInt64)throws  -> String {
@@ -1702,16 +1729,18 @@ public struct Config {
     public var localPersistencePath: String
     public var timezoneConfig: TzConfig
     public var fileLoggingLevel: Level?
+    public var phoneNumberAllowedCountriesIso31661Alpha2: [String]
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(environment: EnvironmentCode, seed: Data, fiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?) {
+    public init(environment: EnvironmentCode, seed: Data, fiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String]) {
         self.environment = environment
         self.seed = seed
         self.fiatCurrency = fiatCurrency
         self.localPersistencePath = localPersistencePath
         self.timezoneConfig = timezoneConfig
         self.fileLoggingLevel = fileLoggingLevel
+        self.phoneNumberAllowedCountriesIso31661Alpha2 = phoneNumberAllowedCountriesIso31661Alpha2
     }
 }
 
@@ -1737,6 +1766,9 @@ extension Config: Equatable, Hashable {
         if lhs.fileLoggingLevel != rhs.fileLoggingLevel {
             return false
         }
+        if lhs.phoneNumberAllowedCountriesIso31661Alpha2 != rhs.phoneNumberAllowedCountriesIso31661Alpha2 {
+            return false
+        }
         return true
     }
 
@@ -1747,6 +1779,7 @@ extension Config: Equatable, Hashable {
         hasher.combine(localPersistencePath)
         hasher.combine(timezoneConfig)
         hasher.combine(fileLoggingLevel)
+        hasher.combine(phoneNumberAllowedCountriesIso31661Alpha2)
     }
 }
 
@@ -1760,7 +1793,8 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
                 fiatCurrency: FfiConverterString.read(from: &buf), 
                 localPersistencePath: FfiConverterString.read(from: &buf), 
                 timezoneConfig: FfiConverterTypeTzConfig.read(from: &buf), 
-                fileLoggingLevel: FfiConverterOptionTypeLevel.read(from: &buf)
+                fileLoggingLevel: FfiConverterOptionTypeLevel.read(from: &buf), 
+                phoneNumberAllowedCountriesIso31661Alpha2: FfiConverterSequenceString.read(from: &buf)
         )
     }
 
@@ -1771,6 +1805,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         FfiConverterString.write(value.localPersistencePath, into: &buf)
         FfiConverterTypeTzConfig.write(value.timezoneConfig, into: &buf)
         FfiConverterOptionTypeLevel.write(value.fileLoggingLevel, into: &buf)
+        FfiConverterSequenceString.write(value.phoneNumberAllowedCountriesIso31661Alpha2, into: &buf)
     }
 }
 
@@ -7673,7 +7708,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_log_debug_info() != 60092) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_parse_phone_number() != 42233) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_parse_phone_number_to_lightning_address() != 44470) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_invoice() != 55741) {
@@ -7706,6 +7741,9 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_uncompleted_offers() != 16092) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_verified_phone_number() != 38376) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_fiat_topup() != 12958) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -7716,6 +7754,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_request_offer_collection() != 9125) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_request_phone_number_verification() != 25416) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_reset_fiat_topup() != 23479) {
@@ -7737,6 +7778,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 63698) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_verify_phone_number() != 57506) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_withdraw_lnurlw() != 52161) {
