@@ -2969,6 +2969,71 @@ public func FfiConverterTypeNodeInfo_lower(_ value: NodeInfo) -> RustBuffer {
 }
 
 
+public struct NotificationToggles {
+    public var paymentReceivedIsEnabled: Bool
+    public var addressTxsConfirmedIsEnabled: Bool
+    public var lnurlPayRequestIsEnabled: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(paymentReceivedIsEnabled: Bool, addressTxsConfirmedIsEnabled: Bool, lnurlPayRequestIsEnabled: Bool) {
+        self.paymentReceivedIsEnabled = paymentReceivedIsEnabled
+        self.addressTxsConfirmedIsEnabled = addressTxsConfirmedIsEnabled
+        self.lnurlPayRequestIsEnabled = lnurlPayRequestIsEnabled
+    }
+}
+
+
+
+extension NotificationToggles: Equatable, Hashable {
+    public static func ==(lhs: NotificationToggles, rhs: NotificationToggles) -> Bool {
+        if lhs.paymentReceivedIsEnabled != rhs.paymentReceivedIsEnabled {
+            return false
+        }
+        if lhs.addressTxsConfirmedIsEnabled != rhs.addressTxsConfirmedIsEnabled {
+            return false
+        }
+        if lhs.lnurlPayRequestIsEnabled != rhs.lnurlPayRequestIsEnabled {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(paymentReceivedIsEnabled)
+        hasher.combine(addressTxsConfirmedIsEnabled)
+        hasher.combine(lnurlPayRequestIsEnabled)
+    }
+}
+
+
+public struct FfiConverterTypeNotificationToggles: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NotificationToggles {
+        return
+            try NotificationToggles(
+                paymentReceivedIsEnabled: FfiConverterBool.read(from: &buf), 
+                addressTxsConfirmedIsEnabled: FfiConverterBool.read(from: &buf), 
+                lnurlPayRequestIsEnabled: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: NotificationToggles, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.paymentReceivedIsEnabled, into: &buf)
+        FfiConverterBool.write(value.addressTxsConfirmedIsEnabled, into: &buf)
+        FfiConverterBool.write(value.lnurlPayRequestIsEnabled, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeNotificationToggles_lift(_ buf: RustBuffer) throws -> NotificationToggles {
+    return try FfiConverterTypeNotificationToggles.lift(buf)
+}
+
+public func FfiConverterTypeNotificationToggles_lower(_ value: NotificationToggles) -> RustBuffer {
+    return FfiConverterTypeNotificationToggles.lower(value)
+}
+
+
 public struct OfferInfo {
     public var offerKind: OfferKind
     public var amount: Amount
@@ -5551,6 +5616,7 @@ public enum NotificationHandlingErrorCode {
     case expectedPaymentNotReceived
     case insufficientInboundLiquidity
     case lipaServiceUnavailable
+    case notificationDisabledInNotificationToggles
 }
 
 
@@ -5570,6 +5636,8 @@ public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuf
         case 4: return .insufficientInboundLiquidity
         
         case 5: return .lipaServiceUnavailable
+        
+        case 6: return .notificationDisabledInNotificationToggles
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -5597,6 +5665,10 @@ public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuf
         
         case .lipaServiceUnavailable:
             writeInt(&buf, Int32(5))
+        
+        
+        case .notificationDisabledInNotificationToggles:
+            writeInt(&buf, Int32(6))
         
         }
     }
@@ -7534,11 +7606,12 @@ public func getTermsAndConditionsStatus(environment: EnvironmentCode, seed: Data
     )
 })
 }
-public func handleNotification(config: Config, notificationPayload: String)throws  -> Notification {
+public func handleNotification(config: Config, notificationPayload: String, notificationToggles: NotificationToggles)throws  -> Notification {
     return try  FfiConverterTypeNotification.lift(try rustCallWithError(FfiConverterTypeNotificationHandlingError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_handle_notification(
         FfiConverterTypeConfig.lower(config),
-        FfiConverterString.lower(notificationPayload),$0
+        FfiConverterString.lower(notificationPayload),
+        FfiConverterTypeNotificationToggles.lower(notificationToggles),$0
     )
 })
 }
@@ -7597,7 +7670,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 32529) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 38954) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 18957) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 23900) {
