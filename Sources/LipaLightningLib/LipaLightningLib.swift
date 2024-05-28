@@ -7606,12 +7606,13 @@ public func getTermsAndConditionsStatus(environment: EnvironmentCode, seed: Data
     )
 })
 }
-public func handleNotification(config: Config, notificationPayload: String, notificationToggles: NotificationToggles)throws  -> Notification {
+public func handleNotification(config: Config, notificationPayload: String, notificationToggles: NotificationToggles, timeout: TimeInterval)throws  -> Notification {
     return try  FfiConverterTypeNotification.lift(try rustCallWithError(FfiConverterTypeNotificationHandlingError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_handle_notification(
         FfiConverterTypeConfig.lower(config),
         FfiConverterString.lower(notificationPayload),
-        FfiConverterTypeNotificationToggles.lower(notificationToggles),$0
+        FfiConverterTypeNotificationToggles.lower(notificationToggles),
+        FfiConverterDuration.lower(timeout),$0
     )
 })
 }
@@ -7670,7 +7671,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 32529) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 18957) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 53366) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 23900) {
