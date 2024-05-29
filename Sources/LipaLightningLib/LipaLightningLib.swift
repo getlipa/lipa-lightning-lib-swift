@@ -649,6 +649,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func logDebugInfo() throws 
     
+    func parsePhoneNumberPrefix(phoneNumber: String) throws 
+    
     func parsePhoneNumberToLightningAddress(phoneNumber: String) throws  -> String
     
     func payInvoice(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata) throws 
@@ -986,6 +988,13 @@ open func listRecipients()throws  -> [Recipient] {
     
 open func logDebugInfo()throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_log_debug_info(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+open func parsePhoneNumberPrefix(phoneNumber: String)throws  {try rustCallWithError(FfiConverterTypeParsePhoneNumberPrefixError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_parse_phone_number_prefix(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),$0
     )
 }
 }
@@ -5939,6 +5948,66 @@ extension ParsePhoneNumberError: Equatable, Hashable {}
 extension ParsePhoneNumberError: Error { }
 
 
+public enum ParsePhoneNumberPrefixError {
+
+    
+    
+    case Incomplete
+    case InvalidCharacter(at: UInt32
+    )
+    case UnsupportedCountry
+}
+
+
+public struct FfiConverterTypeParsePhoneNumberPrefixError: FfiConverterRustBuffer {
+    typealias SwiftType = ParsePhoneNumberPrefixError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ParsePhoneNumberPrefixError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Incomplete
+        case 2: return .InvalidCharacter(
+            at: try FfiConverterUInt32.read(from: &buf)
+            )
+        case 3: return .UnsupportedCountry
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ParsePhoneNumberPrefixError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case .Incomplete:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .InvalidCharacter(at):
+            writeInt(&buf, Int32(2))
+            FfiConverterUInt32.write(at, into: &buf)
+            
+        
+        case .UnsupportedCountry:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+extension ParsePhoneNumberPrefixError: Equatable, Hashable {}
+
+extension ParsePhoneNumberPrefixError: Error { }
+
+
 public enum PayError {
 
     
@@ -7780,6 +7849,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_log_debug_info() != 60092) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_parse_phone_number_prefix() != 63325) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_parse_phone_number_to_lightning_address() != 44470) {
