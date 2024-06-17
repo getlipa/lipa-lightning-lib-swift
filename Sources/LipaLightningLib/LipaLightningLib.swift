@@ -153,7 +153,7 @@ fileprivate func writeDouble(_ writer: inout [UInt8], _ value: Double) {
 }
 
 // Protocol for types that transfer other types across the FFI. This is
-// analogous go the Rust trait of the same name.
+// analogous to the Rust trait of the same name.
 fileprivate protocol FfiConverter {
     associatedtype FfiType
     associatedtype SwiftType
@@ -253,18 +253,19 @@ fileprivate extension RustCallStatus {
 }
 
 private func rustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T {
-    try makeRustCall(callback, errorHandler: nil)
+    let neverThrow: ((RustBuffer) throws -> Never)? = nil
+    return try makeRustCall(callback, errorHandler: neverThrow)
 }
 
-private func rustCallWithError<T>(
-    _ errorHandler: @escaping (RustBuffer) throws -> Error,
+private func rustCallWithError<T, E: Swift.Error>(
+    _ errorHandler: @escaping (RustBuffer) throws -> E,
     _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T) throws -> T {
     try makeRustCall(callback, errorHandler: errorHandler)
 }
 
-private func makeRustCall<T>(
+private func makeRustCall<T, E: Swift.Error>(
     _ callback: (UnsafeMutablePointer<RustCallStatus>) -> T,
-    errorHandler: ((RustBuffer) throws -> Error)?
+    errorHandler: ((RustBuffer) throws -> E)?
 ) throws -> T {
     uniffiEnsureInitialized()
     var callStatus = RustCallStatus.init()
@@ -273,9 +274,9 @@ private func makeRustCall<T>(
     return returnedVal
 }
 
-private func uniffiCheckCallStatus(
+private func uniffiCheckCallStatus<E: Swift.Error>(
     callStatus: RustCallStatus,
-    errorHandler: ((RustBuffer) throws -> Error)?
+    errorHandler: ((RustBuffer) throws -> E)?
 ) throws {
     switch callStatus.code {
         case CALL_SUCCESS:
@@ -446,6 +447,19 @@ fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
     }
 }
 
+fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
+    typealias FfiType = Double
+    typealias SwiftType = Double
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Double {
+        return try lift(readDouble(&buf))
+    }
+
+    public static func write(_ value: Double, into buf: inout [UInt8]) {
+        writeDouble(&buf, lower(value))
+    }
+}
+
 fileprivate struct FfiConverterBool : FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -597,6 +611,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func changeTimezoneConfig(timezoneConfig: TzConfig) 
     
+    func checkClearWalletFeasibility() throws  -> RangeHit
+    
     func clearWallet(clearWalletInfo: ClearWalletInfo, destinationOnchainAddressData: BitcoinAddressData) throws 
     
     func createInvoice(amountSat: UInt64, lspFeeParams: OpeningFeeParams?, description: String, metadata: InvoiceCreationMetadata) throws  -> InvoiceDetails
@@ -638,8 +654,6 @@ public protocol LightningNodeProtocol : AnyObject {
     func getWalletPubkeyId() throws  -> String
     
     func hideTopup(id: String) throws 
-    
-    func isClearWalletFeasible() throws  -> Bool
     
     func listActionRequiredItems() throws  -> [ActionRequiredItem]
     
@@ -796,6 +810,13 @@ open func changeTimezoneConfig(timezoneConfig: TzConfig) {try! rustCall() {
         FfiConverterTypeTzConfig.lower(timezoneConfig),$0
     )
 }
+}
+    
+open func checkClearWalletFeasibility()throws  -> RangeHit {
+    return try  FfiConverterTypeRangeHit.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_check_clear_wallet_feasibility(self.uniffiClonePointer(),$0
+    )
+})
 }
     
 open func clearWallet(clearWalletInfo: ClearWalletInfo, destinationOnchainAddressData: BitcoinAddressData)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
@@ -956,13 +977,6 @@ open func hideTopup(id: String)throws  {try rustCallWithError(FfiConverterTypeLn
         FfiConverterString.lower(id),$0
     )
 }
-}
-    
-open func isClearWalletFeasible()throws  -> Bool {
-    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_is_clear_wallet_feasible(self.uniffiClonePointer(),$0
-    )
-})
 }
     
 open func listActionRequiredItems()throws  -> [ActionRequiredItem] {
@@ -1655,16 +1669,16 @@ public struct ClearWalletInfo {
     public var totalEstimatedFees: Amount
     public var onchainFee: Amount
     public var swapFee: Amount
-    public var feesHash: String
+    public var prepareResponse: PrepareOnchainPaymentResponse
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(clearAmount: Amount, totalEstimatedFees: Amount, onchainFee: Amount, swapFee: Amount, feesHash: String) {
+    public init(clearAmount: Amount, totalEstimatedFees: Amount, onchainFee: Amount, swapFee: Amount, prepareResponse: PrepareOnchainPaymentResponse) {
         self.clearAmount = clearAmount
         self.totalEstimatedFees = totalEstimatedFees
         self.onchainFee = onchainFee
         self.swapFee = swapFee
-        self.feesHash = feesHash
+        self.prepareResponse = prepareResponse
     }
 }
 
@@ -1684,7 +1698,7 @@ extension ClearWalletInfo: Equatable, Hashable {
         if lhs.swapFee != rhs.swapFee {
             return false
         }
-        if lhs.feesHash != rhs.feesHash {
+        if lhs.prepareResponse != rhs.prepareResponse {
             return false
         }
         return true
@@ -1695,7 +1709,7 @@ extension ClearWalletInfo: Equatable, Hashable {
         hasher.combine(totalEstimatedFees)
         hasher.combine(onchainFee)
         hasher.combine(swapFee)
-        hasher.combine(feesHash)
+        hasher.combine(prepareResponse)
     }
 }
 
@@ -1708,7 +1722,7 @@ public struct FfiConverterTypeClearWalletInfo: FfiConverterRustBuffer {
                 totalEstimatedFees: FfiConverterTypeAmount.read(from: &buf), 
                 onchainFee: FfiConverterTypeAmount.read(from: &buf), 
                 swapFee: FfiConverterTypeAmount.read(from: &buf), 
-                feesHash: FfiConverterString.read(from: &buf)
+                prepareResponse: FfiConverterTypePrepareOnchainPaymentResponse.read(from: &buf)
         )
     }
 
@@ -1717,7 +1731,7 @@ public struct FfiConverterTypeClearWalletInfo: FfiConverterRustBuffer {
         FfiConverterTypeAmount.write(value.totalEstimatedFees, into: &buf)
         FfiConverterTypeAmount.write(value.onchainFee, into: &buf)
         FfiConverterTypeAmount.write(value.swapFee, into: &buf)
-        FfiConverterString.write(value.feesHash, into: &buf)
+        FfiConverterTypePrepareOnchainPaymentResponse.write(value.prepareResponse, into: &buf)
     }
 }
 
@@ -3513,6 +3527,103 @@ public func FfiConverterTypePaymentMetadata_lower(_ value: PaymentMetadata) -> R
 }
 
 
+public struct PrepareOnchainPaymentResponse {
+    public var feesHash: String
+    public var feesPercentage: Double
+    public var feesLockup: UInt64
+    public var feesClaim: UInt64
+    public var senderAmountSat: UInt64
+    public var recipientAmountSat: UInt64
+    public var totalFees: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(feesHash: String, feesPercentage: Double, feesLockup: UInt64, feesClaim: UInt64, senderAmountSat: UInt64, recipientAmountSat: UInt64, totalFees: UInt64) {
+        self.feesHash = feesHash
+        self.feesPercentage = feesPercentage
+        self.feesLockup = feesLockup
+        self.feesClaim = feesClaim
+        self.senderAmountSat = senderAmountSat
+        self.recipientAmountSat = recipientAmountSat
+        self.totalFees = totalFees
+    }
+}
+
+
+
+extension PrepareOnchainPaymentResponse: Equatable, Hashable {
+    public static func ==(lhs: PrepareOnchainPaymentResponse, rhs: PrepareOnchainPaymentResponse) -> Bool {
+        if lhs.feesHash != rhs.feesHash {
+            return false
+        }
+        if lhs.feesPercentage != rhs.feesPercentage {
+            return false
+        }
+        if lhs.feesLockup != rhs.feesLockup {
+            return false
+        }
+        if lhs.feesClaim != rhs.feesClaim {
+            return false
+        }
+        if lhs.senderAmountSat != rhs.senderAmountSat {
+            return false
+        }
+        if lhs.recipientAmountSat != rhs.recipientAmountSat {
+            return false
+        }
+        if lhs.totalFees != rhs.totalFees {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(feesHash)
+        hasher.combine(feesPercentage)
+        hasher.combine(feesLockup)
+        hasher.combine(feesClaim)
+        hasher.combine(senderAmountSat)
+        hasher.combine(recipientAmountSat)
+        hasher.combine(totalFees)
+    }
+}
+
+
+public struct FfiConverterTypePrepareOnchainPaymentResponse: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PrepareOnchainPaymentResponse {
+        return
+            try PrepareOnchainPaymentResponse(
+                feesHash: FfiConverterString.read(from: &buf), 
+                feesPercentage: FfiConverterDouble.read(from: &buf), 
+                feesLockup: FfiConverterUInt64.read(from: &buf), 
+                feesClaim: FfiConverterUInt64.read(from: &buf), 
+                senderAmountSat: FfiConverterUInt64.read(from: &buf), 
+                recipientAmountSat: FfiConverterUInt64.read(from: &buf), 
+                totalFees: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PrepareOnchainPaymentResponse, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.feesHash, into: &buf)
+        FfiConverterDouble.write(value.feesPercentage, into: &buf)
+        FfiConverterUInt64.write(value.feesLockup, into: &buf)
+        FfiConverterUInt64.write(value.feesClaim, into: &buf)
+        FfiConverterUInt64.write(value.senderAmountSat, into: &buf)
+        FfiConverterUInt64.write(value.recipientAmountSat, into: &buf)
+        FfiConverterUInt64.write(value.totalFees, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypePrepareOnchainPaymentResponse_lift(_ buf: RustBuffer) throws -> PrepareOnchainPaymentResponse {
+    return try FfiConverterTypePrepareOnchainPaymentResponse.lift(buf)
+}
+
+public func FfiConverterTypePrepareOnchainPaymentResponse_lower(_ value: PrepareOnchainPaymentResponse) -> RustBuffer {
+    return FfiConverterTypePrepareOnchainPaymentResponse.lower(value)
+}
+
+
 public struct ResolveFailedSwapInfo {
     public var swapAddress: String
     public var recoveredAmount: Amount
@@ -4539,7 +4650,11 @@ public struct FfiConverterTypeDecodeDataError: FfiConverterRustBuffer {
 
 extension DecodeDataError: Equatable, Hashable {}
 
-extension DecodeDataError: Error { }
+extension DecodeDataError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -4965,7 +5080,11 @@ public struct FfiConverterTypeLnError: FfiConverterRustBuffer {
 
 extension LnError: Equatable, Hashable {}
 
-extension LnError: Error { }
+extension LnError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 
 public enum LnUrlPayError {
@@ -5035,7 +5154,11 @@ public struct FfiConverterTypeLnUrlPayError: FfiConverterRustBuffer {
 
 extension LnUrlPayError: Equatable, Hashable {}
 
-extension LnUrlPayError: Error { }
+extension LnUrlPayError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -5202,7 +5325,11 @@ public struct FfiConverterTypeLnUrlWithdrawError: FfiConverterRustBuffer {
 
 extension LnUrlWithdrawError: Equatable, Hashable {}
 
-extension LnUrlWithdrawError: Error { }
+extension LnUrlWithdrawError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -5401,7 +5528,11 @@ public struct FfiConverterTypeMnemonicError: FfiConverterRustBuffer {
 
 extension MnemonicError: Equatable, Hashable {}
 
-extension MnemonicError: Error { }
+extension MnemonicError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -5613,7 +5744,11 @@ public struct FfiConverterTypeNotificationHandlingError: FfiConverterRustBuffer 
 
 extension NotificationHandlingError: Equatable, Hashable {}
 
-extension NotificationHandlingError: Error { }
+extension NotificationHandlingError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -5877,7 +6012,11 @@ public struct FfiConverterTypeParseError: FfiConverterRustBuffer {
 
 extension ParseError: Equatable, Hashable {}
 
-extension ParseError: Error { }
+extension ParseError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 
 public enum ParsePhoneNumberError {
@@ -5945,7 +6084,11 @@ public struct FfiConverterTypeParsePhoneNumberError: FfiConverterRustBuffer {
 
 extension ParsePhoneNumberError: Equatable, Hashable {}
 
-extension ParsePhoneNumberError: Error { }
+extension ParsePhoneNumberError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 
 public enum ParsePhoneNumberPrefixError {
@@ -6005,7 +6148,11 @@ public struct FfiConverterTypeParsePhoneNumberPrefixError: FfiConverterRustBuffe
 
 extension ParsePhoneNumberPrefixError: Equatable, Hashable {}
 
-extension ParsePhoneNumberPrefixError: Error { }
+extension ParsePhoneNumberPrefixError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 
 public enum PayError {
@@ -6075,7 +6222,11 @@ public struct FfiConverterTypePayError: FfiConverterRustBuffer {
 
 extension PayError: Equatable, Hashable {}
 
-extension PayError: Error { }
+extension PayError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -6487,6 +6638,74 @@ extension PocketOfferError: Equatable, Hashable {}
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum RangeHit {
+    
+    case below(min: Amount
+    )
+    case `in`
+    case above(max: Amount
+    )
+}
+
+
+public struct FfiConverterTypeRangeHit: FfiConverterRustBuffer {
+    typealias SwiftType = RangeHit
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RangeHit {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .below(min: try FfiConverterTypeAmount.read(from: &buf)
+        )
+        
+        case 2: return .`in`
+        
+        case 3: return .above(max: try FfiConverterTypeAmount.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: RangeHit, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .below(min):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypeAmount.write(min, into: &buf)
+            
+        
+        case .`in`:
+            writeInt(&buf, Int32(2))
+        
+        
+        case let .above(max):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypeAmount.write(max, into: &buf)
+            
+        }
+    }
+}
+
+
+public func FfiConverterTypeRangeHit_lift(_ buf: RustBuffer) throws -> RangeHit {
+    return try FfiConverterTypeRangeHit.lift(buf)
+}
+
+public func FfiConverterTypeRangeHit_lower(_ value: RangeHit) -> RustBuffer {
+    return FfiConverterTypeRangeHit.lower(value)
+}
+
+
+
+extension RangeHit: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum Recipient {
     
     case lightningAddress(address: String
@@ -6705,7 +6924,11 @@ public struct FfiConverterTypeSimpleError: FfiConverterRustBuffer {
 
 extension SimpleError: Equatable, Hashable {}
 
-extension SimpleError: Error { }
+extension SimpleError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 
 public enum SwapError {
@@ -6773,7 +6996,11 @@ public struct FfiConverterTypeSwapError: FfiConverterRustBuffer {
 
 extension SwapError: Equatable, Hashable {}
 
-extension SwapError: Error { }
+extension SwapError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
 
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
@@ -7721,9 +7948,9 @@ private enum InitializationResult {
     case contractVersionMismatch
     case apiChecksumMismatch
 }
-// Use a global variables to perform the versioning checks. Swift ensures that
+// Use a global variable to perform the versioning checks. Swift ensures that
 // the code inside is only computed once.
-private var initializationResult: InitializationResult {
+private var initializationResult: InitializationResult = {
     // Get the bindings contract version from our ComponentInterface
     let bindings_contract_version = 26
     // Get the scaffolding contract version by calling the into the dylib
@@ -7771,6 +7998,9 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_change_timezone_config() != 21160) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_check_clear_wallet_feasibility() != 8958) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_clear_wallet() != 22211) {
@@ -7834,9 +8064,6 @@ private var initializationResult: InitializationResult {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_topup() != 9954) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_is_clear_wallet_feasible() != 27512) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_action_required_items() != 17350) {
@@ -7959,7 +8186,7 @@ private var initializationResult: InitializationResult {
 
     uniffiCallbackInitEventsCallback()
     return InitializationResult.ok
-}
+}()
 
 private func uniffiEnsureInitialized() {
     switch initializationResult {
