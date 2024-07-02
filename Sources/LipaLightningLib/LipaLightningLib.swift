@@ -3705,6 +3705,71 @@ public func FfiConverterTypeResolveFailedSwapInfo_lower(_ value: ResolveFailedSw
 }
 
 
+public struct ReverseSwapInfo {
+    public var paidOnchainAmount: Amount
+    public var claimTxid: String?
+    public var status: ReverseSwapStatus
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(paidOnchainAmount: Amount, claimTxid: String?, status: ReverseSwapStatus) {
+        self.paidOnchainAmount = paidOnchainAmount
+        self.claimTxid = claimTxid
+        self.status = status
+    }
+}
+
+
+
+extension ReverseSwapInfo: Equatable, Hashable {
+    public static func ==(lhs: ReverseSwapInfo, rhs: ReverseSwapInfo) -> Bool {
+        if lhs.paidOnchainAmount != rhs.paidOnchainAmount {
+            return false
+        }
+        if lhs.claimTxid != rhs.claimTxid {
+            return false
+        }
+        if lhs.status != rhs.status {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(paidOnchainAmount)
+        hasher.combine(claimTxid)
+        hasher.combine(status)
+    }
+}
+
+
+public struct FfiConverterTypeReverseSwapInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReverseSwapInfo {
+        return
+            try ReverseSwapInfo(
+                paidOnchainAmount: FfiConverterTypeAmount.read(from: &buf), 
+                claimTxid: FfiConverterOptionString.read(from: &buf), 
+                status: FfiConverterTypeReverseSwapStatus.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ReverseSwapInfo, into buf: inout [UInt8]) {
+        FfiConverterTypeAmount.write(value.paidOnchainAmount, into: &buf)
+        FfiConverterOptionString.write(value.claimTxid, into: &buf)
+        FfiConverterTypeReverseSwapStatus.write(value.status, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeReverseSwapInfo_lift(_ buf: RustBuffer) throws -> ReverseSwapInfo {
+    return try FfiConverterTypeReverseSwapInfo.lift(buf)
+}
+
+public func FfiConverterTypeReverseSwapInfo_lower(_ value: ReverseSwapInfo) -> RustBuffer {
+    return FfiConverterTypeReverseSwapInfo.lower(value)
+}
+
+
 public struct Secret {
     public var mnemonic: [String]
     public var passphrase: String
@@ -4332,6 +4397,8 @@ public enum Activity {
     )
     case swap(incomingPaymentInfo: IncomingPaymentInfo?, swapInfo: SwapInfo
     )
+    case reverseSwap(outgoingPaymentInfo: OutgoingPaymentInfo, reverseSwapInfo: ReverseSwapInfo
+    )
     case channelClose(channelCloseInfo: ChannelCloseInfo
     )
 }
@@ -4356,7 +4423,10 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         case 4: return .swap(incomingPaymentInfo: try FfiConverterOptionTypeIncomingPaymentInfo.read(from: &buf), swapInfo: try FfiConverterTypeSwapInfo.read(from: &buf)
         )
         
-        case 5: return .channelClose(channelCloseInfo: try FfiConverterTypeChannelCloseInfo.read(from: &buf)
+        case 5: return .reverseSwap(outgoingPaymentInfo: try FfiConverterTypeOutgoingPaymentInfo.read(from: &buf), reverseSwapInfo: try FfiConverterTypeReverseSwapInfo.read(from: &buf)
+        )
+        
+        case 6: return .channelClose(channelCloseInfo: try FfiConverterTypeChannelCloseInfo.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -4389,8 +4459,14 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
             FfiConverterTypeSwapInfo.write(swapInfo, into: &buf)
             
         
-        case let .channelClose(channelCloseInfo):
+        case let .reverseSwap(outgoingPaymentInfo,reverseSwapInfo):
             writeInt(&buf, Int32(5))
+            FfiConverterTypeOutgoingPaymentInfo.write(outgoingPaymentInfo, into: &buf)
+            FfiConverterTypeReverseSwapInfo.write(reverseSwapInfo, into: &buf)
+            
+        
+        case let .channelClose(channelCloseInfo):
+            writeInt(&buf, Int32(6))
             FfiConverterTypeChannelCloseInfo.write(channelCloseInfo, into: &buf)
             
         }
@@ -6778,6 +6854,82 @@ public func FfiConverterTypeRecipient_lower(_ value: Recipient) -> RustBuffer {
 
 
 extension Recipient: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
+public enum ReverseSwapStatus {
+    
+    case initial
+    case inProgress
+    case cancelled
+    case completedSeen
+    case completedConfirmed
+}
+
+
+public struct FfiConverterTypeReverseSwapStatus: FfiConverterRustBuffer {
+    typealias SwiftType = ReverseSwapStatus
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReverseSwapStatus {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .initial
+        
+        case 2: return .inProgress
+        
+        case 3: return .cancelled
+        
+        case 4: return .completedSeen
+        
+        case 5: return .completedConfirmed
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ReverseSwapStatus, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .initial:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .inProgress:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .cancelled:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .completedSeen:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .completedConfirmed:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeReverseSwapStatus_lift(_ buf: RustBuffer) throws -> ReverseSwapStatus {
+    return try FfiConverterTypeReverseSwapStatus.lift(buf)
+}
+
+public func FfiConverterTypeReverseSwapStatus_lower(_ value: ReverseSwapStatus) -> RustBuffer {
+    return FfiConverterTypeReverseSwapStatus.lower(value)
+}
+
+
+
+extension ReverseSwapStatus: Equatable, Hashable {}
 
 
 
