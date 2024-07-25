@@ -707,6 +707,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func setAnalyticsConfig(config: AnalyticsConfig) throws 
     
+    func setFeatureFlag(feature: FeatureFlag, flagEnabled: Bool) throws 
+    
     func setPaymentPersonalNote(paymentHash: String, note: String) throws 
     
     func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
@@ -1174,6 +1176,14 @@ open func retrieveLatestFiatTopupInfo()throws  -> FiatTopupInfo? {
 open func setAnalyticsConfig(config: AnalyticsConfig)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_set_analytics_config(self.uniffiClonePointer(),
         FfiConverterTypeAnalyticsConfig.lower(config),$0
+    )
+}
+}
+    
+open func setFeatureFlag(feature: FeatureFlag, flagEnabled: Bool)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_set_feature_flag(self.uniffiClonePointer(),
+        FfiConverterTypeFeatureFlag.lower(feature),
+        FfiConverterBool.lower(flagEnabled),$0
     )
 }
 }
@@ -4885,6 +4895,61 @@ extension EnvironmentCode: Equatable, Hashable {}
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum FeatureFlag {
+    
+    case lightningAddress
+    case phoneNumber
+}
+
+
+public struct FfiConverterTypeFeatureFlag: FfiConverterRustBuffer {
+    typealias SwiftType = FeatureFlag
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FeatureFlag {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .lightningAddress
+        
+        case 2: return .phoneNumber
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: FeatureFlag, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .lightningAddress:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .phoneNumber:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+public func FfiConverterTypeFeatureFlag_lift(_ buf: RustBuffer) throws -> FeatureFlag {
+    return try FfiConverterTypeFeatureFlag.lift(buf)
+}
+
+public func FfiConverterTypeFeatureFlag_lower(_ value: FeatureFlag) -> RustBuffer {
+    return FfiConverterTypeFeatureFlag.lower(value)
+}
+
+
+
+extension FeatureFlag: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum InvoiceAffordability {
     
     case notEnoughFunds
@@ -8294,6 +8359,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_analytics_config() != 38927) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_feature_flag() != 11828) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_payment_personal_note() != 48745) {
