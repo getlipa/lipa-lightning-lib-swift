@@ -18,6 +18,8 @@
 			<string>ios</string>
 			<key>SupportedPlatformVariant</key>
 			<string>simulator</string>
+			<key>MinimumOSVersion</key>
+   			<string>15.0</string>
 		</dict>
 		<dict>
 			<key>LibraryIdentifier</key>
@@ -30,6 +32,8 @@
 			</array>
 			<key>SupportedPlatform</key>
 			<string>ios</string>
+			<key>MinimumOSVersion</key>
+   			<string>15.0</string>
 		</dict>
 	</array>
 	<key>CFBundlePackageType</key>
