@@ -6,7 +6,7 @@ import Foundation
 let package = Package(
         name: "LipaLightningLib",
         platforms: [
-            .iOS(.v13)
+            .iOS(.v15)
         ],
         products: [
             .library(
@@ -16,8 +16,8 @@ let package = Package(
         targets: [
             .binaryTarget(
             name: "lipalightninglibFFI",
-            url: "https://github.com/getlipa/lipa-lightning-lib-swift/releases/download/v0.59.1-beta-test/lipalightninglibFFI.xcframework.zip",
-            checksum: "bd19da167a1e243e4ba224b011be2ce16effa01e7e35e8f9c1bc9c1476466d74"),
+            url: "https://github.com/getlipa/lipa-lightning-lib-swift/releases/download/v0.59.1-beta-test2/lipalightninglibFFI.xcframework.zip",
+            checksum: "3b5b508b24b284e7d98cf7964cde4a834f0615c3ba9a12061df3c14d10a4e24f"),
             .target(
                     name: "LipaLightningLib",
                     dependencies: ["lipalightninglibFFI"]),
