@@ -625,7 +625,7 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func getAnalyticsConfig() throws  -> AnalyticsConfig
     
-    func getChannelCloseResolvingFees() throws  -> ChannelCloseResolvingFees
+    func getChannelCloseResolvingFees() throws  -> ChannelCloseResolvingFees?
     
     func getExchangeRate()  -> ExchangeRate?
     
@@ -652,6 +652,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func getUnresolvedFailedSwaps() throws  -> [FailedSwapInfo]
     
     func getWalletPubkeyId() throws  -> String
+    
+    func hideChannelClosesFundsAvailableActionRequiredItem() throws 
     
     func hideTopup(id: String) throws 
     
@@ -869,8 +871,8 @@ open func getAnalyticsConfig()throws  -> AnalyticsConfig {
 })
 }
     
-open func getChannelCloseResolvingFees()throws  -> ChannelCloseResolvingFees {
-    return try  FfiConverterTypeChannelCloseResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func getChannelCloseResolvingFees()throws  -> ChannelCloseResolvingFees? {
+    return try  FfiConverterOptionTypeChannelCloseResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_channel_close_resolving_fees(self.uniffiClonePointer(),$0
     )
 })
@@ -972,6 +974,12 @@ open func getWalletPubkeyId()throws  -> String {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_wallet_pubkey_id(self.uniffiClonePointer(),$0
     )
 })
+}
+    
+open func hideChannelClosesFundsAvailableActionRequiredItem()throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_hide_channel_closes_funds_available_action_required_item(self.uniffiClonePointer(),$0
+    )
+}
 }
     
 open func hideTopup(id: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
@@ -7754,6 +7762,27 @@ fileprivate struct FfiConverterOptionTypeAmount: FfiConverterRustBuffer {
     }
 }
 
+fileprivate struct FfiConverterOptionTypeChannelCloseResolvingFees: FfiConverterRustBuffer {
+    typealias SwiftType = ChannelCloseResolvingFees?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeChannelCloseResolvingFees.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeChannelCloseResolvingFees.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
 fileprivate struct FfiConverterOptionTypeExchangeRate: FfiConverterRustBuffer {
     typealias SwiftType = ExchangeRate?
 
@@ -8238,7 +8267,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_analytics_config() != 15582) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_channel_close_resolving_fees() != 52527) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_channel_close_resolving_fees() != 63795) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_exchange_rate() != 15675) {
@@ -8278,6 +8307,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_wallet_pubkey_id() != 64850) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_channel_closes_funds_available_action_required_item() != 40997) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_topup() != 9954) {
