@@ -7,9 +7,9 @@
     <key>CFBundleName</key>
     <string>lipalightninglibFFI</string>
     <key>CFBundleVersion</key>
-    <string>0.60.1-beta-mock</string>
+    <string>0.61.0-beta</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.60.1-beta-mock</string>
+    <string>0.61.0-beta</string>
     <key>CFBundleExecutable</key>
     <string>lipalightninglibFFI</string>
     <key>MinimumOSVersion</key>

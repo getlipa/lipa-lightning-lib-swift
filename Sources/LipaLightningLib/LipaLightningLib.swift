@@ -1076,7 +1076,7 @@ open func prepareResolveFailedSwap(failedSwapInfo: FailedSwapInfo, toAddress: St
 }
     
 open func prepareSweep(address: String, onchainFeeRate: UInt32)throws  -> SweepInfo {
-    return try  FfiConverterTypeSweepInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    return try  FfiConverterTypeSweepInfo.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_prepare_sweep(self.uniffiClonePointer(),
         FfiConverterString.lower(address),
         FfiConverterUInt32.lower(onchainFeeRate),$0
@@ -1205,7 +1205,7 @@ open func setPaymentPersonalNote(paymentHash: String, note: String)throws  {try 
 }
     
 open func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?)throws  -> String {
-    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeSwapError.lift) {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_swap_onchain_to_lightning(self.uniffiClonePointer(),
         FfiConverterUInt32.lower(satsPerVbyte),
         FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
@@ -7227,6 +7227,78 @@ extension SwapError: Foundation.LocalizedError {
     }
 }
 
+
+public enum SweepError {
+
+    
+    
+    case Generic(err: String
+    )
+    case ServiceConnectivity(err: String
+    )
+    case InsufficientFunds(err: String
+    )
+}
+
+
+public struct FfiConverterTypeSweepError: FfiConverterRustBuffer {
+    typealias SwiftType = SweepError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SweepError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Generic(
+            err: try FfiConverterString.read(from: &buf)
+            )
+        case 2: return .ServiceConnectivity(
+            err: try FfiConverterString.read(from: &buf)
+            )
+        case 3: return .InsufficientFunds(
+            err: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SweepError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Generic(err):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(err, into: &buf)
+            
+        
+        case let .ServiceConnectivity(err):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(err, into: &buf)
+            
+        
+        case let .InsufficientFunds(err):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(err, into: &buf)
+            
+        }
+    }
+}
+
+
+extension SweepError: Equatable, Hashable {}
+
+extension SweepError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
@@ -8348,7 +8420,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_resolve_failed_swap() != 48057) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_sweep() != 23224) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_sweep() != 55427) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_lightning_address() != 22893) {
@@ -8399,7 +8471,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_payment_personal_note() != 48745) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_onchain_to_lightning() != 56740) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_onchain_to_lightning() != 2389) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 63698) {
