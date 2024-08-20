@@ -50,9 +50,11 @@ fileprivate extension ForeignBytes {
 
 fileprivate extension Data {
     init(rustBuffer: RustBuffer) {
-        // TODO: This copies the buffer. Can we read directly from a
-        // Rust buffer?
-        self.init(bytes: rustBuffer.data!, count: Int(rustBuffer.len))
+        self.init(
+            bytesNoCopy: rustBuffer.data!,
+            count: Int(rustBuffer.len),
+            deallocator: .none
+        )
     }
 }
 
@@ -599,7 +601,7 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 
 public protocol LightningNodeProtocol : AnyObject {
     
-    func acceptPocketTermsAndConditions(version: Int64) throws 
+    func acceptPocketTermsAndConditions(version: Int64, fingerprint: String) throws 
     
     func background() 
     
@@ -773,9 +775,10 @@ public convenience init(config: Config, eventsCallback: EventsCallback)throws  {
     
 
     
-open func acceptPocketTermsAndConditions(version: Int64)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func acceptPocketTermsAndConditions(version: Int64, fingerprint: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_accept_pocket_terms_and_conditions(self.uniffiClonePointer(),
-        FfiConverterInt64.lower(version),$0
+        FfiConverterInt64.lower(version),
+        FfiConverterString.lower(fingerprint),$0
     )
 }
 }
@@ -1422,6 +1425,71 @@ public func FfiConverterTypeBitcoinAddressData_lower(_ value: BitcoinAddressData
 }
 
 
+public struct BreezSdkConfig {
+    public var breezSdkApiKey: String
+    public var breezSdkPartnerCertificate: String
+    public var breezSdkPartnerKey: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(breezSdkApiKey: String, breezSdkPartnerCertificate: String, breezSdkPartnerKey: String) {
+        self.breezSdkApiKey = breezSdkApiKey
+        self.breezSdkPartnerCertificate = breezSdkPartnerCertificate
+        self.breezSdkPartnerKey = breezSdkPartnerKey
+    }
+}
+
+
+
+extension BreezSdkConfig: Equatable, Hashable {
+    public static func ==(lhs: BreezSdkConfig, rhs: BreezSdkConfig) -> Bool {
+        if lhs.breezSdkApiKey != rhs.breezSdkApiKey {
+            return false
+        }
+        if lhs.breezSdkPartnerCertificate != rhs.breezSdkPartnerCertificate {
+            return false
+        }
+        if lhs.breezSdkPartnerKey != rhs.breezSdkPartnerKey {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(breezSdkApiKey)
+        hasher.combine(breezSdkPartnerCertificate)
+        hasher.combine(breezSdkPartnerKey)
+    }
+}
+
+
+public struct FfiConverterTypeBreezSdkConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BreezSdkConfig {
+        return
+            try BreezSdkConfig(
+                breezSdkApiKey: FfiConverterString.read(from: &buf), 
+                breezSdkPartnerCertificate: FfiConverterString.read(from: &buf), 
+                breezSdkPartnerKey: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: BreezSdkConfig, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.breezSdkApiKey, into: &buf)
+        FfiConverterString.write(value.breezSdkPartnerCertificate, into: &buf)
+        FfiConverterString.write(value.breezSdkPartnerKey, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeBreezSdkConfig_lift(_ buf: RustBuffer) throws -> BreezSdkConfig {
+    return try FfiConverterTypeBreezSdkConfig.lift(buf)
+}
+
+public func FfiConverterTypeBreezSdkConfig_lower(_ value: BreezSdkConfig) -> RustBuffer {
+    return FfiConverterTypeBreezSdkConfig.lower(value)
+}
+
+
 public struct CalculateLspFeeResponse {
     public var lspFee: Amount
     public var lspFeeParams: OpeningFeeParams?
@@ -1764,24 +1832,30 @@ public func FfiConverterTypeClearWalletInfo_lower(_ value: ClearWalletInfo) -> R
 
 
 public struct Config {
-    public var environment: EnvironmentCode
     public var seed: Data
     public var fiatCurrency: String
     public var localPersistencePath: String
     public var timezoneConfig: TzConfig
     public var fileLoggingLevel: Level?
     public var phoneNumberAllowedCountriesIso31661Alpha2: [String]
+    public var remoteServicesConfig: RemoteServicesConfig
+    public var breezSdkConfig: BreezSdkConfig
+    public var maxRoutingFeeConfig: MaxRoutingFeeConfig
+    public var receiveLimitsConfig: ReceiveLimitsConfig
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(environment: EnvironmentCode, seed: Data, fiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String]) {
-        self.environment = environment
+    public init(seed: Data, fiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig) {
         self.seed = seed
         self.fiatCurrency = fiatCurrency
         self.localPersistencePath = localPersistencePath
         self.timezoneConfig = timezoneConfig
         self.fileLoggingLevel = fileLoggingLevel
         self.phoneNumberAllowedCountriesIso31661Alpha2 = phoneNumberAllowedCountriesIso31661Alpha2
+        self.remoteServicesConfig = remoteServicesConfig
+        self.breezSdkConfig = breezSdkConfig
+        self.maxRoutingFeeConfig = maxRoutingFeeConfig
+        self.receiveLimitsConfig = receiveLimitsConfig
     }
 }
 
@@ -1789,9 +1863,6 @@ public struct Config {
 
 extension Config: Equatable, Hashable {
     public static func ==(lhs: Config, rhs: Config) -> Bool {
-        if lhs.environment != rhs.environment {
-            return false
-        }
         if lhs.seed != rhs.seed {
             return false
         }
@@ -1810,17 +1881,32 @@ extension Config: Equatable, Hashable {
         if lhs.phoneNumberAllowedCountriesIso31661Alpha2 != rhs.phoneNumberAllowedCountriesIso31661Alpha2 {
             return false
         }
+        if lhs.remoteServicesConfig != rhs.remoteServicesConfig {
+            return false
+        }
+        if lhs.breezSdkConfig != rhs.breezSdkConfig {
+            return false
+        }
+        if lhs.maxRoutingFeeConfig != rhs.maxRoutingFeeConfig {
+            return false
+        }
+        if lhs.receiveLimitsConfig != rhs.receiveLimitsConfig {
+            return false
+        }
         return true
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(environment)
         hasher.combine(seed)
         hasher.combine(fiatCurrency)
         hasher.combine(localPersistencePath)
         hasher.combine(timezoneConfig)
         hasher.combine(fileLoggingLevel)
         hasher.combine(phoneNumberAllowedCountriesIso31661Alpha2)
+        hasher.combine(remoteServicesConfig)
+        hasher.combine(breezSdkConfig)
+        hasher.combine(maxRoutingFeeConfig)
+        hasher.combine(receiveLimitsConfig)
     }
 }
 
@@ -1829,24 +1915,30 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Config {
         return
             try Config(
-                environment: FfiConverterTypeEnvironmentCode.read(from: &buf), 
                 seed: FfiConverterData.read(from: &buf), 
                 fiatCurrency: FfiConverterString.read(from: &buf), 
                 localPersistencePath: FfiConverterString.read(from: &buf), 
                 timezoneConfig: FfiConverterTypeTzConfig.read(from: &buf), 
                 fileLoggingLevel: FfiConverterOptionTypeLevel.read(from: &buf), 
-                phoneNumberAllowedCountriesIso31661Alpha2: FfiConverterSequenceString.read(from: &buf)
+                phoneNumberAllowedCountriesIso31661Alpha2: FfiConverterSequenceString.read(from: &buf), 
+                remoteServicesConfig: FfiConverterTypeRemoteServicesConfig.read(from: &buf), 
+                breezSdkConfig: FfiConverterTypeBreezSdkConfig.read(from: &buf), 
+                maxRoutingFeeConfig: FfiConverterTypeMaxRoutingFeeConfig.read(from: &buf), 
+                receiveLimitsConfig: FfiConverterTypeReceiveLimitsConfig.read(from: &buf)
         )
     }
 
     public static func write(_ value: Config, into buf: inout [UInt8]) {
-        FfiConverterTypeEnvironmentCode.write(value.environment, into: &buf)
         FfiConverterData.write(value.seed, into: &buf)
         FfiConverterString.write(value.fiatCurrency, into: &buf)
         FfiConverterString.write(value.localPersistencePath, into: &buf)
         FfiConverterTypeTzConfig.write(value.timezoneConfig, into: &buf)
         FfiConverterOptionTypeLevel.write(value.fileLoggingLevel, into: &buf)
         FfiConverterSequenceString.write(value.phoneNumberAllowedCountriesIso31661Alpha2, into: &buf)
+        FfiConverterTypeRemoteServicesConfig.write(value.remoteServicesConfig, into: &buf)
+        FfiConverterTypeBreezSdkConfig.write(value.breezSdkConfig, into: &buf)
+        FfiConverterTypeMaxRoutingFeeConfig.write(value.maxRoutingFeeConfig, into: &buf)
+        FfiConverterTypeReceiveLimitsConfig.write(value.receiveLimitsConfig, into: &buf)
     }
 }
 
@@ -2937,6 +3029,63 @@ public func FfiConverterTypeLspFee_lower(_ value: LspFee) -> RustBuffer {
 }
 
 
+public struct MaxRoutingFeeConfig {
+    public var maxRoutingFeePermyriad: UInt16
+    public var maxRoutingFeeExemptFeeSats: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(maxRoutingFeePermyriad: UInt16, maxRoutingFeeExemptFeeSats: UInt64) {
+        self.maxRoutingFeePermyriad = maxRoutingFeePermyriad
+        self.maxRoutingFeeExemptFeeSats = maxRoutingFeeExemptFeeSats
+    }
+}
+
+
+
+extension MaxRoutingFeeConfig: Equatable, Hashable {
+    public static func ==(lhs: MaxRoutingFeeConfig, rhs: MaxRoutingFeeConfig) -> Bool {
+        if lhs.maxRoutingFeePermyriad != rhs.maxRoutingFeePermyriad {
+            return false
+        }
+        if lhs.maxRoutingFeeExemptFeeSats != rhs.maxRoutingFeeExemptFeeSats {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(maxRoutingFeePermyriad)
+        hasher.combine(maxRoutingFeeExemptFeeSats)
+    }
+}
+
+
+public struct FfiConverterTypeMaxRoutingFeeConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MaxRoutingFeeConfig {
+        return
+            try MaxRoutingFeeConfig(
+                maxRoutingFeePermyriad: FfiConverterUInt16.read(from: &buf), 
+                maxRoutingFeeExemptFeeSats: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: MaxRoutingFeeConfig, into buf: inout [UInt8]) {
+        FfiConverterUInt16.write(value.maxRoutingFeePermyriad, into: &buf)
+        FfiConverterUInt64.write(value.maxRoutingFeeExemptFeeSats, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeMaxRoutingFeeConfig_lift(_ buf: RustBuffer) throws -> MaxRoutingFeeConfig {
+    return try FfiConverterTypeMaxRoutingFeeConfig.lift(buf)
+}
+
+public func FfiConverterTypeMaxRoutingFeeConfig_lower(_ value: MaxRoutingFeeConfig) -> RustBuffer {
+    return FfiConverterTypeMaxRoutingFeeConfig.lower(value)
+}
+
+
 public struct NodeInfo {
     public var nodePubkey: String
     public var peers: [String]
@@ -3639,6 +3788,144 @@ public func FfiConverterTypePrepareOnchainPaymentResponse_lift(_ buf: RustBuffer
 
 public func FfiConverterTypePrepareOnchainPaymentResponse_lower(_ value: PrepareOnchainPaymentResponse) -> RustBuffer {
     return FfiConverterTypePrepareOnchainPaymentResponse.lower(value)
+}
+
+
+public struct ReceiveLimitsConfig {
+    public var maxReceiveAmountSat: UInt64
+    public var minReceiveChannelOpenFeeMultiplier: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(maxReceiveAmountSat: UInt64, minReceiveChannelOpenFeeMultiplier: Double) {
+        self.maxReceiveAmountSat = maxReceiveAmountSat
+        self.minReceiveChannelOpenFeeMultiplier = minReceiveChannelOpenFeeMultiplier
+    }
+}
+
+
+
+extension ReceiveLimitsConfig: Equatable, Hashable {
+    public static func ==(lhs: ReceiveLimitsConfig, rhs: ReceiveLimitsConfig) -> Bool {
+        if lhs.maxReceiveAmountSat != rhs.maxReceiveAmountSat {
+            return false
+        }
+        if lhs.minReceiveChannelOpenFeeMultiplier != rhs.minReceiveChannelOpenFeeMultiplier {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(maxReceiveAmountSat)
+        hasher.combine(minReceiveChannelOpenFeeMultiplier)
+    }
+}
+
+
+public struct FfiConverterTypeReceiveLimitsConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReceiveLimitsConfig {
+        return
+            try ReceiveLimitsConfig(
+                maxReceiveAmountSat: FfiConverterUInt64.read(from: &buf), 
+                minReceiveChannelOpenFeeMultiplier: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ReceiveLimitsConfig, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.maxReceiveAmountSat, into: &buf)
+        FfiConverterDouble.write(value.minReceiveChannelOpenFeeMultiplier, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeReceiveLimitsConfig_lift(_ buf: RustBuffer) throws -> ReceiveLimitsConfig {
+    return try FfiConverterTypeReceiveLimitsConfig.lift(buf)
+}
+
+public func FfiConverterTypeReceiveLimitsConfig_lower(_ value: ReceiveLimitsConfig) -> RustBuffer {
+    return FfiConverterTypeReceiveLimitsConfig.lower(value)
+}
+
+
+public struct RemoteServicesConfig {
+    public var backendUrl: String
+    public var pocketUrl: String
+    public var notificationWebhookBaseUrl: String
+    public var notificationWebhookSecretHex: String
+    public var lipaLightningDomain: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(backendUrl: String, pocketUrl: String, notificationWebhookBaseUrl: String, notificationWebhookSecretHex: String, lipaLightningDomain: String) {
+        self.backendUrl = backendUrl
+        self.pocketUrl = pocketUrl
+        self.notificationWebhookBaseUrl = notificationWebhookBaseUrl
+        self.notificationWebhookSecretHex = notificationWebhookSecretHex
+        self.lipaLightningDomain = lipaLightningDomain
+    }
+}
+
+
+
+extension RemoteServicesConfig: Equatable, Hashable {
+    public static func ==(lhs: RemoteServicesConfig, rhs: RemoteServicesConfig) -> Bool {
+        if lhs.backendUrl != rhs.backendUrl {
+            return false
+        }
+        if lhs.pocketUrl != rhs.pocketUrl {
+            return false
+        }
+        if lhs.notificationWebhookBaseUrl != rhs.notificationWebhookBaseUrl {
+            return false
+        }
+        if lhs.notificationWebhookSecretHex != rhs.notificationWebhookSecretHex {
+            return false
+        }
+        if lhs.lipaLightningDomain != rhs.lipaLightningDomain {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(backendUrl)
+        hasher.combine(pocketUrl)
+        hasher.combine(notificationWebhookBaseUrl)
+        hasher.combine(notificationWebhookSecretHex)
+        hasher.combine(lipaLightningDomain)
+    }
+}
+
+
+public struct FfiConverterTypeRemoteServicesConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RemoteServicesConfig {
+        return
+            try RemoteServicesConfig(
+                backendUrl: FfiConverterString.read(from: &buf), 
+                pocketUrl: FfiConverterString.read(from: &buf), 
+                notificationWebhookBaseUrl: FfiConverterString.read(from: &buf), 
+                notificationWebhookSecretHex: FfiConverterString.read(from: &buf), 
+                lipaLightningDomain: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RemoteServicesConfig, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.backendUrl, into: &buf)
+        FfiConverterString.write(value.pocketUrl, into: &buf)
+        FfiConverterString.write(value.notificationWebhookBaseUrl, into: &buf)
+        FfiConverterString.write(value.notificationWebhookSecretHex, into: &buf)
+        FfiConverterString.write(value.lipaLightningDomain, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeRemoteServicesConfig_lift(_ buf: RustBuffer) throws -> RemoteServicesConfig {
+    return try FfiConverterTypeRemoteServicesConfig.lift(buf)
+}
+
+public func FfiConverterTypeRemoteServicesConfig_lower(_ value: RemoteServicesConfig) -> RustBuffer {
+    return FfiConverterTypeRemoteServicesConfig.lower(value)
 }
 
 
@@ -4828,75 +5115,6 @@ public func FfiConverterTypeDecodedData_lower(_ value: DecodedData) -> RustBuffe
 
 
 extension DecodedData: Equatable, Hashable {}
-
-
-
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-
-public enum EnvironmentCode {
-    
-    case local
-    case dev
-    case stage
-    case prod
-}
-
-
-public struct FfiConverterTypeEnvironmentCode: FfiConverterRustBuffer {
-    typealias SwiftType = EnvironmentCode
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EnvironmentCode {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .local
-        
-        case 2: return .dev
-        
-        case 3: return .stage
-        
-        case 4: return .prod
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: EnvironmentCode, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case .local:
-            writeInt(&buf, Int32(1))
-        
-        
-        case .dev:
-            writeInt(&buf, Int32(2))
-        
-        
-        case .stage:
-            writeInt(&buf, Int32(3))
-        
-        
-        case .prod:
-            writeInt(&buf, Int32(4))
-        
-        }
-    }
-}
-
-
-public func FfiConverterTypeEnvironmentCode_lift(_ buf: RustBuffer) throws -> EnvironmentCode {
-    return try FfiConverterTypeEnvironmentCode.lift(buf)
-}
-
-public func FfiConverterTypeEnvironmentCode_lower(_ value: EnvironmentCode) -> RustBuffer {
-    return FfiConverterTypeEnvironmentCode.lower(value)
-}
-
-
-
-extension EnvironmentCode: Equatable, Hashable {}
 
 
 
@@ -8196,11 +8414,12 @@ fileprivate struct FfiConverterSequenceTypeRecipient: FfiConverterRustBuffer {
         return seq
     }
 }
-public func acceptTermsAndConditions(environment: EnvironmentCode, seed: Data, version: Int64)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+public func acceptTermsAndConditions(backendUrl: String, seed: Data, version: Int64, fingerprint: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_accept_terms_and_conditions(
-        FfiConverterTypeEnvironmentCode.lower(environment),
+        FfiConverterString.lower(backendUrl),
         FfiConverterData.lower(seed),
-        FfiConverterInt64.lower(version),$0
+        FfiConverterInt64.lower(version),
+        FfiConverterString.lower(fingerprint),$0
     )
 }
 }
@@ -8211,10 +8430,10 @@ public func generateSecret(passphrase: String)throws  -> Secret {
     )
 })
 }
-public func getTermsAndConditionsStatus(environment: EnvironmentCode, seed: Data, termsAndConditions: TermsAndConditions)throws  -> TermsAndConditionsStatus {
+public func getTermsAndConditionsStatus(backendUrl: String, seed: Data, termsAndConditions: TermsAndConditions)throws  -> TermsAndConditionsStatus {
     return try  FfiConverterTypeTermsAndConditionsStatus.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_get_terms_and_conditions_status(
-        FfiConverterTypeEnvironmentCode.lower(environment),
+        FfiConverterString.lower(backendUrl),
         FfiConverterData.lower(seed),
         FfiConverterTypeTermsAndConditions.lower(termsAndConditions),$0
     )
@@ -8244,9 +8463,9 @@ public func parseLightningAddress(address: String)throws  {try rustCallWithError
     )
 }
 }
-public func recoverLightningNode(environment: EnvironmentCode, seed: Data, localPersistencePath: String, fileLoggingLevel: Level?)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+public func recoverLightningNode(backendUrl: String, seed: Data, localPersistencePath: String, fileLoggingLevel: Level?)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_recover_lightning_node(
-        FfiConverterTypeEnvironmentCode.lower(environment),
+        FfiConverterString.lower(backendUrl),
         FfiConverterData.lower(seed),
         FfiConverterString.lower(localPersistencePath),
         FfiConverterOptionTypeLevel.lower(fileLoggingLevel),$0
@@ -8276,13 +8495,13 @@ private var initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_accept_terms_and_conditions() != 2731) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_accept_terms_and_conditions() != 11801) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_generate_secret() != 27916) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 32529) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 65178) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 53366) {
@@ -8294,13 +8513,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_func_parse_lightning_address() != 40400) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 45110) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 64552) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_words_by_prefix() != 18339) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 31695) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 25155) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_background() != 28178) {
