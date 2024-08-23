@@ -19,7 +19,7 @@
 			<key>SupportedPlatformVariant</key>
 			<string>simulator</string>
 			<key>MinimumOSVersion</key>
-   			<string>15.0</string>
+   			<string>16.0</string>
 		</dict>
 		<dict>
 			<key>LibraryIdentifier</key>
@@ -33,7 +33,7 @@
 			<key>SupportedPlatform</key>
 			<string>ios</string>
 			<key>MinimumOSVersion</key>
-   			<string>15.0</string>
+   			<string>16.0</string>
 		</dict>
 	</array>
 	<key>CFBundlePackageType</key>

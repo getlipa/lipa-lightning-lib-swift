@@ -13,6 +13,6 @@
     <key>CFBundleExecutable</key>
     <string>lipalightninglibFFI</string>
     <key>MinimumOSVersion</key>
-    <string>15.0</string>
+    <string>16.0</string>
 </dict>
 </plist>
