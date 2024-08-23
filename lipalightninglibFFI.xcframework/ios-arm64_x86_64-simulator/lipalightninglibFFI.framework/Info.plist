@@ -7,12 +7,12 @@
     <key>CFBundleName</key>
     <string>lipalightninglibFFI</string>
     <key>CFBundleVersion</key>
-    <string>0.62.05</string>
+    <string>0.62.06</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.62.05</string>
+    <string>0.62.06</string>
     <key>CFBundleExecutable</key>
     <string>lipalightninglibFFI</string>
     <key>MinimumOSVersion</key>
-    <string>16.0</string>
+    <string>16.4</string>
 </dict>
 </plist>
