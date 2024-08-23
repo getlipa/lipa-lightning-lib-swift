@@ -1,4 +1,4 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.9
 
 import PackageDescription
 import Foundation
@@ -16,8 +16,8 @@ let package = Package(
         targets: [
             .binaryTarget(
             name: "lipalightninglibFFI",
-            url: "https://github.com/getlipa/lipa-lightning-lib-swift/releases/download/v0.62.0-beta-test4/lipalightninglibFFI.xcframework.zip",
-            checksum: "6b80cdc99e65ffa34bf1be08d722799698a41ff1a04066ded8031cb13afa7bee"),
+            url: "https://github.com/getlipa/lipa-lightning-lib-swift/releases/download/v0.62.0-beta-test5/lipalightninglibFFI.xcframework.zip",
+            checksum: "0a4006790b4fde3fc29f943a18ee7bd3ba24a8712f6d2352275374395d359534"),
             .target(
                     name: "LipaLightningLib",
                     dependencies: ["lipalightninglibFFI"]),
