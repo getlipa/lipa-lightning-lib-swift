@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.5
 
 import PackageDescription
 import Foundation
@@ -6,7 +6,7 @@ import Foundation
 let package = Package(
         name: "LipaLightningLib",
         platforms: [
-            .iOS(.v16)
+            .iOS(.v15)
         ],
         products: [
             .library(
