@@ -7234,7 +7234,6 @@ public enum RuntimeErrorCode {
     case lspServiceUnavailable
     case backupServiceUnavailable
     case backupNotFound
-    case noOnChainFundsToResolve
     case nodeUnavailable
     case failedFundMigration
 }
@@ -7257,11 +7256,9 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
         
         case 5: return .backupNotFound
         
-        case 6: return .noOnChainFundsToResolve
+        case 6: return .nodeUnavailable
         
-        case 7: return .nodeUnavailable
-        
-        case 8: return .failedFundMigration
+        case 7: return .failedFundMigration
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -7291,16 +7288,12 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
             writeInt(&buf, Int32(5))
         
         
-        case .noOnChainFundsToResolve:
+        case .nodeUnavailable:
             writeInt(&buf, Int32(6))
         
         
-        case .nodeUnavailable:
-            writeInt(&buf, Int32(7))
-        
-        
         case .failedFundMigration:
-            writeInt(&buf, Int32(8))
+            writeInt(&buf, Int32(7))
         
         }
     }
