@@ -1687,14 +1687,16 @@ public func FfiConverterTypeChannelCloseResolvingFees_lower(_ value: ChannelClos
 
 public struct ChannelsInfo {
     public var localBalance: Amount
-    public var inboundCapacity: Amount
+    public var maxReceivableSinglePayment: Amount
+    public var totalInboundCapacity: Amount
     public var outboundCapacity: Amount
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(localBalance: Amount, inboundCapacity: Amount, outboundCapacity: Amount) {
+    public init(localBalance: Amount, maxReceivableSinglePayment: Amount, totalInboundCapacity: Amount, outboundCapacity: Amount) {
         self.localBalance = localBalance
-        self.inboundCapacity = inboundCapacity
+        self.maxReceivableSinglePayment = maxReceivableSinglePayment
+        self.totalInboundCapacity = totalInboundCapacity
         self.outboundCapacity = outboundCapacity
     }
 }
@@ -1706,7 +1708,10 @@ extension ChannelsInfo: Equatable, Hashable {
         if lhs.localBalance != rhs.localBalance {
             return false
         }
-        if lhs.inboundCapacity != rhs.inboundCapacity {
+        if lhs.maxReceivableSinglePayment != rhs.maxReceivableSinglePayment {
+            return false
+        }
+        if lhs.totalInboundCapacity != rhs.totalInboundCapacity {
             return false
         }
         if lhs.outboundCapacity != rhs.outboundCapacity {
@@ -1717,7 +1722,8 @@ extension ChannelsInfo: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(localBalance)
-        hasher.combine(inboundCapacity)
+        hasher.combine(maxReceivableSinglePayment)
+        hasher.combine(totalInboundCapacity)
         hasher.combine(outboundCapacity)
     }
 }
@@ -1728,14 +1734,16 @@ public struct FfiConverterTypeChannelsInfo: FfiConverterRustBuffer {
         return
             try ChannelsInfo(
                 localBalance: FfiConverterTypeAmount.read(from: &buf), 
-                inboundCapacity: FfiConverterTypeAmount.read(from: &buf), 
+                maxReceivableSinglePayment: FfiConverterTypeAmount.read(from: &buf), 
+                totalInboundCapacity: FfiConverterTypeAmount.read(from: &buf), 
                 outboundCapacity: FfiConverterTypeAmount.read(from: &buf)
         )
     }
 
     public static func write(_ value: ChannelsInfo, into buf: inout [UInt8]) {
         FfiConverterTypeAmount.write(value.localBalance, into: &buf)
-        FfiConverterTypeAmount.write(value.inboundCapacity, into: &buf)
+        FfiConverterTypeAmount.write(value.maxReceivableSinglePayment, into: &buf)
+        FfiConverterTypeAmount.write(value.totalInboundCapacity, into: &buf)
         FfiConverterTypeAmount.write(value.outboundCapacity, into: &buf)
     }
 }
