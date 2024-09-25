@@ -4020,13 +4020,15 @@ public func FfiConverterTypeResolveFailedSwapInfo_lower(_ value: ResolveFailedSw
 
 public struct ReverseSwapInfo {
     public var paidOnchainAmount: Amount
+    public var swapFeesAmount: Amount
     public var claimTxid: String?
     public var status: ReverseSwapStatus
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(paidOnchainAmount: Amount, claimTxid: String?, status: ReverseSwapStatus) {
+    public init(paidOnchainAmount: Amount, swapFeesAmount: Amount, claimTxid: String?, status: ReverseSwapStatus) {
         self.paidOnchainAmount = paidOnchainAmount
+        self.swapFeesAmount = swapFeesAmount
         self.claimTxid = claimTxid
         self.status = status
     }
@@ -4037,6 +4039,9 @@ public struct ReverseSwapInfo {
 extension ReverseSwapInfo: Equatable, Hashable {
     public static func ==(lhs: ReverseSwapInfo, rhs: ReverseSwapInfo) -> Bool {
         if lhs.paidOnchainAmount != rhs.paidOnchainAmount {
+            return false
+        }
+        if lhs.swapFeesAmount != rhs.swapFeesAmount {
             return false
         }
         if lhs.claimTxid != rhs.claimTxid {
@@ -4050,6 +4055,7 @@ extension ReverseSwapInfo: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(paidOnchainAmount)
+        hasher.combine(swapFeesAmount)
         hasher.combine(claimTxid)
         hasher.combine(status)
     }
@@ -4061,6 +4067,7 @@ public struct FfiConverterTypeReverseSwapInfo: FfiConverterRustBuffer {
         return
             try ReverseSwapInfo(
                 paidOnchainAmount: FfiConverterTypeAmount.read(from: &buf), 
+                swapFeesAmount: FfiConverterTypeAmount.read(from: &buf), 
                 claimTxid: FfiConverterOptionString.read(from: &buf), 
                 status: FfiConverterTypeReverseSwapStatus.read(from: &buf)
         )
@@ -4068,6 +4075,7 @@ public struct FfiConverterTypeReverseSwapInfo: FfiConverterRustBuffer {
 
     public static func write(_ value: ReverseSwapInfo, into buf: inout [UInt8]) {
         FfiConverterTypeAmount.write(value.paidOnchainAmount, into: &buf)
+        FfiConverterTypeAmount.write(value.swapFeesAmount, into: &buf)
         FfiConverterOptionString.write(value.claimTxid, into: &buf)
         FfiConverterTypeReverseSwapStatus.write(value.status, into: &buf)
     }
