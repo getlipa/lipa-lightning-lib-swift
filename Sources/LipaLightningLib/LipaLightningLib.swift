@@ -170,10 +170,16 @@ fileprivate protocol FfiConverter {
 fileprivate protocol FfiConverterPrimitive: FfiConverter where FfiType == SwiftType { }
 
 extension FfiConverterPrimitive {
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func lift(_ value: FfiType) throws -> SwiftType {
         return value
     }
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func lower(_ value: SwiftType) -> FfiType {
         return value
     }
@@ -184,6 +190,9 @@ extension FfiConverterPrimitive {
 fileprivate protocol FfiConverterRustBuffer: FfiConverter where FfiType == RustBuffer {}
 
 extension FfiConverterRustBuffer {
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func lift(_ buf: RustBuffer) throws -> SwiftType {
         var reader = createReader(data: Data(rustBuffer: buf))
         let value = try read(from: &reader)
@@ -194,6 +203,9 @@ extension FfiConverterRustBuffer {
         return value
     }
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func lower(_ value: SwiftType) -> RustBuffer {
           var writer = createWriter()
           write(value, into: &writer)
@@ -384,6 +396,9 @@ fileprivate class UniffiHandleMap<T> {
 // Public interface members begin here.
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
     typealias FfiType = UInt16
     typealias SwiftType = UInt16
@@ -397,6 +412,9 @@ fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
     typealias FfiType = UInt32
     typealias SwiftType = UInt32
@@ -410,6 +428,9 @@ fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
     typealias FfiType = Int32
     typealias SwiftType = Int32
@@ -423,6 +444,9 @@ fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     typealias FfiType = UInt64
     typealias SwiftType = UInt64
@@ -436,6 +460,9 @@ fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
     typealias FfiType = Int64
     typealias SwiftType = Int64
@@ -449,6 +476,9 @@ fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
     typealias FfiType = Double
     typealias SwiftType = Double
@@ -462,6 +492,9 @@ fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterBool : FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -483,6 +516,9 @@ fileprivate struct FfiConverterBool : FfiConverter {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterString: FfiConverter {
     typealias SwiftType = String
     typealias FfiType = RustBuffer
@@ -521,6 +557,9 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterData: FfiConverterRustBuffer {
     typealias SwiftType = Data
 
@@ -536,6 +575,9 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
     typealias SwiftType = Date
 
@@ -571,6 +613,9 @@ fileprivate struct FfiConverterTimestamp: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
     typealias SwiftType = TimeInterval
 
@@ -627,9 +672,11 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func getAnalyticsConfig() throws  -> AnalyticsConfig
     
-    func getChannelCloseResolvingFees() throws  -> ChannelCloseResolvingFees?
+    func getChannelCloseResolvingFees() throws  -> OnchainResolvingFees?
     
     func getExchangeRate()  -> ExchangeRate?
+    
+    func getFailedSwapResolvingFees(failedSwapInfo: FailedSwapInfo) throws  -> OnchainResolvingFees?
     
     func getHealthStatus() throws  -> BreezHealthCheckStatus
     
@@ -659,6 +706,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func hideTopup(id: String) throws 
     
+    func hideUnresolvedFailedSwapActionRequiredItem(failedSwapInfo: FailedSwapInfo) throws 
+    
     func listActionRequiredItems() throws  -> [ActionRequiredItem]
     
     func listCurrencyCodes()  -> [String]
@@ -681,7 +730,7 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func prepareResolveFailedSwap(failedSwapInfo: FailedSwapInfo, toAddress: String, onchainFeeRate: UInt32) throws  -> ResolveFailedSwapInfo
     
-    func prepareSweep(address: String, onchainFeeRate: UInt32) throws  -> SweepInfo
+    func prepareSweepFundsFromChannelCloses(address: String, onchainFeeRate: UInt32) throws  -> SweepInfo
     
     func queryLightningAddress() throws  -> String?
     
@@ -715,9 +764,11 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func setPaymentPersonalNote(paymentHash: String, note: String) throws 
     
-    func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
+    func swapChannelCloseFundsToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
     
-    func sweep(sweepInfo: SweepInfo) throws  -> String
+    func swapFailedSwapFundsToLightning(failedSwapInfo: FailedSwapInfo, satPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?) throws  -> String
+    
+    func sweepFundsFromChannelCloses(sweepInfo: SweepInfo) throws  -> String
     
     func verifyPhoneNumber(phoneNumber: String, otp: String) throws 
     
@@ -730,6 +781,9 @@ open class LightningNode:
     fileprivate let pointer: UnsafeMutableRawPointer!
 
     /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public struct NoPointer {
         public init() {}
     }
@@ -741,15 +795,21 @@ open class LightningNode:
         self.pointer = pointer
     }
 
-    /// This constructor can be used to instantiate a fake object.
-    /// - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    ///
-    /// - Warning:
-    ///     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public init(noPointer: NoPointer) {
         self.pointer = nil
     }
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public func uniffiClonePointer() -> UnsafeMutableRawPointer {
         return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_lightningnode(self.pointer, $0) }
     }
@@ -874,8 +934,8 @@ open func getAnalyticsConfig()throws  -> AnalyticsConfig {
 })
 }
     
-open func getChannelCloseResolvingFees()throws  -> ChannelCloseResolvingFees? {
-    return try  FfiConverterOptionTypeChannelCloseResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func getChannelCloseResolvingFees()throws  -> OnchainResolvingFees? {
+    return try  FfiConverterOptionTypeOnchainResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_channel_close_resolving_fees(self.uniffiClonePointer(),$0
     )
 })
@@ -884,6 +944,14 @@ open func getChannelCloseResolvingFees()throws  -> ChannelCloseResolvingFees? {
 open func getExchangeRate() -> ExchangeRate? {
     return try!  FfiConverterOptionTypeExchangeRate.lift(try! rustCall() {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_exchange_rate(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getFailedSwapResolvingFees(failedSwapInfo: FailedSwapInfo)throws  -> OnchainResolvingFees? {
+    return try  FfiConverterOptionTypeOnchainResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_failed_swap_resolving_fees(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),$0
     )
 })
 }
@@ -992,6 +1060,13 @@ open func hideTopup(id: String)throws  {try rustCallWithError(FfiConverterTypeLn
 }
 }
     
+open func hideUnresolvedFailedSwapActionRequiredItem(failedSwapInfo: FailedSwapInfo)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_hide_unresolved_failed_swap_action_required_item(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),$0
+    )
+}
+}
+    
 open func listActionRequiredItems()throws  -> [ActionRequiredItem] {
     return try  FfiConverterSequenceTypeActionRequiredItem.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_action_required_items(self.uniffiClonePointer(),$0
@@ -1078,9 +1153,9 @@ open func prepareResolveFailedSwap(failedSwapInfo: FailedSwapInfo, toAddress: St
 })
 }
     
-open func prepareSweep(address: String, onchainFeeRate: UInt32)throws  -> SweepInfo {
+open func prepareSweepFundsFromChannelCloses(address: String, onchainFeeRate: UInt32)throws  -> SweepInfo {
     return try  FfiConverterTypeSweepInfo.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_prepare_sweep(self.uniffiClonePointer(),
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_prepare_sweep_funds_from_channel_closes(self.uniffiClonePointer(),
         FfiConverterString.lower(address),
         FfiConverterUInt32.lower(onchainFeeRate),$0
     )
@@ -1207,18 +1282,28 @@ open func setPaymentPersonalNote(paymentHash: String, note: String)throws  {try 
 }
 }
     
-open func swapOnchainToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?)throws  -> String {
+open func swapChannelCloseFundsToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_swap_onchain_to_lightning(self.uniffiClonePointer(),
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_swap_channel_close_funds_to_lightning(self.uniffiClonePointer(),
         FfiConverterUInt32.lower(satsPerVbyte),
         FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
     )
 })
 }
     
-open func sweep(sweepInfo: SweepInfo)throws  -> String {
+open func swapFailedSwapFundsToLightning(failedSwapInfo: FailedSwapInfo, satPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_sweep(self.uniffiClonePointer(),
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_swap_failed_swap_funds_to_lightning(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),
+        FfiConverterUInt32.lower(satPerVbyte),
+        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParam),$0
+    )
+})
+}
+    
+open func sweepFundsFromChannelCloses(sweepInfo: SweepInfo)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_sweep_funds_from_channel_closes(self.uniffiClonePointer(),
         FfiConverterTypeSweepInfo.lower(sweepInfo),$0
     )
 })
@@ -1244,6 +1329,9 @@ open func withdrawLnurlw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amo
 
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLightningNode: FfiConverter {
 
     typealias FfiType = UnsafeMutableRawPointer
@@ -1278,10 +1366,16 @@ public struct FfiConverterTypeLightningNode: FfiConverter {
 
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLightningNode_lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningNode {
     return try FfiConverterTypeLightningNode.lift(pointer)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLightningNode_lower(_ value: LightningNode) -> UnsafeMutableRawPointer {
     return FfiConverterTypeLightningNode.lower(value)
 }
@@ -1319,6 +1413,9 @@ extension Amount: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeAmount: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Amount {
         return
@@ -1335,10 +1432,16 @@ public struct FfiConverterTypeAmount: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeAmount_lift(_ buf: RustBuffer) throws -> Amount {
     return try FfiConverterTypeAmount.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeAmount_lower(_ value: Amount) -> RustBuffer {
     return FfiConverterTypeAmount.lower(value)
 }
@@ -1394,6 +1497,9 @@ extension BitcoinAddressData: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeBitcoinAddressData: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BitcoinAddressData {
         return
@@ -1416,10 +1522,16 @@ public struct FfiConverterTypeBitcoinAddressData: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeBitcoinAddressData_lift(_ buf: RustBuffer) throws -> BitcoinAddressData {
     return try FfiConverterTypeBitcoinAddressData.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeBitcoinAddressData_lower(_ value: BitcoinAddressData) -> RustBuffer {
     return FfiConverterTypeBitcoinAddressData.lower(value)
 }
@@ -1463,6 +1575,9 @@ extension BreezSdkConfig: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeBreezSdkConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BreezSdkConfig {
         return
@@ -1481,10 +1596,16 @@ public struct FfiConverterTypeBreezSdkConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeBreezSdkConfig_lift(_ buf: RustBuffer) throws -> BreezSdkConfig {
     return try FfiConverterTypeBreezSdkConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeBreezSdkConfig_lower(_ value: BreezSdkConfig) -> RustBuffer {
     return FfiConverterTypeBreezSdkConfig.lower(value)
 }
@@ -1522,6 +1643,9 @@ extension CalculateLspFeeResponse: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeCalculateLspFeeResponse: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CalculateLspFeeResponse {
         return
@@ -1538,10 +1662,16 @@ public struct FfiConverterTypeCalculateLspFeeResponse: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeCalculateLspFeeResponse_lift(_ buf: RustBuffer) throws -> CalculateLspFeeResponse {
     return try FfiConverterTypeCalculateLspFeeResponse.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeCalculateLspFeeResponse_lower(_ value: CalculateLspFeeResponse) -> RustBuffer {
     return FfiConverterTypeCalculateLspFeeResponse.lower(value)
 }
@@ -1591,6 +1721,9 @@ extension ChannelCloseInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeChannelCloseInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChannelCloseInfo {
         return
@@ -1611,77 +1744,18 @@ public struct FfiConverterTypeChannelCloseInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeChannelCloseInfo_lift(_ buf: RustBuffer) throws -> ChannelCloseInfo {
     return try FfiConverterTypeChannelCloseInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeChannelCloseInfo_lower(_ value: ChannelCloseInfo) -> RustBuffer {
     return FfiConverterTypeChannelCloseInfo.lower(value)
-}
-
-
-public struct ChannelCloseResolvingFees {
-    public var swapFees: SwapToLightningFees?
-    public var sweepOnchainFeeEstimate: Amount
-    public var satPerVbyte: UInt32
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(swapFees: SwapToLightningFees?, sweepOnchainFeeEstimate: Amount, satPerVbyte: UInt32) {
-        self.swapFees = swapFees
-        self.sweepOnchainFeeEstimate = sweepOnchainFeeEstimate
-        self.satPerVbyte = satPerVbyte
-    }
-}
-
-
-
-extension ChannelCloseResolvingFees: Equatable, Hashable {
-    public static func ==(lhs: ChannelCloseResolvingFees, rhs: ChannelCloseResolvingFees) -> Bool {
-        if lhs.swapFees != rhs.swapFees {
-            return false
-        }
-        if lhs.sweepOnchainFeeEstimate != rhs.sweepOnchainFeeEstimate {
-            return false
-        }
-        if lhs.satPerVbyte != rhs.satPerVbyte {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(swapFees)
-        hasher.combine(sweepOnchainFeeEstimate)
-        hasher.combine(satPerVbyte)
-    }
-}
-
-
-public struct FfiConverterTypeChannelCloseResolvingFees: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChannelCloseResolvingFees {
-        return
-            try ChannelCloseResolvingFees(
-                swapFees: FfiConverterOptionTypeSwapToLightningFees.read(from: &buf), 
-                sweepOnchainFeeEstimate: FfiConverterTypeAmount.read(from: &buf), 
-                satPerVbyte: FfiConverterUInt32.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: ChannelCloseResolvingFees, into buf: inout [UInt8]) {
-        FfiConverterOptionTypeSwapToLightningFees.write(value.swapFees, into: &buf)
-        FfiConverterTypeAmount.write(value.sweepOnchainFeeEstimate, into: &buf)
-        FfiConverterUInt32.write(value.satPerVbyte, into: &buf)
-    }
-}
-
-
-public func FfiConverterTypeChannelCloseResolvingFees_lift(_ buf: RustBuffer) throws -> ChannelCloseResolvingFees {
-    return try FfiConverterTypeChannelCloseResolvingFees.lift(buf)
-}
-
-public func FfiConverterTypeChannelCloseResolvingFees_lower(_ value: ChannelCloseResolvingFees) -> RustBuffer {
-    return FfiConverterTypeChannelCloseResolvingFees.lower(value)
 }
 
 
@@ -1729,6 +1803,9 @@ extension ChannelsInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeChannelsInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChannelsInfo {
         return
@@ -1749,10 +1826,16 @@ public struct FfiConverterTypeChannelsInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeChannelsInfo_lift(_ buf: RustBuffer) throws -> ChannelsInfo {
     return try FfiConverterTypeChannelsInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeChannelsInfo_lower(_ value: ChannelsInfo) -> RustBuffer {
     return FfiConverterTypeChannelsInfo.lower(value)
 }
@@ -1808,6 +1891,9 @@ extension ClearWalletInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeClearWalletInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ClearWalletInfo {
         return
@@ -1830,10 +1916,16 @@ public struct FfiConverterTypeClearWalletInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeClearWalletInfo_lift(_ buf: RustBuffer) throws -> ClearWalletInfo {
     return try FfiConverterTypeClearWalletInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeClearWalletInfo_lower(_ value: ClearWalletInfo) -> RustBuffer {
     return FfiConverterTypeClearWalletInfo.lower(value)
 }
@@ -1919,6 +2011,9 @@ extension Config: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Config {
         return
@@ -1951,10 +2046,16 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeConfig_lift(_ buf: RustBuffer) throws -> Config {
     return try FfiConverterTypeConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeConfig_lower(_ value: Config) -> RustBuffer {
     return FfiConverterTypeConfig.lower(value)
 }
@@ -1998,6 +2099,9 @@ extension ExchangeRate: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeExchangeRate: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExchangeRate {
         return
@@ -2016,10 +2120,16 @@ public struct FfiConverterTypeExchangeRate: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeExchangeRate_lift(_ buf: RustBuffer) throws -> ExchangeRate {
     return try FfiConverterTypeExchangeRate.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeExchangeRate_lower(_ value: ExchangeRate) -> RustBuffer {
     return FfiConverterTypeExchangeRate.lower(value)
 }
@@ -2063,6 +2173,9 @@ extension FailedSwapInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeFailedSwapInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FailedSwapInfo {
         return
@@ -2081,10 +2194,16 @@ public struct FfiConverterTypeFailedSwapInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFailedSwapInfo_lift(_ buf: RustBuffer) throws -> FailedSwapInfo {
     return try FfiConverterTypeFailedSwapInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFailedSwapInfo_lower(_ value: FailedSwapInfo) -> RustBuffer {
     return FfiConverterTypeFailedSwapInfo.lower(value)
 }
@@ -2206,6 +2325,9 @@ extension FiatTopupInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopupInfo {
         return
@@ -2250,10 +2372,16 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFiatTopupInfo_lift(_ buf: RustBuffer) throws -> FiatTopupInfo {
     return try FfiConverterTypeFiatTopupInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFiatTopupInfo_lower(_ value: FiatTopupInfo) -> RustBuffer {
     return FfiConverterTypeFiatTopupInfo.lower(value)
 }
@@ -2303,6 +2431,9 @@ extension FiatValue: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeFiatValue: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatValue {
         return
@@ -2323,10 +2454,16 @@ public struct FfiConverterTypeFiatValue: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFiatValue_lift(_ buf: RustBuffer) throws -> FiatValue {
     return try FfiConverterTypeFiatValue.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFiatValue_lower(_ value: FiatValue) -> RustBuffer {
     return FfiConverterTypeFiatValue.lower(value)
 }
@@ -2382,6 +2519,9 @@ extension IncomingPaymentInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeIncomingPaymentInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> IncomingPaymentInfo {
         return
@@ -2404,10 +2544,16 @@ public struct FfiConverterTypeIncomingPaymentInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeIncomingPaymentInfo_lift(_ buf: RustBuffer) throws -> IncomingPaymentInfo {
     return try FfiConverterTypeIncomingPaymentInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeIncomingPaymentInfo_lower(_ value: IncomingPaymentInfo) -> RustBuffer {
     return FfiConverterTypeIncomingPaymentInfo.lower(value)
 }
@@ -2439,6 +2585,9 @@ extension InvoiceCreationMetadata: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeInvoiceCreationMetadata: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> InvoiceCreationMetadata {
         return
@@ -2453,10 +2602,16 @@ public struct FfiConverterTypeInvoiceCreationMetadata: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeInvoiceCreationMetadata_lift(_ buf: RustBuffer) throws -> InvoiceCreationMetadata {
     return try FfiConverterTypeInvoiceCreationMetadata.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeInvoiceCreationMetadata_lower(_ value: InvoiceCreationMetadata) -> RustBuffer {
     return FfiConverterTypeInvoiceCreationMetadata.lower(value)
 }
@@ -2530,6 +2685,9 @@ extension InvoiceDetails: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeInvoiceDetails: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> InvoiceDetails {
         return
@@ -2558,10 +2716,16 @@ public struct FfiConverterTypeInvoiceDetails: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeInvoiceDetails_lift(_ buf: RustBuffer) throws -> InvoiceDetails {
     return try FfiConverterTypeInvoiceDetails.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeInvoiceDetails_lower(_ value: InvoiceDetails) -> RustBuffer {
     return FfiConverterTypeInvoiceDetails.lower(value)
 }
@@ -2599,6 +2763,9 @@ extension ListActivitiesResponse: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeListActivitiesResponse: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ListActivitiesResponse {
         return
@@ -2615,10 +2782,16 @@ public struct FfiConverterTypeListActivitiesResponse: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeListActivitiesResponse_lift(_ buf: RustBuffer) throws -> ListActivitiesResponse {
     return try FfiConverterTypeListActivitiesResponse.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeListActivitiesResponse_lower(_ value: ListActivitiesResponse) -> RustBuffer {
     return FfiConverterTypeListActivitiesResponse.lower(value)
 }
@@ -2686,6 +2859,9 @@ extension LnUrlPayDetails: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlPayDetails: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlPayDetails {
         return
@@ -2712,10 +2888,16 @@ public struct FfiConverterTypeLnUrlPayDetails: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlPayDetails_lift(_ buf: RustBuffer) throws -> LnUrlPayDetails {
     return try FfiConverterTypeLnUrlPayDetails.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlPayDetails_lower(_ value: LnUrlPayDetails) -> RustBuffer {
     return FfiConverterTypeLnUrlPayDetails.lower(value)
 }
@@ -2795,6 +2977,9 @@ extension LnUrlPayRequestData: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlPayRequestData: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlPayRequestData {
         return
@@ -2825,10 +3010,16 @@ public struct FfiConverterTypeLnUrlPayRequestData: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlPayRequestData_lift(_ buf: RustBuffer) throws -> LnUrlPayRequestData {
     return try FfiConverterTypeLnUrlPayRequestData.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlPayRequestData_lower(_ value: LnUrlPayRequestData) -> RustBuffer {
     return FfiConverterTypeLnUrlPayRequestData.lower(value)
 }
@@ -2872,6 +3063,9 @@ extension LnUrlWithdrawDetails: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlWithdrawDetails: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlWithdrawDetails {
         return
@@ -2890,10 +3084,16 @@ public struct FfiConverterTypeLnUrlWithdrawDetails: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlWithdrawDetails_lift(_ buf: RustBuffer) throws -> LnUrlWithdrawDetails {
     return try FfiConverterTypeLnUrlWithdrawDetails.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlWithdrawDetails_lower(_ value: LnUrlWithdrawDetails) -> RustBuffer {
     return FfiConverterTypeLnUrlWithdrawDetails.lower(value)
 }
@@ -2949,6 +3149,9 @@ extension LnUrlWithdrawRequestData: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlWithdrawRequestData: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LnUrlWithdrawRequestData {
         return
@@ -2971,10 +3174,16 @@ public struct FfiConverterTypeLnUrlWithdrawRequestData: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlWithdrawRequestData_lift(_ buf: RustBuffer) throws -> LnUrlWithdrawRequestData {
     return try FfiConverterTypeLnUrlWithdrawRequestData.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlWithdrawRequestData_lower(_ value: LnUrlWithdrawRequestData) -> RustBuffer {
     return FfiConverterTypeLnUrlWithdrawRequestData.lower(value)
 }
@@ -3012,6 +3221,9 @@ extension LspFee: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLspFee: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LspFee {
         return
@@ -3028,10 +3240,16 @@ public struct FfiConverterTypeLspFee: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLspFee_lift(_ buf: RustBuffer) throws -> LspFee {
     return try FfiConverterTypeLspFee.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLspFee_lower(_ value: LspFee) -> RustBuffer {
     return FfiConverterTypeLspFee.lower(value)
 }
@@ -3069,6 +3287,9 @@ extension MaxRoutingFeeConfig: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeMaxRoutingFeeConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MaxRoutingFeeConfig {
         return
@@ -3085,10 +3306,16 @@ public struct FfiConverterTypeMaxRoutingFeeConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeMaxRoutingFeeConfig_lift(_ buf: RustBuffer) throws -> MaxRoutingFeeConfig {
     return try FfiConverterTypeMaxRoutingFeeConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeMaxRoutingFeeConfig_lower(_ value: MaxRoutingFeeConfig) -> RustBuffer {
     return FfiConverterTypeMaxRoutingFeeConfig.lower(value)
 }
@@ -3138,6 +3365,9 @@ extension NodeInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeNodeInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NodeInfo {
         return
@@ -3158,10 +3388,16 @@ public struct FfiConverterTypeNodeInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNodeInfo_lift(_ buf: RustBuffer) throws -> NodeInfo {
     return try FfiConverterTypeNodeInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNodeInfo_lower(_ value: NodeInfo) -> RustBuffer {
     return FfiConverterTypeNodeInfo.lower(value)
 }
@@ -3205,6 +3441,9 @@ extension NotificationToggles: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeNotificationToggles: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NotificationToggles {
         return
@@ -3223,10 +3462,16 @@ public struct FfiConverterTypeNotificationToggles: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNotificationToggles_lift(_ buf: RustBuffer) throws -> NotificationToggles {
     return try FfiConverterTypeNotificationToggles.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNotificationToggles_lower(_ value: NotificationToggles) -> RustBuffer {
     return FfiConverterTypeNotificationToggles.lower(value)
 }
@@ -3288,6 +3533,9 @@ extension OfferInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OfferInfo {
         return
@@ -3312,12 +3560,92 @@ public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOfferInfo_lift(_ buf: RustBuffer) throws -> OfferInfo {
     return try FfiConverterTypeOfferInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOfferInfo_lower(_ value: OfferInfo) -> RustBuffer {
     return FfiConverterTypeOfferInfo.lower(value)
+}
+
+
+public struct OnchainResolvingFees {
+    public var swapFees: SwapToLightningFees?
+    public var sweepOnchainFeeEstimate: Amount
+    public var satPerVbyte: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(swapFees: SwapToLightningFees?, sweepOnchainFeeEstimate: Amount, satPerVbyte: UInt32) {
+        self.swapFees = swapFees
+        self.sweepOnchainFeeEstimate = sweepOnchainFeeEstimate
+        self.satPerVbyte = satPerVbyte
+    }
+}
+
+
+
+extension OnchainResolvingFees: Equatable, Hashable {
+    public static func ==(lhs: OnchainResolvingFees, rhs: OnchainResolvingFees) -> Bool {
+        if lhs.swapFees != rhs.swapFees {
+            return false
+        }
+        if lhs.sweepOnchainFeeEstimate != rhs.sweepOnchainFeeEstimate {
+            return false
+        }
+        if lhs.satPerVbyte != rhs.satPerVbyte {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(swapFees)
+        hasher.combine(sweepOnchainFeeEstimate)
+        hasher.combine(satPerVbyte)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOnchainResolvingFees: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OnchainResolvingFees {
+        return
+            try OnchainResolvingFees(
+                swapFees: FfiConverterOptionTypeSwapToLightningFees.read(from: &buf), 
+                sweepOnchainFeeEstimate: FfiConverterTypeAmount.read(from: &buf), 
+                satPerVbyte: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OnchainResolvingFees, into buf: inout [UInt8]) {
+        FfiConverterOptionTypeSwapToLightningFees.write(value.swapFees, into: &buf)
+        FfiConverterTypeAmount.write(value.sweepOnchainFeeEstimate, into: &buf)
+        FfiConverterUInt32.write(value.satPerVbyte, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOnchainResolvingFees_lift(_ buf: RustBuffer) throws -> OnchainResolvingFees {
+    return try FfiConverterTypeOnchainResolvingFees.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOnchainResolvingFees_lower(_ value: OnchainResolvingFees) -> RustBuffer {
+    return FfiConverterTypeOnchainResolvingFees.lower(value)
 }
 
 
@@ -3377,6 +3705,9 @@ extension OpeningFeeParams: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeOpeningFeeParams: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OpeningFeeParams {
         return
@@ -3401,10 +3732,16 @@ public struct FfiConverterTypeOpeningFeeParams: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOpeningFeeParams_lift(_ buf: RustBuffer) throws -> OpeningFeeParams {
     return try FfiConverterTypeOpeningFeeParams.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOpeningFeeParams_lower(_ value: OpeningFeeParams) -> RustBuffer {
     return FfiConverterTypeOpeningFeeParams.lower(value)
 }
@@ -3454,6 +3791,9 @@ extension OutgoingPaymentInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeOutgoingPaymentInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OutgoingPaymentInfo {
         return
@@ -3474,10 +3814,16 @@ public struct FfiConverterTypeOutgoingPaymentInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOutgoingPaymentInfo_lift(_ buf: RustBuffer) throws -> OutgoingPaymentInfo {
     return try FfiConverterTypeOutgoingPaymentInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOutgoingPaymentInfo_lower(_ value: OutgoingPaymentInfo) -> RustBuffer {
     return FfiConverterTypeOutgoingPaymentInfo.lower(value)
 }
@@ -3515,6 +3861,9 @@ extension PaymentAmountLimits: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePaymentAmountLimits: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PaymentAmountLimits {
         return
@@ -3531,10 +3880,16 @@ public struct FfiConverterTypePaymentAmountLimits: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentAmountLimits_lift(_ buf: RustBuffer) throws -> PaymentAmountLimits {
     return try FfiConverterTypePaymentAmountLimits.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentAmountLimits_lower(_ value: PaymentAmountLimits) -> RustBuffer {
     return FfiConverterTypePaymentAmountLimits.lower(value)
 }
@@ -3608,6 +3963,9 @@ extension PaymentInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePaymentInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PaymentInfo {
         return
@@ -3636,10 +3994,16 @@ public struct FfiConverterTypePaymentInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentInfo_lift(_ buf: RustBuffer) throws -> PaymentInfo {
     return try FfiConverterTypePaymentInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentInfo_lower(_ value: PaymentInfo) -> RustBuffer {
     return FfiConverterTypePaymentInfo.lower(value)
 }
@@ -3677,6 +4041,9 @@ extension PaymentMetadata: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePaymentMetadata: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PaymentMetadata {
         return
@@ -3693,10 +4060,16 @@ public struct FfiConverterTypePaymentMetadata: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentMetadata_lift(_ buf: RustBuffer) throws -> PaymentMetadata {
     return try FfiConverterTypePaymentMetadata.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentMetadata_lower(_ value: PaymentMetadata) -> RustBuffer {
     return FfiConverterTypePaymentMetadata.lower(value)
 }
@@ -3764,6 +4137,9 @@ extension PrepareOnchainPaymentResponse: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePrepareOnchainPaymentResponse: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PrepareOnchainPaymentResponse {
         return
@@ -3790,10 +4166,16 @@ public struct FfiConverterTypePrepareOnchainPaymentResponse: FfiConverterRustBuf
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePrepareOnchainPaymentResponse_lift(_ buf: RustBuffer) throws -> PrepareOnchainPaymentResponse {
     return try FfiConverterTypePrepareOnchainPaymentResponse.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePrepareOnchainPaymentResponse_lower(_ value: PrepareOnchainPaymentResponse) -> RustBuffer {
     return FfiConverterTypePrepareOnchainPaymentResponse.lower(value)
 }
@@ -3831,6 +4213,9 @@ extension ReceiveLimitsConfig: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeReceiveLimitsConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReceiveLimitsConfig {
         return
@@ -3847,10 +4232,16 @@ public struct FfiConverterTypeReceiveLimitsConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeReceiveLimitsConfig_lift(_ buf: RustBuffer) throws -> ReceiveLimitsConfig {
     return try FfiConverterTypeReceiveLimitsConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeReceiveLimitsConfig_lower(_ value: ReceiveLimitsConfig) -> RustBuffer {
     return FfiConverterTypeReceiveLimitsConfig.lower(value)
 }
@@ -3906,6 +4297,9 @@ extension RemoteServicesConfig: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeRemoteServicesConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RemoteServicesConfig {
         return
@@ -3928,10 +4322,16 @@ public struct FfiConverterTypeRemoteServicesConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRemoteServicesConfig_lift(_ buf: RustBuffer) throws -> RemoteServicesConfig {
     return try FfiConverterTypeRemoteServicesConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRemoteServicesConfig_lower(_ value: RemoteServicesConfig) -> RustBuffer {
     return FfiConverterTypeRemoteServicesConfig.lower(value)
 }
@@ -3987,6 +4387,9 @@ extension ResolveFailedSwapInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeResolveFailedSwapInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ResolveFailedSwapInfo {
         return
@@ -4009,10 +4412,16 @@ public struct FfiConverterTypeResolveFailedSwapInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeResolveFailedSwapInfo_lift(_ buf: RustBuffer) throws -> ResolveFailedSwapInfo {
     return try FfiConverterTypeResolveFailedSwapInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeResolveFailedSwapInfo_lower(_ value: ResolveFailedSwapInfo) -> RustBuffer {
     return FfiConverterTypeResolveFailedSwapInfo.lower(value)
 }
@@ -4062,6 +4471,9 @@ extension ReverseSwapInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeReverseSwapInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReverseSwapInfo {
         return
@@ -4082,10 +4494,16 @@ public struct FfiConverterTypeReverseSwapInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeReverseSwapInfo_lift(_ buf: RustBuffer) throws -> ReverseSwapInfo {
     return try FfiConverterTypeReverseSwapInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeReverseSwapInfo_lower(_ value: ReverseSwapInfo) -> RustBuffer {
     return FfiConverterTypeReverseSwapInfo.lower(value)
 }
@@ -4129,6 +4547,9 @@ extension Secret: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSecret: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Secret {
         return
@@ -4147,10 +4568,16 @@ public struct FfiConverterTypeSecret: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSecret_lift(_ buf: RustBuffer) throws -> Secret {
     return try FfiConverterTypeSecret.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSecret_lower(_ value: Secret) -> RustBuffer {
     return FfiConverterTypeSecret.lower(value)
 }
@@ -4200,6 +4627,9 @@ extension SwapAddressInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSwapAddressInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwapAddressInfo {
         return
@@ -4220,10 +4650,16 @@ public struct FfiConverterTypeSwapAddressInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSwapAddressInfo_lift(_ buf: RustBuffer) throws -> SwapAddressInfo {
     return try FfiConverterTypeSwapAddressInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSwapAddressInfo_lower(_ value: SwapAddressInfo) -> RustBuffer {
     return FfiConverterTypeSwapAddressInfo.lower(value)
 }
@@ -4233,13 +4669,15 @@ public struct SwapInfo {
     public var bitcoinAddress: String
     public var createdAt: TzTime
     public var paidAmount: Amount
+    public var txid: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(bitcoinAddress: String, createdAt: TzTime, paidAmount: Amount) {
+    public init(bitcoinAddress: String, createdAt: TzTime, paidAmount: Amount, txid: String) {
         self.bitcoinAddress = bitcoinAddress
         self.createdAt = createdAt
         self.paidAmount = paidAmount
+        self.txid = txid
     }
 }
 
@@ -4256,6 +4694,9 @@ extension SwapInfo: Equatable, Hashable {
         if lhs.paidAmount != rhs.paidAmount {
             return false
         }
+        if lhs.txid != rhs.txid {
+            return false
+        }
         return true
     }
 
@@ -4263,17 +4704,22 @@ extension SwapInfo: Equatable, Hashable {
         hasher.combine(bitcoinAddress)
         hasher.combine(createdAt)
         hasher.combine(paidAmount)
+        hasher.combine(txid)
     }
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSwapInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwapInfo {
         return
             try SwapInfo(
                 bitcoinAddress: FfiConverterString.read(from: &buf), 
                 createdAt: FfiConverterTypeTzTime.read(from: &buf), 
-                paidAmount: FfiConverterTypeAmount.read(from: &buf)
+                paidAmount: FfiConverterTypeAmount.read(from: &buf), 
+                txid: FfiConverterString.read(from: &buf)
         )
     }
 
@@ -4281,14 +4727,21 @@ public struct FfiConverterTypeSwapInfo: FfiConverterRustBuffer {
         FfiConverterString.write(value.bitcoinAddress, into: &buf)
         FfiConverterTypeTzTime.write(value.createdAt, into: &buf)
         FfiConverterTypeAmount.write(value.paidAmount, into: &buf)
+        FfiConverterString.write(value.txid, into: &buf)
     }
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSwapInfo_lift(_ buf: RustBuffer) throws -> SwapInfo {
     return try FfiConverterTypeSwapInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSwapInfo_lower(_ value: SwapInfo) -> RustBuffer {
     return FfiConverterTypeSwapInfo.lower(value)
 }
@@ -4344,6 +4797,9 @@ extension SwapToLightningFees: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSwapToLightningFees: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwapToLightningFees {
         return
@@ -4366,10 +4822,16 @@ public struct FfiConverterTypeSwapToLightningFees: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSwapToLightningFees_lift(_ buf: RustBuffer) throws -> SwapToLightningFees {
     return try FfiConverterTypeSwapToLightningFees.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSwapToLightningFees_lower(_ value: SwapToLightningFees) -> RustBuffer {
     return FfiConverterTypeSwapToLightningFees.lower(value)
 }
@@ -4419,6 +4881,9 @@ extension SweepInfo: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSweepInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SweepInfo {
         return
@@ -4439,10 +4904,16 @@ public struct FfiConverterTypeSweepInfo: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSweepInfo_lift(_ buf: RustBuffer) throws -> SweepInfo {
     return try FfiConverterTypeSweepInfo.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeSweepInfo_lower(_ value: SweepInfo) -> RustBuffer {
     return FfiConverterTypeSweepInfo.lower(value)
 }
@@ -4486,6 +4957,9 @@ extension TermsAndConditionsStatus: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeTermsAndConditionsStatus: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TermsAndConditionsStatus {
         return
@@ -4504,10 +4978,16 @@ public struct FfiConverterTypeTermsAndConditionsStatus: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTermsAndConditionsStatus_lift(_ buf: RustBuffer) throws -> TermsAndConditionsStatus {
     return try FfiConverterTypeTermsAndConditionsStatus.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTermsAndConditionsStatus_lower(_ value: TermsAndConditionsStatus) -> RustBuffer {
     return FfiConverterTypeTermsAndConditionsStatus.lower(value)
 }
@@ -4545,6 +5025,9 @@ extension TzConfig: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeTzConfig: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TzConfig {
         return
@@ -4561,10 +5044,16 @@ public struct FfiConverterTypeTzConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTzConfig_lift(_ buf: RustBuffer) throws -> TzConfig {
     return try FfiConverterTypeTzConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTzConfig_lower(_ value: TzConfig) -> RustBuffer {
     return FfiConverterTypeTzConfig.lower(value)
 }
@@ -4608,6 +5097,9 @@ extension TzTime: Equatable, Hashable {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeTzTime: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TzTime {
         return
@@ -4626,10 +5118,16 @@ public struct FfiConverterTypeTzTime: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTzTime_lift(_ buf: RustBuffer) throws -> TzTime {
     return try FfiConverterTypeTzTime.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTzTime_lower(_ value: TzTime) -> RustBuffer {
     return FfiConverterTypeTzTime.lower(value)
 }
@@ -4648,6 +5146,9 @@ public enum ActionRequiredItem {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeActionRequiredItem: FfiConverterRustBuffer {
     typealias SwiftType = ActionRequiredItem
 
@@ -4691,10 +5192,16 @@ public struct FfiConverterTypeActionRequiredItem: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeActionRequiredItem_lift(_ buf: RustBuffer) throws -> ActionRequiredItem {
     return try FfiConverterTypeActionRequiredItem.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeActionRequiredItem_lower(_ value: ActionRequiredItem) -> RustBuffer {
     return FfiConverterTypeActionRequiredItem.lower(value)
 }
@@ -4725,6 +5232,9 @@ public enum Activity {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
     typealias SwiftType = Activity
 
@@ -4795,10 +5305,16 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeActivity_lift(_ buf: RustBuffer) throws -> Activity {
     return try FfiConverterTypeActivity.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeActivity_lower(_ value: Activity) -> RustBuffer {
     return FfiConverterTypeActivity.lower(value)
 }
@@ -4819,6 +5335,9 @@ public enum AnalyticsConfig {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeAnalyticsConfig: FfiConverterRustBuffer {
     typealias SwiftType = AnalyticsConfig
 
@@ -4850,10 +5369,16 @@ public struct FfiConverterTypeAnalyticsConfig: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeAnalyticsConfig_lift(_ buf: RustBuffer) throws -> AnalyticsConfig {
     return try FfiConverterTypeAnalyticsConfig.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeAnalyticsConfig_lower(_ value: AnalyticsConfig) -> RustBuffer {
     return FfiConverterTypeAnalyticsConfig.lower(value)
 }
@@ -4875,6 +5400,9 @@ public enum BreezHealthCheckStatus {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeBreezHealthCheckStatus: FfiConverterRustBuffer {
     typealias SwiftType = BreezHealthCheckStatus
 
@@ -4912,10 +5440,16 @@ public struct FfiConverterTypeBreezHealthCheckStatus: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeBreezHealthCheckStatus_lift(_ buf: RustBuffer) throws -> BreezHealthCheckStatus {
     return try FfiConverterTypeBreezHealthCheckStatus.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeBreezHealthCheckStatus_lower(_ value: BreezHealthCheckStatus) -> RustBuffer {
     return FfiConverterTypeBreezHealthCheckStatus.lower(value)
 }
@@ -4936,6 +5470,9 @@ public enum ChannelCloseState {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeChannelCloseState: FfiConverterRustBuffer {
     typealias SwiftType = ChannelCloseState
 
@@ -4967,10 +5504,16 @@ public struct FfiConverterTypeChannelCloseState: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeChannelCloseState_lift(_ buf: RustBuffer) throws -> ChannelCloseState {
     return try FfiConverterTypeChannelCloseState.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeChannelCloseState_lower(_ value: ChannelCloseState) -> RustBuffer {
     return FfiConverterTypeChannelCloseState.lower(value)
 }
@@ -4995,6 +5538,9 @@ public enum DecodeDataError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeDecodeDataError: FfiConverterRustBuffer {
     typealias SwiftType = DecodeDataError
 
@@ -5069,6 +5615,9 @@ public enum DecodedData {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeDecodedData: FfiConverterRustBuffer {
     typealias SwiftType = DecodedData
 
@@ -5120,10 +5669,16 @@ public struct FfiConverterTypeDecodedData: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeDecodedData_lift(_ buf: RustBuffer) throws -> DecodedData {
     return try FfiConverterTypeDecodedData.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeDecodedData_lower(_ value: DecodedData) -> RustBuffer {
     return FfiConverterTypeDecodedData.lower(value)
 }
@@ -5144,6 +5699,9 @@ public enum FeatureFlag {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeFeatureFlag: FfiConverterRustBuffer {
     typealias SwiftType = FeatureFlag
 
@@ -5175,10 +5733,16 @@ public struct FfiConverterTypeFeatureFlag: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFeatureFlag_lift(_ buf: RustBuffer) throws -> FeatureFlag {
     return try FfiConverterTypeFeatureFlag.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeFeatureFlag_lower(_ value: FeatureFlag) -> RustBuffer {
     return FfiConverterTypeFeatureFlag.lower(value)
 }
@@ -5200,6 +5764,9 @@ public enum InvoiceAffordability {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeInvoiceAffordability: FfiConverterRustBuffer {
     typealias SwiftType = InvoiceAffordability
 
@@ -5237,10 +5804,16 @@ public struct FfiConverterTypeInvoiceAffordability: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeInvoiceAffordability_lift(_ buf: RustBuffer) throws -> InvoiceAffordability {
     return try FfiConverterTypeInvoiceAffordability.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeInvoiceAffordability_lower(_ value: InvoiceAffordability) -> RustBuffer {
     return FfiConverterTypeInvoiceAffordability.lower(value)
 }
@@ -5264,6 +5837,9 @@ public enum Level {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLevel: FfiConverterRustBuffer {
     typealias SwiftType = Level
 
@@ -5313,10 +5889,16 @@ public struct FfiConverterTypeLevel: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLevel_lift(_ buf: RustBuffer) throws -> Level {
     return try FfiConverterTypeLevel.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLevel_lower(_ value: Level) -> RustBuffer {
     return FfiConverterTypeLevel.lower(value)
 }
@@ -5340,6 +5922,9 @@ public enum LiquidityLimit {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLiquidityLimit: FfiConverterRustBuffer {
     typealias SwiftType = LiquidityLimit
 
@@ -5381,10 +5966,16 @@ public struct FfiConverterTypeLiquidityLimit: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLiquidityLimit_lift(_ buf: RustBuffer) throws -> LiquidityLimit {
     return try FfiConverterTypeLiquidityLimit.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLiquidityLimit_lower(_ value: LiquidityLimit) -> RustBuffer {
     return FfiConverterTypeLiquidityLimit.lower(value)
 }
@@ -5409,6 +6000,9 @@ public enum LnError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnError: FfiConverterRustBuffer {
     typealias SwiftType = LnError
 
@@ -5483,6 +6077,9 @@ public enum LnUrlPayError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlPayError: FfiConverterRustBuffer {
     typealias SwiftType = LnUrlPayError
 
@@ -5559,6 +6156,9 @@ public enum LnUrlPayErrorCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlPayErrorCode: FfiConverterRustBuffer {
     typealias SwiftType = LnUrlPayErrorCode
 
@@ -5626,10 +6226,16 @@ public struct FfiConverterTypeLnUrlPayErrorCode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlPayErrorCode_lift(_ buf: RustBuffer) throws -> LnUrlPayErrorCode {
     return try FfiConverterTypeLnUrlPayErrorCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlPayErrorCode_lower(_ value: LnUrlPayErrorCode) -> RustBuffer {
     return FfiConverterTypeLnUrlPayErrorCode.lower(value)
 }
@@ -5654,6 +6260,9 @@ public enum LnUrlWithdrawError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlWithdrawError: FfiConverterRustBuffer {
     typealias SwiftType = LnUrlWithdrawError
 
@@ -5725,6 +6334,9 @@ public enum LnUrlWithdrawErrorCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeLnUrlWithdrawErrorCode: FfiConverterRustBuffer {
     typealias SwiftType = LnUrlWithdrawErrorCode
 
@@ -5762,10 +6374,16 @@ public struct FfiConverterTypeLnUrlWithdrawErrorCode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlWithdrawErrorCode_lift(_ buf: RustBuffer) throws -> LnUrlWithdrawErrorCode {
     return try FfiConverterTypeLnUrlWithdrawErrorCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeLnUrlWithdrawErrorCode_lower(_ value: LnUrlWithdrawErrorCode) -> RustBuffer {
     return FfiConverterTypeLnUrlWithdrawErrorCode.lower(value)
 }
@@ -5788,6 +6406,9 @@ public enum MaxRoutingFeeMode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeMaxRoutingFeeMode: FfiConverterRustBuffer {
     typealias SwiftType = MaxRoutingFeeMode
 
@@ -5823,10 +6444,16 @@ public struct FfiConverterTypeMaxRoutingFeeMode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeMaxRoutingFeeMode_lift(_ buf: RustBuffer) throws -> MaxRoutingFeeMode {
     return try FfiConverterTypeMaxRoutingFeeMode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeMaxRoutingFeeMode_lower(_ value: MaxRoutingFeeMode) -> RustBuffer {
     return FfiConverterTypeMaxRoutingFeeMode.lower(value)
 }
@@ -5852,6 +6479,9 @@ public enum MnemonicError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeMnemonicError: FfiConverterRustBuffer {
     typealias SwiftType = MnemonicError
 
@@ -5929,6 +6559,9 @@ public enum Network {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
     typealias SwiftType = Network
 
@@ -5972,10 +6605,16 @@ public struct FfiConverterTypeNetwork: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNetwork_lift(_ buf: RustBuffer) throws -> Network {
     return try FfiConverterTypeNetwork.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNetwork_lower(_ value: Network) -> RustBuffer {
     return FfiConverterTypeNetwork.lower(value)
 }
@@ -6000,6 +6639,9 @@ public enum Notification {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
     typealias SwiftType = Notification
 
@@ -6045,10 +6687,16 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNotification_lift(_ buf: RustBuffer) throws -> Notification {
     return try FfiConverterTypeNotification.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNotification_lower(_ value: Notification) -> RustBuffer {
     return FfiConverterTypeNotification.lower(value)
 }
@@ -6073,6 +6721,9 @@ public enum NotificationHandlingError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeNotificationHandlingError: FfiConverterRustBuffer {
     typealias SwiftType = NotificationHandlingError
 
@@ -6147,6 +6798,9 @@ public enum NotificationHandlingErrorCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuffer {
     typealias SwiftType = NotificationHandlingErrorCode
 
@@ -6202,10 +6856,16 @@ public struct FfiConverterTypeNotificationHandlingErrorCode: FfiConverterRustBuf
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNotificationHandlingErrorCode_lift(_ buf: RustBuffer) throws -> NotificationHandlingErrorCode {
     return try FfiConverterTypeNotificationHandlingErrorCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeNotificationHandlingErrorCode_lower(_ value: NotificationHandlingErrorCode) -> RustBuffer {
     return FfiConverterTypeNotificationHandlingErrorCode.lower(value)
 }
@@ -6226,6 +6886,9 @@ public enum OfferKind {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
     typealias SwiftType = OfferKind
 
@@ -6260,10 +6923,16 @@ public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOfferKind_lift(_ buf: RustBuffer) throws -> OfferKind {
     return try FfiConverterTypeOfferKind.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOfferKind_lower(_ value: OfferKind) -> RustBuffer {
     return FfiConverterTypeOfferKind.lower(value)
 }
@@ -6286,6 +6955,9 @@ public enum OfferStatus {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeOfferStatus: FfiConverterRustBuffer {
     typealias SwiftType = OfferStatus
 
@@ -6329,10 +7001,16 @@ public struct FfiConverterTypeOfferStatus: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOfferStatus_lift(_ buf: RustBuffer) throws -> OfferStatus {
     return try FfiConverterTypeOfferStatus.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeOfferStatus_lower(_ value: OfferStatus) -> RustBuffer {
     return FfiConverterTypeOfferStatus.lower(value)
 }
@@ -6354,6 +7032,9 @@ public enum ParseError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeParseError: FfiConverterRustBuffer {
     typealias SwiftType = ParseError
 
@@ -6414,6 +7095,9 @@ public enum ParsePhoneNumberError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeParsePhoneNumberError: FfiConverterRustBuffer {
     typealias SwiftType = ParsePhoneNumberError
 
@@ -6485,6 +7169,9 @@ public enum ParsePhoneNumberPrefixError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeParsePhoneNumberPrefixError: FfiConverterRustBuffer {
     typealias SwiftType = ParsePhoneNumberPrefixError
 
@@ -6551,6 +7238,9 @@ public enum PayError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePayError: FfiConverterRustBuffer {
     typealias SwiftType = PayError
 
@@ -6628,6 +7318,9 @@ public enum PayErrorCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePayErrorCode: FfiConverterRustBuffer {
     typealias SwiftType = PayErrorCode
 
@@ -6701,10 +7394,16 @@ public struct FfiConverterTypePayErrorCode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePayErrorCode_lift(_ buf: RustBuffer) throws -> PayErrorCode {
     return try FfiConverterTypePayErrorCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePayErrorCode_lower(_ value: PayErrorCode) -> RustBuffer {
     return FfiConverterTypePayErrorCode.lower(value)
 }
@@ -6727,6 +7426,9 @@ public enum PaymentSource {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePaymentSource: FfiConverterRustBuffer {
     typealias SwiftType = PaymentSource
 
@@ -6770,10 +7472,16 @@ public struct FfiConverterTypePaymentSource: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentSource_lift(_ buf: RustBuffer) throws -> PaymentSource {
     return try FfiConverterTypePaymentSource.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentSource_lower(_ value: PaymentSource) -> RustBuffer {
     return FfiConverterTypePaymentSource.lower(value)
 }
@@ -6797,6 +7505,9 @@ public enum PaymentState {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePaymentState: FfiConverterRustBuffer {
     typealias SwiftType = PaymentState
 
@@ -6846,10 +7557,16 @@ public struct FfiConverterTypePaymentState: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentState_lift(_ buf: RustBuffer) throws -> PaymentState {
     return try FfiConverterTypePaymentState.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePaymentState_lower(_ value: PaymentState) -> RustBuffer {
     return FfiConverterTypePaymentState.lower(value)
 }
@@ -6876,6 +7593,9 @@ public enum PermanentFailureCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePermanentFailureCode: FfiConverterRustBuffer {
     typealias SwiftType = PermanentFailureCode
 
@@ -6943,10 +7663,16 @@ public struct FfiConverterTypePermanentFailureCode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePermanentFailureCode_lift(_ buf: RustBuffer) throws -> PermanentFailureCode {
     return try FfiConverterTypePermanentFailureCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePermanentFailureCode_lower(_ value: PermanentFailureCode) -> RustBuffer {
     return FfiConverterTypePermanentFailureCode.lower(value)
 }
@@ -6969,6 +7695,9 @@ public enum PocketOfferError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypePocketOfferError: FfiConverterRustBuffer {
     typealias SwiftType = PocketOfferError
 
@@ -7004,10 +7733,16 @@ public struct FfiConverterTypePocketOfferError: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePocketOfferError_lift(_ buf: RustBuffer) throws -> PocketOfferError {
     return try FfiConverterTypePocketOfferError.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypePocketOfferError_lower(_ value: PocketOfferError) -> RustBuffer {
     return FfiConverterTypePocketOfferError.lower(value)
 }
@@ -7031,6 +7766,9 @@ public enum RangeHit {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeRangeHit: FfiConverterRustBuffer {
     typealias SwiftType = RangeHit
 
@@ -7072,10 +7810,16 @@ public struct FfiConverterTypeRangeHit: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRangeHit_lift(_ buf: RustBuffer) throws -> RangeHit {
     return try FfiConverterTypeRangeHit.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRangeHit_lower(_ value: RangeHit) -> RustBuffer {
     return FfiConverterTypeRangeHit.lower(value)
 }
@@ -7101,6 +7845,9 @@ public enum Recipient {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
     typealias SwiftType = Recipient
 
@@ -7150,10 +7897,16 @@ public struct FfiConverterTypeRecipient: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRecipient_lift(_ buf: RustBuffer) throws -> Recipient {
     return try FfiConverterTypeRecipient.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRecipient_lower(_ value: Recipient) -> RustBuffer {
     return FfiConverterTypeRecipient.lower(value)
 }
@@ -7177,6 +7930,9 @@ public enum ReverseSwapStatus {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeReverseSwapStatus: FfiConverterRustBuffer {
     typealias SwiftType = ReverseSwapStatus
 
@@ -7226,10 +7982,16 @@ public struct FfiConverterTypeReverseSwapStatus: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeReverseSwapStatus_lift(_ buf: RustBuffer) throws -> ReverseSwapStatus {
     return try FfiConverterTypeReverseSwapStatus.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeReverseSwapStatus_lower(_ value: ReverseSwapStatus) -> RustBuffer {
     return FfiConverterTypeReverseSwapStatus.lower(value)
 }
@@ -7254,6 +8016,9 @@ public enum RuntimeErrorCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
     typealias SwiftType = RuntimeErrorCode
 
@@ -7309,10 +8074,16 @@ public struct FfiConverterTypeRuntimeErrorCode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRuntimeErrorCode_lift(_ buf: RustBuffer) throws -> RuntimeErrorCode {
     return try FfiConverterTypeRuntimeErrorCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeRuntimeErrorCode_lower(_ value: RuntimeErrorCode) -> RustBuffer {
     return FfiConverterTypeRuntimeErrorCode.lower(value)
 }
@@ -7333,6 +8104,9 @@ public enum SimpleError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSimpleError: FfiConverterRustBuffer {
     typealias SwiftType = SimpleError
 
@@ -7389,6 +8163,9 @@ public enum SwapError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSwapError: FfiConverterRustBuffer {
     typealias SwiftType = SwapError
 
@@ -7461,6 +8238,9 @@ public enum SweepError {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeSweepError: FfiConverterRustBuffer {
     typealias SwiftType = SweepError
 
@@ -7532,6 +8312,9 @@ public enum TemporaryFailureCode {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeTemporaryFailureCode: FfiConverterRustBuffer {
     typealias SwiftType = TemporaryFailureCode
 
@@ -7577,10 +8360,16 @@ public struct FfiConverterTypeTemporaryFailureCode: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTemporaryFailureCode_lift(_ buf: RustBuffer) throws -> TemporaryFailureCode {
     return try FfiConverterTypeTemporaryFailureCode.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTemporaryFailureCode_lower(_ value: TemporaryFailureCode) -> RustBuffer {
     return FfiConverterTypeTemporaryFailureCode.lower(value)
 }
@@ -7601,6 +8390,9 @@ public enum TermsAndConditions {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeTermsAndConditions: FfiConverterRustBuffer {
     typealias SwiftType = TermsAndConditions
 
@@ -7632,10 +8424,16 @@ public struct FfiConverterTypeTermsAndConditions: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTermsAndConditions_lift(_ buf: RustBuffer) throws -> TermsAndConditions {
     return try FfiConverterTypeTermsAndConditions.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeTermsAndConditions_lower(_ value: TermsAndConditions) -> RustBuffer {
     return FfiConverterTypeTermsAndConditions.lower(value)
 }
@@ -7660,6 +8458,9 @@ public enum UnsupportedDataType {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
     typealias SwiftType = UnsupportedDataType
 
@@ -7711,10 +8512,16 @@ public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
 }
 
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeUnsupportedDataType_lift(_ buf: RustBuffer) throws -> UnsupportedDataType {
     return try FfiConverterTypeUnsupportedDataType.lift(buf)
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 public func FfiConverterTypeUnsupportedDataType_lower(_ value: UnsupportedDataType) -> RustBuffer {
     return FfiConverterTypeUnsupportedDataType.lower(value)
 }
@@ -7944,32 +8751,53 @@ private func uniffiCallbackInitEventsCallback() {
 }
 
 // FfiConverter protocol for callback interfaces
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterCallbackInterfaceEventsCallback {
     fileprivate static var handleMap = UniffiHandleMap<EventsCallback>()
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 extension FfiConverterCallbackInterfaceEventsCallback : FfiConverter {
     typealias SwiftType = EventsCallback
     typealias FfiType = UInt64
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func lift(_ handle: UInt64) throws -> SwiftType {
         try handleMap.get(handle: handle)
     }
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         let handle: UInt64 = try readInt(&buf)
         return try lift(handle)
     }
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func lower(_ v: SwiftType) -> UInt64 {
         return handleMap.insert(obj: v)
     }
 
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     public static func write(_ v: SwiftType, into buf: inout [UInt8]) {
         writeInt(&buf, lower(v))
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
     typealias SwiftType = UInt64?
 
@@ -7991,6 +8819,9 @@ fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -8012,6 +8843,9 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTimestamp: FfiConverterRustBuffer {
     typealias SwiftType = Date?
 
@@ -8033,6 +8867,9 @@ fileprivate struct FfiConverterOptionTimestamp: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeAmount: FfiConverterRustBuffer {
     typealias SwiftType = Amount?
 
@@ -8054,27 +8891,9 @@ fileprivate struct FfiConverterOptionTypeAmount: FfiConverterRustBuffer {
     }
 }
 
-fileprivate struct FfiConverterOptionTypeChannelCloseResolvingFees: FfiConverterRustBuffer {
-    typealias SwiftType = ChannelCloseResolvingFees?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeChannelCloseResolvingFees.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeChannelCloseResolvingFees.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeExchangeRate: FfiConverterRustBuffer {
     typealias SwiftType = ExchangeRate?
 
@@ -8096,6 +8915,9 @@ fileprivate struct FfiConverterOptionTypeExchangeRate: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeFiatTopupInfo: FfiConverterRustBuffer {
     typealias SwiftType = FiatTopupInfo?
 
@@ -8117,6 +8939,9 @@ fileprivate struct FfiConverterOptionTypeFiatTopupInfo: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
     typealias SwiftType = FiatValue?
 
@@ -8138,6 +8963,9 @@ fileprivate struct FfiConverterOptionTypeFiatValue: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeIncomingPaymentInfo: FfiConverterRustBuffer {
     typealias SwiftType = IncomingPaymentInfo?
 
@@ -8159,6 +8987,33 @@ fileprivate struct FfiConverterOptionTypeIncomingPaymentInfo: FfiConverterRustBu
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeOnchainResolvingFees: FfiConverterRustBuffer {
+    typealias SwiftType = OnchainResolvingFees?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeOnchainResolvingFees.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeOnchainResolvingFees.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeOpeningFeeParams: FfiConverterRustBuffer {
     typealias SwiftType = OpeningFeeParams?
 
@@ -8180,6 +9035,9 @@ fileprivate struct FfiConverterOptionTypeOpeningFeeParams: FfiConverterRustBuffe
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeSwapToLightningFees: FfiConverterRustBuffer {
     typealias SwiftType = SwapToLightningFees?
 
@@ -8201,6 +9059,9 @@ fileprivate struct FfiConverterOptionTypeSwapToLightningFees: FfiConverterRustBu
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeTzTime: FfiConverterRustBuffer {
     typealias SwiftType = TzTime?
 
@@ -8222,6 +9083,9 @@ fileprivate struct FfiConverterOptionTypeTzTime: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeLevel: FfiConverterRustBuffer {
     typealias SwiftType = Level?
 
@@ -8243,6 +9107,9 @@ fileprivate struct FfiConverterOptionTypeLevel: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypePocketOfferError: FfiConverterRustBuffer {
     typealias SwiftType = PocketOfferError?
 
@@ -8264,6 +9131,9 @@ fileprivate struct FfiConverterOptionTypePocketOfferError: FfiConverterRustBuffe
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeRecipient: FfiConverterRustBuffer {
     typealias SwiftType = Recipient?
 
@@ -8285,6 +9155,9 @@ fileprivate struct FfiConverterOptionTypeRecipient: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     typealias SwiftType = [String]
 
@@ -8307,6 +9180,9 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeFailedSwapInfo: FfiConverterRustBuffer {
     typealias SwiftType = [FailedSwapInfo]
 
@@ -8329,6 +9205,9 @@ fileprivate struct FfiConverterSequenceTypeFailedSwapInfo: FfiConverterRustBuffe
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeOfferInfo: FfiConverterRustBuffer {
     typealias SwiftType = [OfferInfo]
 
@@ -8351,6 +9230,9 @@ fileprivate struct FfiConverterSequenceTypeOfferInfo: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeActionRequiredItem: FfiConverterRustBuffer {
     typealias SwiftType = [ActionRequiredItem]
 
@@ -8373,6 +9255,9 @@ fileprivate struct FfiConverterSequenceTypeActionRequiredItem: FfiConverterRustB
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeActivity: FfiConverterRustBuffer {
     typealias SwiftType = [Activity]
 
@@ -8395,6 +9280,9 @@ fileprivate struct FfiConverterSequenceTypeActivity: FfiConverterRustBuffer {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeRecipient: FfiConverterRustBuffer {
     typealias SwiftType = [Recipient]
 
@@ -8560,10 +9448,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_analytics_config() != 15582) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_channel_close_resolving_fees() != 63795) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_channel_close_resolving_fees() != 20341) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_exchange_rate() != 15675) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_failed_swap_resolving_fees() != 398) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_health_status() != 64525) {
@@ -8608,6 +9499,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_topup() != 9954) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_unresolved_failed_swap_action_required_item() != 22326) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_action_required_items() != 17350) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -8641,7 +9535,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_resolve_failed_swap() != 48057) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_sweep() != 55427) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_sweep_funds_from_channel_closes() != 4648) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_lightning_address() != 22893) {
@@ -8692,10 +9586,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_payment_personal_note() != 48745) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_onchain_to_lightning() != 2389) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_channel_close_funds_to_lightning() != 37915) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep() != 63698) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_failed_swap_funds_to_lightning() != 24245) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep_funds_from_channel_closes() != 53207) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_verify_phone_number() != 57506) {
