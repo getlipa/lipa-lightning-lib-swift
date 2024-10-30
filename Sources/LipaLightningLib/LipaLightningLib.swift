@@ -654,7 +654,7 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func calculateLspFee(amountSat: UInt64) throws  -> CalculateLspFeeResponse
     
-    func changeFiatCurrency(fiatCurrency: String) 
+    func changeFiatCurrency(fiatCurrency: String) throws 
     
     func changeTimezoneConfig(timezoneConfig: TzConfig) 
     
@@ -865,7 +865,7 @@ open func calculateLspFee(amountSat: UInt64)throws  -> CalculateLspFeeResponse {
 })
 }
     
-open func changeFiatCurrency(fiatCurrency: String) {try! rustCall() {
+open func changeFiatCurrency(fiatCurrency: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_change_fiat_currency(self.uniffiClonePointer(),
         FfiConverterString.lower(fiatCurrency),$0
     )
@@ -1933,7 +1933,7 @@ public func FfiConverterTypeClearWalletInfo_lower(_ value: ClearWalletInfo) -> R
 
 public struct Config {
     public var seed: Data
-    public var fiatCurrency: String
+    public var defaultFiatCurrency: String
     public var localPersistencePath: String
     public var timezoneConfig: TzConfig
     public var fileLoggingLevel: Level?
@@ -1945,9 +1945,9 @@ public struct Config {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(seed: Data, fiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig) {
+    public init(seed: Data, defaultFiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig) {
         self.seed = seed
-        self.fiatCurrency = fiatCurrency
+        self.defaultFiatCurrency = defaultFiatCurrency
         self.localPersistencePath = localPersistencePath
         self.timezoneConfig = timezoneConfig
         self.fileLoggingLevel = fileLoggingLevel
@@ -1966,7 +1966,7 @@ extension Config: Equatable, Hashable {
         if lhs.seed != rhs.seed {
             return false
         }
-        if lhs.fiatCurrency != rhs.fiatCurrency {
+        if lhs.defaultFiatCurrency != rhs.defaultFiatCurrency {
             return false
         }
         if lhs.localPersistencePath != rhs.localPersistencePath {
@@ -1998,7 +1998,7 @@ extension Config: Equatable, Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(seed)
-        hasher.combine(fiatCurrency)
+        hasher.combine(defaultFiatCurrency)
         hasher.combine(localPersistencePath)
         hasher.combine(timezoneConfig)
         hasher.combine(fileLoggingLevel)
@@ -2019,7 +2019,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
         return
             try Config(
                 seed: FfiConverterData.read(from: &buf), 
-                fiatCurrency: FfiConverterString.read(from: &buf), 
+                defaultFiatCurrency: FfiConverterString.read(from: &buf), 
                 localPersistencePath: FfiConverterString.read(from: &buf), 
                 timezoneConfig: FfiConverterTypeTzConfig.read(from: &buf), 
                 fileLoggingLevel: FfiConverterOptionTypeLevel.read(from: &buf), 
@@ -2033,7 +2033,7 @@ public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
 
     public static func write(_ value: Config, into buf: inout [UInt8]) {
         FfiConverterData.write(value.seed, into: &buf)
-        FfiConverterString.write(value.fiatCurrency, into: &buf)
+        FfiConverterString.write(value.defaultFiatCurrency, into: &buf)
         FfiConverterString.write(value.localPersistencePath, into: &buf)
         FfiConverterTypeTzConfig.write(value.timezoneConfig, into: &buf)
         FfiConverterOptionTypeLevel.write(value.fileLoggingLevel, into: &buf)
@@ -9421,7 +9421,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_calculate_lsp_fee() != 41445) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_change_fiat_currency() != 45001) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_change_fiat_currency() != 3943) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_change_timezone_config() != 21160) {
