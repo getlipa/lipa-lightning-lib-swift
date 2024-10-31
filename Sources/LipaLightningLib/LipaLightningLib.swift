@@ -4669,15 +4669,13 @@ public struct SwapInfo {
     public var bitcoinAddress: String
     public var createdAt: TzTime
     public var paidAmount: Amount
-    public var txid: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(bitcoinAddress: String, createdAt: TzTime, paidAmount: Amount, txid: String) {
+    public init(bitcoinAddress: String, createdAt: TzTime, paidAmount: Amount) {
         self.bitcoinAddress = bitcoinAddress
         self.createdAt = createdAt
         self.paidAmount = paidAmount
-        self.txid = txid
     }
 }
 
@@ -4694,9 +4692,6 @@ extension SwapInfo: Equatable, Hashable {
         if lhs.paidAmount != rhs.paidAmount {
             return false
         }
-        if lhs.txid != rhs.txid {
-            return false
-        }
         return true
     }
 
@@ -4704,7 +4699,6 @@ extension SwapInfo: Equatable, Hashable {
         hasher.combine(bitcoinAddress)
         hasher.combine(createdAt)
         hasher.combine(paidAmount)
-        hasher.combine(txid)
     }
 }
 
@@ -4718,8 +4712,7 @@ public struct FfiConverterTypeSwapInfo: FfiConverterRustBuffer {
             try SwapInfo(
                 bitcoinAddress: FfiConverterString.read(from: &buf), 
                 createdAt: FfiConverterTypeTzTime.read(from: &buf), 
-                paidAmount: FfiConverterTypeAmount.read(from: &buf), 
-                txid: FfiConverterString.read(from: &buf)
+                paidAmount: FfiConverterTypeAmount.read(from: &buf)
         )
     }
 
@@ -4727,7 +4720,6 @@ public struct FfiConverterTypeSwapInfo: FfiConverterRustBuffer {
         FfiConverterString.write(value.bitcoinAddress, into: &buf)
         FfiConverterTypeTzTime.write(value.createdAt, into: &buf)
         FfiConverterTypeAmount.write(value.paidAmount, into: &buf)
-        FfiConverterString.write(value.txid, into: &buf)
     }
 }
 
