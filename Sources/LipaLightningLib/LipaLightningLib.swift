@@ -644,9 +644,182 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 
 
 
+public protocol ActivitiesProtocol : AnyObject {
+    
+    func get(hash: String) throws  -> Activity
+    
+    func getByReverseSwap(reverseSwapId: String) throws  -> Activity?
+    
+    func getIncomingPayment(hash: String) throws  -> IncomingPaymentInfo
+    
+    func getOutgoingPayment(hash: String) throws  -> OutgoingPaymentInfo
+    
+    func list(numberOfActivities: UInt32) throws  -> ListActivitiesResponse
+    
+    func setPersonalNote(paymentHash: String, note: String) throws 
+    
+}
+
+open class Activities:
+    ActivitiesProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_activities(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_activities(pointer, $0) }
+    }
+
+    
+
+    
+open func get(hash: String)throws  -> Activity {
+    return try  FfiConverterTypeActivity.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_activities_get(self.uniffiClonePointer(),
+        FfiConverterString.lower(hash),$0
+    )
+})
+}
+    
+open func getByReverseSwap(reverseSwapId: String)throws  -> Activity? {
+    return try  FfiConverterOptionTypeActivity.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_activities_get_by_reverse_swap(self.uniffiClonePointer(),
+        FfiConverterString.lower(reverseSwapId),$0
+    )
+})
+}
+    
+open func getIncomingPayment(hash: String)throws  -> IncomingPaymentInfo {
+    return try  FfiConverterTypeIncomingPaymentInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_activities_get_incoming_payment(self.uniffiClonePointer(),
+        FfiConverterString.lower(hash),$0
+    )
+})
+}
+    
+open func getOutgoingPayment(hash: String)throws  -> OutgoingPaymentInfo {
+    return try  FfiConverterTypeOutgoingPaymentInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_activities_get_outgoing_payment(self.uniffiClonePointer(),
+        FfiConverterString.lower(hash),$0
+    )
+})
+}
+    
+open func list(numberOfActivities: UInt32)throws  -> ListActivitiesResponse {
+    return try  FfiConverterTypeListActivitiesResponse.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_activities_list(self.uniffiClonePointer(),
+        FfiConverterUInt32.lower(numberOfActivities),$0
+    )
+})
+}
+    
+open func setPersonalNote(paymentHash: String, note: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_activities_set_personal_note(self.uniffiClonePointer(),
+        FfiConverterString.lower(paymentHash),
+        FfiConverterString.lower(note),$0
+    )
+}
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeActivities: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Activities
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Activities {
+        return Activities(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Activities) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Activities {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Activities, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeActivities_lift(_ pointer: UnsafeMutableRawPointer) throws -> Activities {
+    return try FfiConverterTypeActivities.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeActivities_lower(_ value: Activities) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeActivities.lower(value)
+}
+
+
+
+
 public protocol LightningNodeProtocol : AnyObject {
     
     func acceptPocketTermsAndConditions(version: Int64, fingerprint: String) throws 
+    
+    func activities()  -> Activities
     
     func background() 
     
@@ -669,6 +842,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func foreground() 
     
     func generateSwapAddress(lspFeeParams: OpeningFeeParams?) throws  -> SwapAddressInfo
+    
+    func getActivity(hash: String) throws  -> Activity
     
     func getAnalyticsConfig() throws  -> AnalyticsConfig
     
@@ -843,6 +1018,13 @@ open func acceptPocketTermsAndConditions(version: Int64, fingerprint: String)thr
 }
 }
     
+open func activities() -> Activities {
+    return try!  FfiConverterTypeActivities.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_activities(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func background() {try! rustCall() {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_background(self.uniffiClonePointer(),$0
     )
@@ -923,6 +1105,14 @@ open func generateSwapAddress(lspFeeParams: OpeningFeeParams?)throws  -> SwapAdd
     return try  FfiConverterTypeSwapAddressInfo.lift(try rustCallWithError(FfiConverterTypeSwapError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_generate_swap_address(self.uniffiClonePointer(),
         FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
+    )
+})
+}
+    
+open func getActivity(hash: String)throws  -> Activity {
+    return try  FfiConverterTypeActivity.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_get_activity(self.uniffiClonePointer(),
+        FfiConverterString.lower(hash),$0
     )
 })
 }
@@ -8539,6 +8729,8 @@ public protocol EventsCallback : AnyObject {
     
     func swapReceived(paymentHash: String) 
     
+    func reverseSwapSent(reverseSwapId: String) 
+    
     func breezHealthStatusChangedTo(status: BreezHealthCheckStatus) 
     
     func synced() 
@@ -8672,6 +8864,30 @@ fileprivate struct UniffiCallbackInterfaceEventsCallback {
                 }
                 return uniffiObj.swapReceived(
                      paymentHash: try FfiConverterString.lift(paymentHash)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        reverseSwapSent: { (
+            uniffiHandle: UInt64,
+            reverseSwapId: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterCallbackInterfaceEventsCallback.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.reverseSwapSent(
+                     reverseSwapId: try FfiConverterString.lift(reverseSwapId)
                 )
             }
 
@@ -9078,6 +9294,30 @@ fileprivate struct FfiConverterOptionTypeTzTime: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeActivity: FfiConverterRustBuffer {
+    typealias SwiftType = Activity?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeActivity.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeActivity.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeLevel: FfiConverterRustBuffer {
     typealias SwiftType = Level?
 
@@ -9401,7 +9641,28 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_func_words_by_prefix() != 18339) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_activities_get() != 57920) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_activities_get_by_reverse_swap() != 62360) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_activities_get_incoming_payment() != 52578) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_activities_get_outgoing_payment() != 59419) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_activities_list() != 5217) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_activities_set_personal_note() != 42000) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 25155) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_activities() != 23299) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_background() != 28178) {
@@ -9435,6 +9696,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_generate_swap_address() != 19541) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_activity() != 53526) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_get_analytics_config() != 15582) {
@@ -9609,6 +9873,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_swap_received() != 19106) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_reverse_swap_sent() != 61435) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_breez_health_status_changed_to() != 40320) {
