@@ -644,6 +644,152 @@ fileprivate struct FfiConverterDuration: FfiConverterRustBuffer {
 
 
 
+public protocol ActionsRequiredProtocol : AnyObject {
+    
+    func dismissTopup(id: String) throws 
+    
+    func hideUnrecoverableChannelCloseFundsItem() throws 
+    
+    func hideUnrecoverableFailedSwapItem(failedSwapInfo: FailedSwapInfo) throws 
+    
+    func list() throws  -> [ActionRequiredItem]
+    
+}
+
+open class ActionsRequired:
+    ActionsRequiredProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_actionsrequired(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_actionsrequired(pointer, $0) }
+    }
+
+    
+
+    
+open func dismissTopup(id: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_actionsrequired_dismiss_topup(self.uniffiClonePointer(),
+        FfiConverterString.lower(id),$0
+    )
+}
+}
+    
+open func hideUnrecoverableChannelCloseFundsItem()throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_actionsrequired_hide_unrecoverable_channel_close_funds_item(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+open func hideUnrecoverableFailedSwapItem(failedSwapInfo: FailedSwapInfo)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_actionsrequired_hide_unrecoverable_failed_swap_item(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),$0
+    )
+}
+}
+    
+open func list()throws  -> [ActionRequiredItem] {
+    return try  FfiConverterSequenceTypeActionRequiredItem.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_actionsrequired_list(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeActionsRequired: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = ActionsRequired
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ActionsRequired {
+        return ActionsRequired(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: ActionsRequired) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ActionsRequired {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: ActionsRequired, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeActionsRequired_lift(_ pointer: UnsafeMutableRawPointer) throws -> ActionsRequired {
+    return try FfiConverterTypeActionsRequired.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeActionsRequired_lower(_ value: ActionsRequired) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeActionsRequired.lower(value)
+}
+
+
+
+
 public protocol ActivitiesProtocol : AnyObject {
     
     func get(hash: String) throws  -> Activity
@@ -815,9 +961,705 @@ public func FfiConverterTypeActivities_lower(_ value: Activities) -> UnsafeMutab
 
 
 
+public protocol Bolt11Protocol : AnyObject {
+    
+    func create(amountSat: UInt64, lspFeeParams: OpeningFeeParams?, description: String, metadata: InvoiceCreationMetadata) throws  -> InvoiceDetails
+    
+    func pay(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata) throws 
+    
+    func payOpenAmount(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: PaymentMetadata) throws 
+    
+}
+
+open class Bolt11:
+    Bolt11Protocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_bolt11(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_bolt11(pointer, $0) }
+    }
+
+    
+
+    
+open func create(amountSat: UInt64, lspFeeParams: OpeningFeeParams?, description: String, metadata: InvoiceCreationMetadata)throws  -> InvoiceDetails {
+    return try  FfiConverterTypeInvoiceDetails.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_bolt11_create(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amountSat),
+        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),
+        FfiConverterString.lower(description),
+        FfiConverterTypeInvoiceCreationMetadata.lower(metadata),$0
+    )
+})
+}
+    
+open func pay(invoiceDetails: InvoiceDetails, metadata: PaymentMetadata)throws  {try rustCallWithError(FfiConverterTypePayError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_bolt11_pay(self.uniffiClonePointer(),
+        FfiConverterTypeInvoiceDetails.lower(invoiceDetails),
+        FfiConverterTypePaymentMetadata.lower(metadata),$0
+    )
+}
+}
+    
+open func payOpenAmount(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: PaymentMetadata)throws  {try rustCallWithError(FfiConverterTypePayError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_bolt11_pay_open_amount(self.uniffiClonePointer(),
+        FfiConverterTypeInvoiceDetails.lower(invoiceDetails),
+        FfiConverterUInt64.lower(amountSat),
+        FfiConverterTypePaymentMetadata.lower(metadata),$0
+    )
+}
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBolt11: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Bolt11
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Bolt11 {
+        return Bolt11(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Bolt11) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bolt11 {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Bolt11, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBolt11_lift(_ pointer: UnsafeMutableRawPointer) throws -> Bolt11 {
+    return try FfiConverterTypeBolt11.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBolt11_lower(_ value: Bolt11) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeBolt11.lower(value)
+}
+
+
+
+
+public protocol ConfigProtocol : AnyObject {
+    
+    func background() 
+    
+    func foreground() 
+    
+    func getAnalyticsConfig() throws  -> AnalyticsConfig
+    
+    func listCurrencies()  -> [String]
+    
+    func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String) throws 
+    
+    func setAnalyticsConfig(config: AnalyticsConfig) throws 
+    
+    func setFeatureFlag(feature: FeatureFlag, flagEnabled: Bool) throws 
+    
+    func setFiatCurrency(fiatCurrency: String) throws 
+    
+    func setTimezoneConfig(timezoneConfig: TzConfig) 
+    
+}
+
+open class Config:
+    ConfigProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_config(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_config(pointer, $0) }
+    }
+
+    
+
+    
+open func background() {try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_config_background(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+open func foreground() {try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_config_foreground(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+open func getAnalyticsConfig()throws  -> AnalyticsConfig {
+    return try  FfiConverterTypeAnalyticsConfig.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_config_get_analytics_config(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func listCurrencies() -> [String] {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_config_list_currencies(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_config_register_notification_token(self.uniffiClonePointer(),
+        FfiConverterString.lower(notificationToken),
+        FfiConverterString.lower(languageIso6391),
+        FfiConverterString.lower(countryIso31661Alpha2),$0
+    )
+}
+}
+    
+open func setAnalyticsConfig(config: AnalyticsConfig)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_config_set_analytics_config(self.uniffiClonePointer(),
+        FfiConverterTypeAnalyticsConfig.lower(config),$0
+    )
+}
+}
+    
+open func setFeatureFlag(feature: FeatureFlag, flagEnabled: Bool)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_config_set_feature_flag(self.uniffiClonePointer(),
+        FfiConverterTypeFeatureFlag.lower(feature),
+        FfiConverterBool.lower(flagEnabled),$0
+    )
+}
+}
+    
+open func setFiatCurrency(fiatCurrency: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_config_set_fiat_currency(self.uniffiClonePointer(),
+        FfiConverterString.lower(fiatCurrency),$0
+    )
+}
+}
+    
+open func setTimezoneConfig(timezoneConfig: TzConfig) {try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_config_set_timezone_config(self.uniffiClonePointer(),
+        FfiConverterTypeTzConfig.lower(timezoneConfig),$0
+    )
+}
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeConfig: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Config
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Config {
+        return Config(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Config) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Config {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Config, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeConfig_lift(_ pointer: UnsafeMutableRawPointer) throws -> Config {
+    return try FfiConverterTypeConfig.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeConfig_lower(_ value: Config) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeConfig.lower(value)
+}
+
+
+
+
+public protocol FiatTopupProtocol : AnyObject {
+    
+    func acceptTc(version: Int64, fingerprint: String) throws 
+    
+    func calculatePayoutFee(offer: OfferInfo) throws  -> Amount
+    
+    func getInfo() throws  -> FiatTopupInfo?
+    
+    func queryTcStatus() throws  -> TermsAndConditionsStatus
+    
+    func register(email: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
+    
+    func requestCollection(offer: OfferInfo) throws  -> String
+    
+    func reset() throws 
+    
+}
+
+open class FiatTopup:
+    FiatTopupProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_fiattopup(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_fiattopup(pointer, $0) }
+    }
+
+    
+
+    
+open func acceptTc(version: Int64, fingerprint: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_accept_tc(self.uniffiClonePointer(),
+        FfiConverterInt64.lower(version),
+        FfiConverterString.lower(fingerprint),$0
+    )
+}
+}
+    
+open func calculatePayoutFee(offer: OfferInfo)throws  -> Amount {
+    return try  FfiConverterTypeAmount.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_calculate_payout_fee(self.uniffiClonePointer(),
+        FfiConverterTypeOfferInfo.lower(offer),$0
+    )
+})
+}
+    
+open func getInfo()throws  -> FiatTopupInfo? {
+    return try  FfiConverterOptionTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_get_info(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func queryTcStatus()throws  -> TermsAndConditionsStatus {
+    return try  FfiConverterTypeTermsAndConditionsStatus.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_query_tc_status(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func register(email: String?, userIban: String, userCurrency: String)throws  -> FiatTopupInfo {
+    return try  FfiConverterTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_register(self.uniffiClonePointer(),
+        FfiConverterOptionString.lower(email),
+        FfiConverterString.lower(userIban),
+        FfiConverterString.lower(userCurrency),$0
+    )
+})
+}
+    
+open func requestCollection(offer: OfferInfo)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_request_collection(self.uniffiClonePointer(),
+        FfiConverterTypeOfferInfo.lower(offer),$0
+    )
+})
+}
+    
+open func reset()throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_fiattopup_reset(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFiatTopup: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = FiatTopup
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> FiatTopup {
+        return FiatTopup(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: FiatTopup) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopup {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: FiatTopup, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFiatTopup_lift(_ pointer: UnsafeMutableRawPointer) throws -> FiatTopup {
+    return try FfiConverterTypeFiatTopup.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFiatTopup_lower(_ value: FiatTopup) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeFiatTopup.lower(value)
+}
+
+
+
+
+public protocol LightningProtocol : AnyObject {
+    
+    func bolt11()  -> Bolt11
+    
+    func calculateLspFeeForAmount(amountSat: UInt64) throws  -> CalculateLspFeeResponse
+    
+    func determineMaxRoutingFeeMode(amountSat: UInt64)  -> MaxRoutingFeeMode
+    
+    func determinePaymentAffordability(amountSat: UInt64) throws  -> PaymentAffordability
+    
+    func determineReceiveAmountLimits() throws  -> ReceiveAmountLimits
+    
+    func getLspFee() throws  -> LspFee
+    
+    func lnurl()  -> Lnurl
+    
+}
+
+open class Lightning:
+    LightningProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_lightning(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_lightning(pointer, $0) }
+    }
+
+    
+
+    
+open func bolt11() -> Bolt11 {
+    return try!  FfiConverterTypeBolt11.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_bolt11(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func calculateLspFeeForAmount(amountSat: UInt64)throws  -> CalculateLspFeeResponse {
+    return try  FfiConverterTypeCalculateLspFeeResponse.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_calculate_lsp_fee_for_amount(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amountSat),$0
+    )
+})
+}
+    
+open func determineMaxRoutingFeeMode(amountSat: UInt64) -> MaxRoutingFeeMode {
+    return try!  FfiConverterTypeMaxRoutingFeeMode.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_determine_max_routing_fee_mode(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amountSat),$0
+    )
+})
+}
+    
+open func determinePaymentAffordability(amountSat: UInt64)throws  -> PaymentAffordability {
+    return try  FfiConverterTypePaymentAffordability.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_determine_payment_affordability(self.uniffiClonePointer(),
+        FfiConverterUInt64.lower(amountSat),$0
+    )
+})
+}
+    
+open func determineReceiveAmountLimits()throws  -> ReceiveAmountLimits {
+    return try  FfiConverterTypeReceiveAmountLimits.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_determine_receive_amount_limits(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getLspFee()throws  -> LspFee {
+    return try  FfiConverterTypeLspFee.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_get_lsp_fee(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func lnurl() -> Lnurl {
+    return try!  FfiConverterTypeLnurl.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightning_lnurl(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLightning: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Lightning
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Lightning {
+        return Lightning(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Lightning) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Lightning {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Lightning, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightning_lift(_ pointer: UnsafeMutableRawPointer) throws -> Lightning {
+    return try FfiConverterTypeLightning.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightning_lower(_ value: Lightning) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeLightning.lower(value)
+}
+
+
+
+
 public protocol LightningNodeProtocol : AnyObject {
     
     func acceptPocketTermsAndConditions(version: Int64, fingerprint: String) throws 
+    
+    func actionsRequired()  -> ActionsRequired
     
     func activities()  -> Activities
     
@@ -835,9 +1677,13 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func clearWallet(clearWalletInfo: ClearWalletInfo, destinationOnchainAddressData: BitcoinAddressData) throws 
     
+    func config()  -> Config
+    
     func createInvoice(amountSat: UInt64, lspFeeParams: OpeningFeeParams?, description: String, metadata: InvoiceCreationMetadata) throws  -> InvoiceDetails
     
     func decodeData(data: String) throws  -> DecodedData
+    
+    func fiatTopup()  -> FiatTopup
     
     func foreground() 
     
@@ -882,6 +1728,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func hideTopup(id: String) throws 
     
     func hideUnresolvedFailedSwapActionRequiredItem(failedSwapInfo: FailedSwapInfo) throws 
+    
+    func lightning()  -> Lightning
     
     func listActionRequiredItems() throws  -> [ActionRequiredItem]
     
@@ -988,11 +1836,11 @@ open class LightningNode:
     public func uniffiClonePointer() -> UnsafeMutableRawPointer {
         return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_lightningnode(self.pointer, $0) }
     }
-public convenience init(config: Config, eventsCallback: EventsCallback)throws  {
+public convenience init(config: LightningNodeConfig, eventsCallback: EventsCallback)throws  {
     let pointer =
         try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_constructor_lightningnode_new(
-        FfiConverterTypeConfig.lower(config),
+        FfiConverterTypeLightningNodeConfig.lower(config),
         FfiConverterCallbackInterfaceEventsCallback.lower(eventsCallback),$0
     )
 }
@@ -1016,6 +1864,13 @@ open func acceptPocketTermsAndConditions(version: Int64, fingerprint: String)thr
         FfiConverterString.lower(fingerprint),$0
     )
 }
+}
+    
+open func actionsRequired() -> ActionsRequired {
+    return try!  FfiConverterTypeActionsRequired.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_actions_required(self.uniffiClonePointer(),$0
+    )
+})
 }
     
 open func activities() -> Activities {
@@ -1076,6 +1931,13 @@ open func clearWallet(clearWalletInfo: ClearWalletInfo, destinationOnchainAddres
 }
 }
     
+open func config() -> Config {
+    return try!  FfiConverterTypeConfig.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_config(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func createInvoice(amountSat: UInt64, lspFeeParams: OpeningFeeParams?, description: String, metadata: InvoiceCreationMetadata)throws  -> InvoiceDetails {
     return try  FfiConverterTypeInvoiceDetails.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_create_invoice(self.uniffiClonePointer(),
@@ -1091,6 +1953,13 @@ open func decodeData(data: String)throws  -> DecodedData {
     return try  FfiConverterTypeDecodedData.lift(try rustCallWithError(FfiConverterTypeDecodeDataError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_decode_data(self.uniffiClonePointer(),
         FfiConverterString.lower(data),$0
+    )
+})
+}
+    
+open func fiatTopup() -> FiatTopup {
+    return try!  FfiConverterTypeFiatTopup.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_fiat_topup(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -1255,6 +2124,13 @@ open func hideUnresolvedFailedSwapActionRequiredItem(failedSwapInfo: FailedSwapI
         FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),$0
     )
 }
+}
+    
+open func lightning() -> Lightning {
+    return try!  FfiConverterTypeLightning.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_lightning(self.uniffiClonePointer(),$0
+    )
+})
 }
     
 open func listActionRequiredItems()throws  -> [ActionRequiredItem] {
@@ -1568,6 +2444,140 @@ public func FfiConverterTypeLightningNode_lift(_ pointer: UnsafeMutableRawPointe
 #endif
 public func FfiConverterTypeLightningNode_lower(_ value: LightningNode) -> UnsafeMutableRawPointer {
     return FfiConverterTypeLightningNode.lower(value)
+}
+
+
+
+
+public protocol LnurlProtocol : AnyObject {
+    
+    func pay(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64, comment: String?) throws  -> String
+    
+    func withdraw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amountSat: UInt64) throws  -> String
+    
+}
+
+open class Lnurl:
+    LnurlProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_lnurl(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_lnurl(pointer, $0) }
+    }
+
+    
+
+    
+open func pay(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64, comment: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnUrlPayError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lnurl_pay(self.uniffiClonePointer(),
+        FfiConverterTypeLnUrlPayRequestData.lower(lnurlPayRequestData),
+        FfiConverterUInt64.lower(amountSat),
+        FfiConverterOptionString.lower(comment),$0
+    )
+})
+}
+    
+open func withdraw(lnurlWithdrawRequestData: LnUrlWithdrawRequestData, amountSat: UInt64)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnUrlWithdrawError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lnurl_withdraw(self.uniffiClonePointer(),
+        FfiConverterTypeLnUrlWithdrawRequestData.lower(lnurlWithdrawRequestData),
+        FfiConverterUInt64.lower(amountSat),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLnurl: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Lnurl
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Lnurl {
+        return Lnurl(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Lnurl) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Lnurl {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Lnurl, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLnurl_lift(_ pointer: UnsafeMutableRawPointer) throws -> Lnurl {
+    return try FfiConverterTypeLnurl.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLnurl_lower(_ value: Lnurl) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeLnurl.lower(value)
 }
 
 
@@ -2118,136 +3128,6 @@ public func FfiConverterTypeClearWalletInfo_lift(_ buf: RustBuffer) throws -> Cl
 #endif
 public func FfiConverterTypeClearWalletInfo_lower(_ value: ClearWalletInfo) -> RustBuffer {
     return FfiConverterTypeClearWalletInfo.lower(value)
-}
-
-
-public struct Config {
-    public var seed: Data
-    public var defaultFiatCurrency: String
-    public var localPersistencePath: String
-    public var timezoneConfig: TzConfig
-    public var fileLoggingLevel: Level?
-    public var phoneNumberAllowedCountriesIso31661Alpha2: [String]
-    public var remoteServicesConfig: RemoteServicesConfig
-    public var breezSdkConfig: BreezSdkConfig
-    public var maxRoutingFeeConfig: MaxRoutingFeeConfig
-    public var receiveLimitsConfig: ReceiveLimitsConfig
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(seed: Data, defaultFiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig) {
-        self.seed = seed
-        self.defaultFiatCurrency = defaultFiatCurrency
-        self.localPersistencePath = localPersistencePath
-        self.timezoneConfig = timezoneConfig
-        self.fileLoggingLevel = fileLoggingLevel
-        self.phoneNumberAllowedCountriesIso31661Alpha2 = phoneNumberAllowedCountriesIso31661Alpha2
-        self.remoteServicesConfig = remoteServicesConfig
-        self.breezSdkConfig = breezSdkConfig
-        self.maxRoutingFeeConfig = maxRoutingFeeConfig
-        self.receiveLimitsConfig = receiveLimitsConfig
-    }
-}
-
-
-
-extension Config: Equatable, Hashable {
-    public static func ==(lhs: Config, rhs: Config) -> Bool {
-        if lhs.seed != rhs.seed {
-            return false
-        }
-        if lhs.defaultFiatCurrency != rhs.defaultFiatCurrency {
-            return false
-        }
-        if lhs.localPersistencePath != rhs.localPersistencePath {
-            return false
-        }
-        if lhs.timezoneConfig != rhs.timezoneConfig {
-            return false
-        }
-        if lhs.fileLoggingLevel != rhs.fileLoggingLevel {
-            return false
-        }
-        if lhs.phoneNumberAllowedCountriesIso31661Alpha2 != rhs.phoneNumberAllowedCountriesIso31661Alpha2 {
-            return false
-        }
-        if lhs.remoteServicesConfig != rhs.remoteServicesConfig {
-            return false
-        }
-        if lhs.breezSdkConfig != rhs.breezSdkConfig {
-            return false
-        }
-        if lhs.maxRoutingFeeConfig != rhs.maxRoutingFeeConfig {
-            return false
-        }
-        if lhs.receiveLimitsConfig != rhs.receiveLimitsConfig {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(seed)
-        hasher.combine(defaultFiatCurrency)
-        hasher.combine(localPersistencePath)
-        hasher.combine(timezoneConfig)
-        hasher.combine(fileLoggingLevel)
-        hasher.combine(phoneNumberAllowedCountriesIso31661Alpha2)
-        hasher.combine(remoteServicesConfig)
-        hasher.combine(breezSdkConfig)
-        hasher.combine(maxRoutingFeeConfig)
-        hasher.combine(receiveLimitsConfig)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeConfig: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Config {
-        return
-            try Config(
-                seed: FfiConverterData.read(from: &buf), 
-                defaultFiatCurrency: FfiConverterString.read(from: &buf), 
-                localPersistencePath: FfiConverterString.read(from: &buf), 
-                timezoneConfig: FfiConverterTypeTzConfig.read(from: &buf), 
-                fileLoggingLevel: FfiConverterOptionTypeLevel.read(from: &buf), 
-                phoneNumberAllowedCountriesIso31661Alpha2: FfiConverterSequenceString.read(from: &buf), 
-                remoteServicesConfig: FfiConverterTypeRemoteServicesConfig.read(from: &buf), 
-                breezSdkConfig: FfiConverterTypeBreezSdkConfig.read(from: &buf), 
-                maxRoutingFeeConfig: FfiConverterTypeMaxRoutingFeeConfig.read(from: &buf), 
-                receiveLimitsConfig: FfiConverterTypeReceiveLimitsConfig.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: Config, into buf: inout [UInt8]) {
-        FfiConverterData.write(value.seed, into: &buf)
-        FfiConverterString.write(value.defaultFiatCurrency, into: &buf)
-        FfiConverterString.write(value.localPersistencePath, into: &buf)
-        FfiConverterTypeTzConfig.write(value.timezoneConfig, into: &buf)
-        FfiConverterOptionTypeLevel.write(value.fileLoggingLevel, into: &buf)
-        FfiConverterSequenceString.write(value.phoneNumberAllowedCountriesIso31661Alpha2, into: &buf)
-        FfiConverterTypeRemoteServicesConfig.write(value.remoteServicesConfig, into: &buf)
-        FfiConverterTypeBreezSdkConfig.write(value.breezSdkConfig, into: &buf)
-        FfiConverterTypeMaxRoutingFeeConfig.write(value.maxRoutingFeeConfig, into: &buf)
-        FfiConverterTypeReceiveLimitsConfig.write(value.receiveLimitsConfig, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeConfig_lift(_ buf: RustBuffer) throws -> Config {
-    return try FfiConverterTypeConfig.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeConfig_lower(_ value: Config) -> RustBuffer {
-    return FfiConverterTypeConfig.lower(value)
 }
 
 
@@ -2918,6 +3798,136 @@ public func FfiConverterTypeInvoiceDetails_lift(_ buf: RustBuffer) throws -> Inv
 #endif
 public func FfiConverterTypeInvoiceDetails_lower(_ value: InvoiceDetails) -> RustBuffer {
     return FfiConverterTypeInvoiceDetails.lower(value)
+}
+
+
+public struct LightningNodeConfig {
+    public var seed: Data
+    public var defaultFiatCurrency: String
+    public var localPersistencePath: String
+    public var timezoneConfig: TzConfig
+    public var fileLoggingLevel: Level?
+    public var phoneNumberAllowedCountriesIso31661Alpha2: [String]
+    public var remoteServicesConfig: RemoteServicesConfig
+    public var breezSdkConfig: BreezSdkConfig
+    public var maxRoutingFeeConfig: MaxRoutingFeeConfig
+    public var receiveLimitsConfig: ReceiveLimitsConfig
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(seed: Data, defaultFiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig) {
+        self.seed = seed
+        self.defaultFiatCurrency = defaultFiatCurrency
+        self.localPersistencePath = localPersistencePath
+        self.timezoneConfig = timezoneConfig
+        self.fileLoggingLevel = fileLoggingLevel
+        self.phoneNumberAllowedCountriesIso31661Alpha2 = phoneNumberAllowedCountriesIso31661Alpha2
+        self.remoteServicesConfig = remoteServicesConfig
+        self.breezSdkConfig = breezSdkConfig
+        self.maxRoutingFeeConfig = maxRoutingFeeConfig
+        self.receiveLimitsConfig = receiveLimitsConfig
+    }
+}
+
+
+
+extension LightningNodeConfig: Equatable, Hashable {
+    public static func ==(lhs: LightningNodeConfig, rhs: LightningNodeConfig) -> Bool {
+        if lhs.seed != rhs.seed {
+            return false
+        }
+        if lhs.defaultFiatCurrency != rhs.defaultFiatCurrency {
+            return false
+        }
+        if lhs.localPersistencePath != rhs.localPersistencePath {
+            return false
+        }
+        if lhs.timezoneConfig != rhs.timezoneConfig {
+            return false
+        }
+        if lhs.fileLoggingLevel != rhs.fileLoggingLevel {
+            return false
+        }
+        if lhs.phoneNumberAllowedCountriesIso31661Alpha2 != rhs.phoneNumberAllowedCountriesIso31661Alpha2 {
+            return false
+        }
+        if lhs.remoteServicesConfig != rhs.remoteServicesConfig {
+            return false
+        }
+        if lhs.breezSdkConfig != rhs.breezSdkConfig {
+            return false
+        }
+        if lhs.maxRoutingFeeConfig != rhs.maxRoutingFeeConfig {
+            return false
+        }
+        if lhs.receiveLimitsConfig != rhs.receiveLimitsConfig {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(seed)
+        hasher.combine(defaultFiatCurrency)
+        hasher.combine(localPersistencePath)
+        hasher.combine(timezoneConfig)
+        hasher.combine(fileLoggingLevel)
+        hasher.combine(phoneNumberAllowedCountriesIso31661Alpha2)
+        hasher.combine(remoteServicesConfig)
+        hasher.combine(breezSdkConfig)
+        hasher.combine(maxRoutingFeeConfig)
+        hasher.combine(receiveLimitsConfig)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLightningNodeConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LightningNodeConfig {
+        return
+            try LightningNodeConfig(
+                seed: FfiConverterData.read(from: &buf), 
+                defaultFiatCurrency: FfiConverterString.read(from: &buf), 
+                localPersistencePath: FfiConverterString.read(from: &buf), 
+                timezoneConfig: FfiConverterTypeTzConfig.read(from: &buf), 
+                fileLoggingLevel: FfiConverterOptionTypeLevel.read(from: &buf), 
+                phoneNumberAllowedCountriesIso31661Alpha2: FfiConverterSequenceString.read(from: &buf), 
+                remoteServicesConfig: FfiConverterTypeRemoteServicesConfig.read(from: &buf), 
+                breezSdkConfig: FfiConverterTypeBreezSdkConfig.read(from: &buf), 
+                maxRoutingFeeConfig: FfiConverterTypeMaxRoutingFeeConfig.read(from: &buf), 
+                receiveLimitsConfig: FfiConverterTypeReceiveLimitsConfig.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LightningNodeConfig, into buf: inout [UInt8]) {
+        FfiConverterData.write(value.seed, into: &buf)
+        FfiConverterString.write(value.defaultFiatCurrency, into: &buf)
+        FfiConverterString.write(value.localPersistencePath, into: &buf)
+        FfiConverterTypeTzConfig.write(value.timezoneConfig, into: &buf)
+        FfiConverterOptionTypeLevel.write(value.fileLoggingLevel, into: &buf)
+        FfiConverterSequenceString.write(value.phoneNumberAllowedCountriesIso31661Alpha2, into: &buf)
+        FfiConverterTypeRemoteServicesConfig.write(value.remoteServicesConfig, into: &buf)
+        FfiConverterTypeBreezSdkConfig.write(value.breezSdkConfig, into: &buf)
+        FfiConverterTypeMaxRoutingFeeConfig.write(value.maxRoutingFeeConfig, into: &buf)
+        FfiConverterTypeReceiveLimitsConfig.write(value.receiveLimitsConfig, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightningNodeConfig_lift(_ buf: RustBuffer) throws -> LightningNodeConfig {
+    return try FfiConverterTypeLightningNodeConfig.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightningNodeConfig_lower(_ value: LightningNodeConfig) -> RustBuffer {
+    return FfiConverterTypeLightningNodeConfig.lower(value)
 }
 
 
@@ -4368,6 +5378,72 @@ public func FfiConverterTypePrepareOnchainPaymentResponse_lift(_ buf: RustBuffer
 #endif
 public func FfiConverterTypePrepareOnchainPaymentResponse_lower(_ value: PrepareOnchainPaymentResponse) -> RustBuffer {
     return FfiConverterTypePrepareOnchainPaymentResponse.lower(value)
+}
+
+
+public struct ReceiveAmountLimits {
+    public var maxReceive: Amount
+    public var liquidityLimit: LiquidityLimit
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(maxReceive: Amount, liquidityLimit: LiquidityLimit) {
+        self.maxReceive = maxReceive
+        self.liquidityLimit = liquidityLimit
+    }
+}
+
+
+
+extension ReceiveAmountLimits: Equatable, Hashable {
+    public static func ==(lhs: ReceiveAmountLimits, rhs: ReceiveAmountLimits) -> Bool {
+        if lhs.maxReceive != rhs.maxReceive {
+            return false
+        }
+        if lhs.liquidityLimit != rhs.liquidityLimit {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(maxReceive)
+        hasher.combine(liquidityLimit)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeReceiveAmountLimits: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReceiveAmountLimits {
+        return
+            try ReceiveAmountLimits(
+                maxReceive: FfiConverterTypeAmount.read(from: &buf), 
+                liquidityLimit: FfiConverterTypeLiquidityLimit.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ReceiveAmountLimits, into buf: inout [UInt8]) {
+        FfiConverterTypeAmount.write(value.maxReceive, into: &buf)
+        FfiConverterTypeLiquidityLimit.write(value.liquidityLimit, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReceiveAmountLimits_lift(_ buf: RustBuffer) throws -> ReceiveAmountLimits {
+    return try FfiConverterTypeReceiveAmountLimits.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReceiveAmountLimits_lower(_ value: ReceiveAmountLimits) -> RustBuffer {
+    return FfiConverterTypeReceiveAmountLimits.lower(value)
 }
 
 
@@ -7599,6 +8675,77 @@ extension PayErrorCode: Equatable, Hashable {}
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
+public enum PaymentAffordability {
+    
+    case notEnoughFunds
+    case unaffordableFees
+    case affordable
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePaymentAffordability: FfiConverterRustBuffer {
+    typealias SwiftType = PaymentAffordability
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PaymentAffordability {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .notEnoughFunds
+        
+        case 2: return .unaffordableFees
+        
+        case 3: return .affordable
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PaymentAffordability, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .notEnoughFunds:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .unaffordableFees:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .affordable:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePaymentAffordability_lift(_ buf: RustBuffer) throws -> PaymentAffordability {
+    return try FfiConverterTypePaymentAffordability.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePaymentAffordability_lower(_ value: PaymentAffordability) -> RustBuffer {
+    return FfiConverterTypePaymentAffordability.lower(value)
+}
+
+
+
+extension PaymentAffordability: Equatable, Hashable {}
+
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+
 public enum PaymentSource {
     
     case camera
@@ -9561,10 +10708,10 @@ public func getTermsAndConditionsStatus(backendUrl: String, seed: Data, termsAnd
     )
 })
 }
-public func handleNotification(config: Config, notificationPayload: String, notificationToggles: NotificationToggles, timeout: TimeInterval)throws  -> Notification {
+public func handleNotification(config: LightningNodeConfig, notificationPayload: String, notificationToggles: NotificationToggles, timeout: TimeInterval)throws  -> Notification {
     return try  FfiConverterTypeNotification.lift(try rustCallWithError(FfiConverterTypeNotificationHandlingError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_handle_notification(
-        FfiConverterTypeConfig.lower(config),
+        FfiConverterTypeLightningNodeConfig.lower(config),
         FfiConverterString.lower(notificationPayload),
         FfiConverterTypeNotificationToggles.lower(notificationToggles),
         FfiConverterDuration.lower(timeout),$0
@@ -9626,7 +10773,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_func_get_terms_and_conditions_status() != 65178) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 53366) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_handle_notification() != 27529) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_mnemonic_to_secret() != 23900) {
@@ -9639,6 +10786,18 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_words_by_prefix() != 18339) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_actionsrequired_dismiss_topup() != 60616) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_actionsrequired_hide_unrecoverable_channel_close_funds_item() != 20833) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_actionsrequired_hide_unrecoverable_failed_swap_item() != 25796) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_actionsrequired_list() != 50235) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_activities_get() != 57920) {
@@ -9659,7 +10818,88 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_activities_set_personal_note() != 42000) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_bolt11_create() != 1035) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_bolt11_pay() != 6682) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_bolt11_pay_open_amount() != 49363) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_background() != 3896) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_foreground() != 57183) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_get_analytics_config() != 56514) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_list_currencies() != 27075) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_register_notification_token() != 57954) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_set_analytics_config() != 58647) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_set_feature_flag() != 32595) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_set_fiat_currency() != 28125) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_config_set_timezone_config() != 25187) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_accept_tc() != 42345) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_calculate_payout_fee() != 23167) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_get_info() != 62428) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_query_tc_status() != 17404) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_register() != 17799) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_request_collection() != 4275) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_reset() != 34939) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_bolt11() != 3635) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_calculate_lsp_fee_for_amount() != 58652) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_determine_max_routing_fee_mode() != 2981) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_determine_payment_affordability() != 40404) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_determine_receive_amount_limits() != 59145) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_get_lsp_fee() != 21001) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_lnurl() != 50401) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 25155) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_actions_required() != 19551) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_activities() != 23299) {
@@ -9686,10 +10926,16 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_clear_wallet() != 22211) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_config() != 58674) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_create_invoice() != 6856) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_decode_data() != 11730) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_fiat_topup() != 11833) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_foreground() != 21792) {
@@ -9756,6 +11002,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_hide_unresolved_failed_swap_action_required_item() != 22326) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_lightning() != 11450) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_action_required_items() != 17350) {
@@ -9857,7 +11106,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_withdraw_lnurlw() != 52161) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_constructor_lightningnode_new() != 11021) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lnurl_pay() != 38665) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lnurl_withdraw() != 19605) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_constructor_lightningnode_new() != 17310) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_payment_received() != 64243) {
