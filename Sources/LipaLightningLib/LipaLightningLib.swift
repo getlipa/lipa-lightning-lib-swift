@@ -1106,6 +1106,157 @@ public func FfiConverterTypeBolt11_lower(_ value: Bolt11) -> UnsafeMutableRawPoi
 
 
 
+public protocol ChannelCloseProtocol : AnyObject {
+    
+    func determineResolvingFees() throws  -> OnchainResolvingFees?
+    
+    func prepareSweep(address: String) throws  -> SweepChannelCloseInfo
+    
+    func swap(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
+    
+    func sweep(sweepInfo: SweepChannelCloseInfo) throws  -> String
+    
+}
+
+open class ChannelClose:
+    ChannelCloseProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_channelclose(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_channelclose(pointer, $0) }
+    }
+
+    
+
+    
+open func determineResolvingFees()throws  -> OnchainResolvingFees? {
+    return try  FfiConverterOptionTypeOnchainResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_channelclose_determine_resolving_fees(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func prepareSweep(address: String)throws  -> SweepChannelCloseInfo {
+    return try  FfiConverterTypeSweepChannelCloseInfo.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_channelclose_prepare_sweep(self.uniffiClonePointer(),
+        FfiConverterString.lower(address),$0
+    )
+})
+}
+    
+open func swap(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_channelclose_swap(self.uniffiClonePointer(),
+        FfiConverterUInt32.lower(satsPerVbyte),
+        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
+    )
+})
+}
+    
+open func sweep(sweepInfo: SweepChannelCloseInfo)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_channelclose_sweep(self.uniffiClonePointer(),
+        FfiConverterTypeSweepChannelCloseInfo.lower(sweepInfo),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChannelClose: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = ChannelClose
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ChannelClose {
+        return ChannelClose(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: ChannelClose) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChannelClose {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: ChannelClose, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChannelClose_lift(_ pointer: UnsafeMutableRawPointer) throws -> ChannelClose {
+    return try FfiConverterTypeChannelClose.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChannelClose_lower(_ value: ChannelClose) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeChannelClose.lower(value)
+}
+
+
+
+
 public protocol ConfigProtocol : AnyObject {
     
     func background() 
@@ -1655,6 +1806,135 @@ public func FfiConverterTypeLightning_lower(_ value: Lightning) -> UnsafeMutable
 
 
 
+public protocol LightningAddressProtocol : AnyObject {
+    
+    func get() throws  -> String?
+    
+    func register() throws  -> String
+    
+}
+
+open class LightningAddress:
+    LightningAddressProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_lightningaddress(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_lightningaddress(pointer, $0) }
+    }
+
+    
+
+    
+open func get()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningaddress_get(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func register()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningaddress_register(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLightningAddress: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = LightningAddress
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningAddress {
+        return LightningAddress(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: LightningAddress) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LightningAddress {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: LightningAddress, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightningAddress_lift(_ pointer: UnsafeMutableRawPointer) throws -> LightningAddress {
+    return try FfiConverterTypeLightningAddress.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLightningAddress_lower(_ value: LightningAddress) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeLightningAddress.lower(value)
+}
+
+
+
+
 public protocol LightningNodeProtocol : AnyObject {
     
     func acceptPocketTermsAndConditions(version: Int64, fingerprint: String) throws 
@@ -1731,6 +2011,8 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func lightning()  -> Lightning
     
+    func lightningAddress()  -> LightningAddress
+    
     func listActionRequiredItems() throws  -> [ActionRequiredItem]
     
     func listCurrencyCodes()  -> [String]
@@ -1738,6 +2020,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func listRecipients() throws  -> [Recipient]
     
     func logDebugInfo() throws 
+    
+    func onchain()  -> Onchain
     
     func parsePhoneNumberPrefix(phoneNumber: String) throws 
     
@@ -1748,6 +2032,8 @@ public protocol LightningNodeProtocol : AnyObject {
     func payLnurlp(lnurlPayRequestData: LnUrlPayRequestData, amountSat: UInt64, comment: String?) throws  -> String
     
     func payOpenInvoice(invoiceDetails: InvoiceDetails, amountSat: UInt64, metadata: PaymentMetadata) throws 
+    
+    func phoneNumber()  -> PhoneNumber
     
     func prepareClearWallet() throws  -> ClearWalletInfo
     
@@ -1789,9 +2075,11 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func swapChannelCloseFundsToLightning(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
     
-    func swapFailedSwapFundsToLightning(failedSwapInfo: FailedSwapInfo, satPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?) throws  -> String
+    func swapFailedSwapFundsToLightning(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?) throws  -> String
     
     func sweepFundsFromChannelCloses(sweepInfo: SweepInfo) throws  -> String
+    
+    func util()  -> Util
     
     func verifyPhoneNumber(phoneNumber: String, otp: String) throws 
     
@@ -2133,6 +2421,13 @@ open func lightning() -> Lightning {
 })
 }
     
+open func lightningAddress() -> LightningAddress {
+    return try!  FfiConverterTypeLightningAddress.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_lightning_address(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func listActionRequiredItems()throws  -> [ActionRequiredItem] {
     return try  FfiConverterSequenceTypeActionRequiredItem.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_list_action_required_items(self.uniffiClonePointer(),$0
@@ -2158,6 +2453,13 @@ open func logDebugInfo()throws  {try rustCallWithError(FfiConverterTypeLnError.l
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_log_debug_info(self.uniffiClonePointer(),$0
     )
 }
+}
+    
+open func onchain() -> Onchain {
+    return try!  FfiConverterTypeOnchain.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_onchain(self.uniffiClonePointer(),$0
+    )
+})
 }
     
 open func parsePhoneNumberPrefix(phoneNumber: String)throws  {try rustCallWithError(FfiConverterTypeParsePhoneNumberPrefixError.lift) {
@@ -2200,6 +2502,13 @@ open func payOpenInvoice(invoiceDetails: InvoiceDetails, amountSat: UInt64, meta
         FfiConverterTypePaymentMetadata.lower(metadata),$0
     )
 }
+}
+    
+open func phoneNumber() -> PhoneNumber {
+    return try!  FfiConverterTypePhoneNumber.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_phone_number(self.uniffiClonePointer(),$0
+    )
+})
 }
     
 open func prepareClearWallet()throws  -> ClearWalletInfo {
@@ -2357,11 +2666,11 @@ open func swapChannelCloseFundsToLightning(satsPerVbyte: UInt32, lspFeeParams: O
 })
 }
     
-open func swapFailedSwapFundsToLightning(failedSwapInfo: FailedSwapInfo, satPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?)throws  -> String {
+open func swapFailedSwapFundsToLightning(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_swap_failed_swap_funds_to_lightning(self.uniffiClonePointer(),
         FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),
-        FfiConverterUInt32.lower(satPerVbyte),
+        FfiConverterUInt32.lower(satsPerVbyte),
         FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParam),$0
     )
 })
@@ -2371,6 +2680,13 @@ open func sweepFundsFromChannelCloses(sweepInfo: SweepInfo)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_sweep_funds_from_channel_closes(self.uniffiClonePointer(),
         FfiConverterTypeSweepInfo.lower(sweepInfo),$0
+    )
+})
+}
+    
+open func util() -> Util {
+    return try!  FfiConverterTypeUtil.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_util(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -2578,6 +2894,780 @@ public func FfiConverterTypeLnurl_lift(_ pointer: UnsafeMutableRawPointer) throw
 #endif
 public func FfiConverterTypeLnurl_lower(_ value: Lnurl) -> UnsafeMutableRawPointer {
     return FfiConverterTypeLnurl.lower(value)
+}
+
+
+
+
+public protocol OnchainProtocol : AnyObject {
+    
+    func channelClose()  -> ChannelClose
+    
+    func reverseSwap()  -> ReverseSwap
+    
+    func swap()  -> Swap
+    
+}
+
+open class Onchain:
+    OnchainProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_onchain(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_onchain(pointer, $0) }
+    }
+
+    
+
+    
+open func channelClose() -> ChannelClose {
+    return try!  FfiConverterTypeChannelClose.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_onchain_channel_close(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func reverseSwap() -> ReverseSwap {
+    return try!  FfiConverterTypeReverseSwap.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_onchain_reverse_swap(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func swap() -> Swap {
+    return try!  FfiConverterTypeSwap.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_onchain_swap(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOnchain: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Onchain
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Onchain {
+        return Onchain(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Onchain) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Onchain {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Onchain, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOnchain_lift(_ pointer: UnsafeMutableRawPointer) throws -> Onchain {
+    return try FfiConverterTypeOnchain.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOnchain_lower(_ value: Onchain) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeOnchain.lower(value)
+}
+
+
+
+
+public protocol PhoneNumberProtocol : AnyObject {
+    
+    func get() throws  -> String?
+    
+    func parsePrefix(phoneNumber: String) throws 
+    
+    func parseToLightningAddress(phoneNumber: String) throws  -> String
+    
+    func register(phoneNumber: String) throws 
+    
+    func verify(phoneNumber: String, otp: String) throws 
+    
+}
+
+open class PhoneNumber:
+    PhoneNumberProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_phonenumber(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_phonenumber(pointer, $0) }
+    }
+
+    
+
+    
+open func get()throws  -> String? {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_phonenumber_get(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func parsePrefix(phoneNumber: String)throws  {try rustCallWithError(FfiConverterTypeParsePhoneNumberPrefixError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_phonenumber_parse_prefix(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),$0
+    )
+}
+}
+    
+open func parseToLightningAddress(phoneNumber: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeParsePhoneNumberError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_phonenumber_parse_to_lightning_address(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),$0
+    )
+})
+}
+    
+open func register(phoneNumber: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_phonenumber_register(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),$0
+    )
+}
+}
+    
+open func verify(phoneNumber: String, otp: String)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_phonenumber_verify(self.uniffiClonePointer(),
+        FfiConverterString.lower(phoneNumber),
+        FfiConverterString.lower(otp),$0
+    )
+}
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePhoneNumber: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = PhoneNumber
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PhoneNumber {
+        return PhoneNumber(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: PhoneNumber) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PhoneNumber {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: PhoneNumber, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePhoneNumber_lift(_ pointer: UnsafeMutableRawPointer) throws -> PhoneNumber {
+    return try FfiConverterTypePhoneNumber.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePhoneNumber_lower(_ value: PhoneNumber) -> UnsafeMutableRawPointer {
+    return FfiConverterTypePhoneNumber.lower(value)
+}
+
+
+
+
+public protocol ReverseSwapProtocol : AnyObject {
+    
+    func clearWallet(clearWalletInfo: ClearWalletInfo, destinationOnchainAddressData: BitcoinAddressData) throws 
+    
+    func determineClearWalletFeasibility() throws  -> RangeHit
+    
+    func prepareClearWallet() throws  -> ClearWalletInfo
+    
+}
+
+open class ReverseSwap:
+    ReverseSwapProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_reverseswap(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_reverseswap(pointer, $0) }
+    }
+
+    
+
+    
+open func clearWallet(clearWalletInfo: ClearWalletInfo, destinationOnchainAddressData: BitcoinAddressData)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_reverseswap_clear_wallet(self.uniffiClonePointer(),
+        FfiConverterTypeClearWalletInfo.lower(clearWalletInfo),
+        FfiConverterTypeBitcoinAddressData.lower(destinationOnchainAddressData),$0
+    )
+}
+}
+    
+open func determineClearWalletFeasibility()throws  -> RangeHit {
+    return try  FfiConverterTypeRangeHit.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_reverseswap_determine_clear_wallet_feasibility(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func prepareClearWallet()throws  -> ClearWalletInfo {
+    return try  FfiConverterTypeClearWalletInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_reverseswap_prepare_clear_wallet(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeReverseSwap: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = ReverseSwap
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> ReverseSwap {
+        return ReverseSwap(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: ReverseSwap) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReverseSwap {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: ReverseSwap, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReverseSwap_lift(_ pointer: UnsafeMutableRawPointer) throws -> ReverseSwap {
+    return try FfiConverterTypeReverseSwap.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReverseSwap_lower(_ value: ReverseSwap) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeReverseSwap.lower(value)
+}
+
+
+
+
+public protocol SwapProtocol : AnyObject {
+    
+    func create(lspFeeParams: OpeningFeeParams?) throws  -> SwapAddressInfo
+    
+    func determineResolvingFees(failedSwapInfo: FailedSwapInfo) throws  -> OnchainResolvingFees?
+    
+    func prepareSweep(failedSwapInfo: FailedSwapInfo, toAddress: String) throws  -> SweepFailedSwapInfo
+    
+    func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?) throws  -> String
+    
+    func sweep(sweepFailedSwapInfo: SweepFailedSwapInfo) throws  -> String
+    
+}
+
+open class Swap:
+    SwapProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_swap(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_swap(pointer, $0) }
+    }
+
+    
+
+    
+open func create(lspFeeParams: OpeningFeeParams?)throws  -> SwapAddressInfo {
+    return try  FfiConverterTypeSwapAddressInfo.lift(try rustCallWithError(FfiConverterTypeSwapError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_swap_create(self.uniffiClonePointer(),
+        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
+    )
+})
+}
+    
+open func determineResolvingFees(failedSwapInfo: FailedSwapInfo)throws  -> OnchainResolvingFees? {
+    return try  FfiConverterOptionTypeOnchainResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_swap_determine_resolving_fees(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),$0
+    )
+})
+}
+    
+open func prepareSweep(failedSwapInfo: FailedSwapInfo, toAddress: String)throws  -> SweepFailedSwapInfo {
+    return try  FfiConverterTypeSweepFailedSwapInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_swap_prepare_sweep(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),
+        FfiConverterString.lower(toAddress),$0
+    )
+})
+}
+    
+open func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_swap_swap(self.uniffiClonePointer(),
+        FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),
+        FfiConverterUInt32.lower(satsPerVbyte),
+        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParam),$0
+    )
+})
+}
+    
+open func sweep(sweepFailedSwapInfo: SweepFailedSwapInfo)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_swap_sweep(self.uniffiClonePointer(),
+        FfiConverterTypeSweepFailedSwapInfo.lower(sweepFailedSwapInfo),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSwap: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Swap
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Swap {
+        return Swap(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Swap) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Swap {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Swap, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSwap_lift(_ pointer: UnsafeMutableRawPointer) throws -> Swap {
+    return try FfiConverterTypeSwap.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSwap_lower(_ value: Swap) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeSwap.lower(value)
+}
+
+
+
+
+public protocol UtilProtocol : AnyObject {
+    
+    func decodeData(data: String) throws  -> DecodedData
+    
+    func derivePaymentUuid(paymentHash: String) throws  -> String
+    
+    func getExchangeRate()  -> ExchangeRate?
+    
+    func getNodeInfo() throws  -> NodeInfo
+    
+    func logDebugInfo() throws 
+    
+    func queryHealthStatus() throws  -> BreezHealthCheckStatus
+    
+    func queryWalletPubkeyId() throws  -> String
+    
+}
+
+open class Util:
+    UtilProtocol {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_uniffi_lipalightninglib_fn_clone_util(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_uniffi_lipalightninglib_fn_free_util(pointer, $0) }
+    }
+
+    
+
+    
+open func decodeData(data: String)throws  -> DecodedData {
+    return try  FfiConverterTypeDecodedData.lift(try rustCallWithError(FfiConverterTypeDecodeDataError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_util_decode_data(self.uniffiClonePointer(),
+        FfiConverterString.lower(data),$0
+    )
+})
+}
+    
+open func derivePaymentUuid(paymentHash: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_util_derive_payment_uuid(self.uniffiClonePointer(),
+        FfiConverterString.lower(paymentHash),$0
+    )
+})
+}
+    
+open func getExchangeRate() -> ExchangeRate? {
+    return try!  FfiConverterOptionTypeExchangeRate.lift(try! rustCall() {
+    uniffi_uniffi_lipalightninglib_fn_method_util_get_exchange_rate(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getNodeInfo()throws  -> NodeInfo {
+    return try  FfiConverterTypeNodeInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_util_get_node_info(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func logDebugInfo()throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_util_log_debug_info(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
+open func queryHealthStatus()throws  -> BreezHealthCheckStatus {
+    return try  FfiConverterTypeBreezHealthCheckStatus.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_util_query_health_status(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func queryWalletPubkeyId()throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_util_query_wallet_pubkey_id(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeUtil: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = Util
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> Util {
+        return Util(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: Util) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Util {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: Util, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUtil_lift(_ pointer: UnsafeMutableRawPointer) throws -> Util {
+    return try FfiConverterTypeUtil.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUtil_lower(_ value: Util) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeUtil.lower(value)
 }
 
 
@@ -4778,14 +5868,14 @@ public func FfiConverterTypeOfferInfo_lower(_ value: OfferInfo) -> RustBuffer {
 public struct OnchainResolvingFees {
     public var swapFees: SwapToLightningFees?
     public var sweepOnchainFeeEstimate: Amount
-    public var satPerVbyte: UInt32
+    public var satsPerVbyte: UInt32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(swapFees: SwapToLightningFees?, sweepOnchainFeeEstimate: Amount, satPerVbyte: UInt32) {
+    public init(swapFees: SwapToLightningFees?, sweepOnchainFeeEstimate: Amount, satsPerVbyte: UInt32) {
         self.swapFees = swapFees
         self.sweepOnchainFeeEstimate = sweepOnchainFeeEstimate
-        self.satPerVbyte = satPerVbyte
+        self.satsPerVbyte = satsPerVbyte
     }
 }
 
@@ -4799,7 +5889,7 @@ extension OnchainResolvingFees: Equatable, Hashable {
         if lhs.sweepOnchainFeeEstimate != rhs.sweepOnchainFeeEstimate {
             return false
         }
-        if lhs.satPerVbyte != rhs.satPerVbyte {
+        if lhs.satsPerVbyte != rhs.satsPerVbyte {
             return false
         }
         return true
@@ -4808,7 +5898,7 @@ extension OnchainResolvingFees: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(swapFees)
         hasher.combine(sweepOnchainFeeEstimate)
-        hasher.combine(satPerVbyte)
+        hasher.combine(satsPerVbyte)
     }
 }
 
@@ -4822,14 +5912,14 @@ public struct FfiConverterTypeOnchainResolvingFees: FfiConverterRustBuffer {
             try OnchainResolvingFees(
                 swapFees: FfiConverterOptionTypeSwapToLightningFees.read(from: &buf), 
                 sweepOnchainFeeEstimate: FfiConverterTypeAmount.read(from: &buf), 
-                satPerVbyte: FfiConverterUInt32.read(from: &buf)
+                satsPerVbyte: FfiConverterUInt32.read(from: &buf)
         )
     }
 
     public static func write(_ value: OnchainResolvingFees, into buf: inout [UInt8]) {
         FfiConverterOptionTypeSwapToLightningFees.write(value.swapFees, into: &buf)
         FfiConverterTypeAmount.write(value.sweepOnchainFeeEstimate, into: &buf)
-        FfiConverterUInt32.write(value.satPerVbyte, into: &buf)
+        FfiConverterUInt32.write(value.satsPerVbyte, into: &buf)
     }
 }
 
@@ -6092,6 +7182,178 @@ public func FfiConverterTypeSwapToLightningFees_lift(_ buf: RustBuffer) throws -
 #endif
 public func FfiConverterTypeSwapToLightningFees_lower(_ value: SwapToLightningFees) -> RustBuffer {
     return FfiConverterTypeSwapToLightningFees.lower(value)
+}
+
+
+public struct SweepChannelCloseInfo {
+    public var address: String
+    public var onchainFeeRate: UInt32
+    public var onchainFeeAmount: Amount
+    public var amount: Amount
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(address: String, onchainFeeRate: UInt32, onchainFeeAmount: Amount, amount: Amount) {
+        self.address = address
+        self.onchainFeeRate = onchainFeeRate
+        self.onchainFeeAmount = onchainFeeAmount
+        self.amount = amount
+    }
+}
+
+
+
+extension SweepChannelCloseInfo: Equatable, Hashable {
+    public static func ==(lhs: SweepChannelCloseInfo, rhs: SweepChannelCloseInfo) -> Bool {
+        if lhs.address != rhs.address {
+            return false
+        }
+        if lhs.onchainFeeRate != rhs.onchainFeeRate {
+            return false
+        }
+        if lhs.onchainFeeAmount != rhs.onchainFeeAmount {
+            return false
+        }
+        if lhs.amount != rhs.amount {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(address)
+        hasher.combine(onchainFeeRate)
+        hasher.combine(onchainFeeAmount)
+        hasher.combine(amount)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSweepChannelCloseInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SweepChannelCloseInfo {
+        return
+            try SweepChannelCloseInfo(
+                address: FfiConverterString.read(from: &buf), 
+                onchainFeeRate: FfiConverterUInt32.read(from: &buf), 
+                onchainFeeAmount: FfiConverterTypeAmount.read(from: &buf), 
+                amount: FfiConverterTypeAmount.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SweepChannelCloseInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.address, into: &buf)
+        FfiConverterUInt32.write(value.onchainFeeRate, into: &buf)
+        FfiConverterTypeAmount.write(value.onchainFeeAmount, into: &buf)
+        FfiConverterTypeAmount.write(value.amount, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSweepChannelCloseInfo_lift(_ buf: RustBuffer) throws -> SweepChannelCloseInfo {
+    return try FfiConverterTypeSweepChannelCloseInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSweepChannelCloseInfo_lower(_ value: SweepChannelCloseInfo) -> RustBuffer {
+    return FfiConverterTypeSweepChannelCloseInfo.lower(value)
+}
+
+
+public struct SweepFailedSwapInfo {
+    public var swapAddress: String
+    public var recoveredAmount: Amount
+    public var onchainFee: Amount
+    public var toAddress: String
+    public var onchainFeeRate: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(swapAddress: String, recoveredAmount: Amount, onchainFee: Amount, toAddress: String, onchainFeeRate: UInt32) {
+        self.swapAddress = swapAddress
+        self.recoveredAmount = recoveredAmount
+        self.onchainFee = onchainFee
+        self.toAddress = toAddress
+        self.onchainFeeRate = onchainFeeRate
+    }
+}
+
+
+
+extension SweepFailedSwapInfo: Equatable, Hashable {
+    public static func ==(lhs: SweepFailedSwapInfo, rhs: SweepFailedSwapInfo) -> Bool {
+        if lhs.swapAddress != rhs.swapAddress {
+            return false
+        }
+        if lhs.recoveredAmount != rhs.recoveredAmount {
+            return false
+        }
+        if lhs.onchainFee != rhs.onchainFee {
+            return false
+        }
+        if lhs.toAddress != rhs.toAddress {
+            return false
+        }
+        if lhs.onchainFeeRate != rhs.onchainFeeRate {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(swapAddress)
+        hasher.combine(recoveredAmount)
+        hasher.combine(onchainFee)
+        hasher.combine(toAddress)
+        hasher.combine(onchainFeeRate)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSweepFailedSwapInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SweepFailedSwapInfo {
+        return
+            try SweepFailedSwapInfo(
+                swapAddress: FfiConverterString.read(from: &buf), 
+                recoveredAmount: FfiConverterTypeAmount.read(from: &buf), 
+                onchainFee: FfiConverterTypeAmount.read(from: &buf), 
+                toAddress: FfiConverterString.read(from: &buf), 
+                onchainFeeRate: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SweepFailedSwapInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.swapAddress, into: &buf)
+        FfiConverterTypeAmount.write(value.recoveredAmount, into: &buf)
+        FfiConverterTypeAmount.write(value.onchainFee, into: &buf)
+        FfiConverterString.write(value.toAddress, into: &buf)
+        FfiConverterUInt32.write(value.onchainFeeRate, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSweepFailedSwapInfo_lift(_ buf: RustBuffer) throws -> SweepFailedSwapInfo {
+    return try FfiConverterTypeSweepFailedSwapInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSweepFailedSwapInfo_lower(_ value: SweepFailedSwapInfo) -> RustBuffer {
+    return FfiConverterTypeSweepFailedSwapInfo.lower(value)
 }
 
 
@@ -9778,7 +11040,6 @@ extension TermsAndConditions: Equatable, Hashable {}
 
 public enum UnsupportedDataType {
     
-    case bitcoinAddress
     case lnUrlAuth
     case nodeId
     case url
@@ -9797,15 +11058,13 @@ public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
         let variant: Int32 = try readInt(&buf)
         switch variant {
         
-        case 1: return .bitcoinAddress
+        case 1: return .lnUrlAuth
         
-        case 2: return .lnUrlAuth
+        case 2: return .nodeId
         
-        case 3: return .nodeId
+        case 3: return .url
         
-        case 4: return .url
-        
-        case 5: return .network(network: try FfiConverterString.read(from: &buf)
+        case 4: return .network(network: try FfiConverterString.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -9816,24 +11075,20 @@ public struct FfiConverterTypeUnsupportedDataType: FfiConverterRustBuffer {
         switch value {
         
         
-        case .bitcoinAddress:
+        case .lnUrlAuth:
             writeInt(&buf, Int32(1))
         
         
-        case .lnUrlAuth:
+        case .nodeId:
             writeInt(&buf, Int32(2))
         
         
-        case .nodeId:
+        case .url:
             writeInt(&buf, Int32(3))
         
         
-        case .url:
-            writeInt(&buf, Int32(4))
-        
-        
         case let .network(network):
-            writeInt(&buf, Int32(5))
+            writeInt(&buf, Int32(4))
             FfiConverterString.write(network, into: &buf)
             
         }
@@ -10827,6 +12082,18 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_bolt11_pay_open_amount() != 49363) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_determine_resolving_fees() != 21525) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_prepare_sweep() != 21435) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_swap() != 13343) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_sweep() != 3534) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_config_background() != 3896) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -10894,6 +12161,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_lnurl() != 50401) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningaddress_get() != 26745) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningaddress_register() != 1206) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_accept_pocket_terms_and_conditions() != 25155) {
@@ -11007,6 +12280,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_lightning() != 11450) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_lightning_address() != 63205) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_list_action_required_items() != 17350) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -11017,6 +12293,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_log_debug_info() != 60092) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_onchain() != 55255) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_parse_phone_number_prefix() != 63325) {
@@ -11032,6 +12311,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_pay_open_invoice() != 20722) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_phone_number() != 40512) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_prepare_clear_wallet() != 19083) {
@@ -11094,10 +12376,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_channel_close_funds_to_lightning() != 37915) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_failed_swap_funds_to_lightning() != 24245) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_swap_failed_swap_funds_to_lightning() != 3439) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_sweep_funds_from_channel_closes() != 53207) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_util() != 18468) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_verify_phone_number() != 57506) {
@@ -11110,6 +12395,75 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lnurl_withdraw() != 19605) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_onchain_channel_close() != 55056) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_onchain_reverse_swap() != 26842) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_onchain_swap() != 34743) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_phonenumber_get() != 53005) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_phonenumber_parse_prefix() != 52452) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_phonenumber_parse_to_lightning_address() != 29117) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_phonenumber_register() != 48201) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_phonenumber_verify() != 24882) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_reverseswap_clear_wallet() != 5945) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_reverseswap_determine_clear_wallet_feasibility() != 40903) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_reverseswap_prepare_clear_wallet() != 16256) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_create() != 19186) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_determine_resolving_fees() != 43015) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_prepare_sweep() != 47233) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_swap() != 22862) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_sweep() != 44251) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_decode_data() != 9974) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_derive_payment_uuid() != 22797) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_get_exchange_rate() != 24506) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_get_node_info() != 36095) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_log_debug_info() != 33177) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_query_health_status() != 19195) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_util_query_wallet_pubkey_id() != 18812) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_constructor_lightningnode_new() != 17310) {
