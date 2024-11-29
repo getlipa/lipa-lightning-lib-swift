@@ -16,8 +16,8 @@ let package = Package(
         targets: [
             .binaryTarget(
             name: "lipalightninglibFFI",
-            url: "https://github.com/getlipa/lipa-lightning-lib-swift/releases/download/v0.73.0-beta/lipalightninglibFFI.xcframework.zip",
-            checksum: "e83c09fdd6b4f1a09909a263efc83a509fd676e0020f9ba0892f0789f8cc48db"),
+            url: "https://github.com/getlipa/lipa-lightning-lib-swift/releases/download/v0.73.0-beta-mock/lipalightninglibFFI.xcframework.zip",
+            checksum: "ac3668801d33cd39196f885985fd170c34b5427a7f1097e36f046ec13394f413"),
             .target(
                     name: "LipaLightningLib",
                     dependencies: ["lipalightninglibFFI"]),
