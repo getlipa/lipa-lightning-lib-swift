@@ -1633,7 +1633,7 @@ public protocol LightningProtocol : AnyObject {
     
     func bolt11()  -> Bolt11
     
-    func calculateLspFeeForAmount(amountSat: UInt64) throws  -> CalculateLspFeeResponse
+    func calculateLspFeeForAmount(amountSat: UInt64) throws  -> CalculateLspFeeResponseV2
     
     func determineMaxRoutingFeeMode(amountSat: UInt64)  -> MaxRoutingFeeMode
     
@@ -1704,8 +1704,8 @@ open func bolt11() -> Bolt11 {
 })
 }
     
-open func calculateLspFeeForAmount(amountSat: UInt64)throws  -> CalculateLspFeeResponse {
-    return try  FfiConverterTypeCalculateLspFeeResponse.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func calculateLspFeeForAmount(amountSat: UInt64)throws  -> CalculateLspFeeResponseV2 {
+    return try  FfiConverterTypeCalculateLspFeeResponseV2.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightning_calculate_lsp_fee_for_amount(self.uniffiClonePointer(),
         FfiConverterUInt64.lower(amountSat),$0
     )
@@ -3336,7 +3336,7 @@ public func FfiConverterTypeReverseSwap_lower(_ value: ReverseSwap) -> UnsafeMut
 
 public protocol SwapProtocol : AnyObject {
     
-    func calculateLspFeeForAmount(amountSat: UInt64) throws  -> CalculateLspFeeResponse
+    func calculateLspFeeForAmount(amountSat: UInt64) throws  -> CalculateLspFeeResponseV2
     
     func create(lspFeeParams: OpeningFeeParams?) throws  -> SwapAddressInfo
     
@@ -3400,8 +3400,8 @@ open class Swap:
     
 
     
-open func calculateLspFeeForAmount(amountSat: UInt64)throws  -> CalculateLspFeeResponse {
-    return try  FfiConverterTypeCalculateLspFeeResponse.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func calculateLspFeeForAmount(amountSat: UInt64)throws  -> CalculateLspFeeResponseV2 {
+    return try  FfiConverterTypeCalculateLspFeeResponseV2.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_swap_calculate_lsp_fee_for_amount(self.uniffiClonePointer(),
         FfiConverterUInt64.lower(amountSat),$0
     )
@@ -3974,6 +3974,72 @@ public func FfiConverterTypeCalculateLspFeeResponse_lift(_ buf: RustBuffer) thro
 #endif
 public func FfiConverterTypeCalculateLspFeeResponse_lower(_ value: CalculateLspFeeResponse) -> RustBuffer {
     return FfiConverterTypeCalculateLspFeeResponse.lower(value)
+}
+
+
+public struct CalculateLspFeeResponseV2 {
+    public var lspFee: Amount
+    public var lspFeeParams: OpeningFeeParams
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(lspFee: Amount, lspFeeParams: OpeningFeeParams) {
+        self.lspFee = lspFee
+        self.lspFeeParams = lspFeeParams
+    }
+}
+
+
+
+extension CalculateLspFeeResponseV2: Equatable, Hashable {
+    public static func ==(lhs: CalculateLspFeeResponseV2, rhs: CalculateLspFeeResponseV2) -> Bool {
+        if lhs.lspFee != rhs.lspFee {
+            return false
+        }
+        if lhs.lspFeeParams != rhs.lspFeeParams {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(lspFee)
+        hasher.combine(lspFeeParams)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCalculateLspFeeResponseV2: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CalculateLspFeeResponseV2 {
+        return
+            try CalculateLspFeeResponseV2(
+                lspFee: FfiConverterTypeAmount.read(from: &buf), 
+                lspFeeParams: FfiConverterTypeOpeningFeeParams.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CalculateLspFeeResponseV2, into buf: inout [UInt8]) {
+        FfiConverterTypeAmount.write(value.lspFee, into: &buf)
+        FfiConverterTypeOpeningFeeParams.write(value.lspFeeParams, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCalculateLspFeeResponseV2_lift(_ buf: RustBuffer) throws -> CalculateLspFeeResponseV2 {
+    return try FfiConverterTypeCalculateLspFeeResponseV2.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCalculateLspFeeResponseV2_lower(_ value: CalculateLspFeeResponseV2) -> RustBuffer {
+    return FfiConverterTypeCalculateLspFeeResponseV2.lower(value)
 }
 
 
@@ -7110,11 +7176,11 @@ public struct SwapToLightningFees {
     public var onchainFee: Amount
     public var channelOpeningFee: Amount
     public var totalFees: Amount
-    public var lspFeeParams: OpeningFeeParams?
+    public var lspFeeParams: OpeningFeeParams
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(swapFee: Amount, onchainFee: Amount, channelOpeningFee: Amount, totalFees: Amount, lspFeeParams: OpeningFeeParams?) {
+    public init(swapFee: Amount, onchainFee: Amount, channelOpeningFee: Amount, totalFees: Amount, lspFeeParams: OpeningFeeParams) {
         self.swapFee = swapFee
         self.onchainFee = onchainFee
         self.channelOpeningFee = channelOpeningFee
@@ -7166,7 +7232,7 @@ public struct FfiConverterTypeSwapToLightningFees: FfiConverterRustBuffer {
                 onchainFee: FfiConverterTypeAmount.read(from: &buf), 
                 channelOpeningFee: FfiConverterTypeAmount.read(from: &buf), 
                 totalFees: FfiConverterTypeAmount.read(from: &buf), 
-                lspFeeParams: FfiConverterOptionTypeOpeningFeeParams.read(from: &buf)
+                lspFeeParams: FfiConverterTypeOpeningFeeParams.read(from: &buf)
         )
     }
 
@@ -7175,7 +7241,7 @@ public struct FfiConverterTypeSwapToLightningFees: FfiConverterRustBuffer {
         FfiConverterTypeAmount.write(value.onchainFee, into: &buf)
         FfiConverterTypeAmount.write(value.channelOpeningFee, into: &buf)
         FfiConverterTypeAmount.write(value.totalFees, into: &buf)
-        FfiConverterOptionTypeOpeningFeeParams.write(value.lspFeeParams, into: &buf)
+        FfiConverterTypeOpeningFeeParams.write(value.lspFeeParams, into: &buf)
     }
 }
 
@@ -11997,12 +12063,13 @@ public func parseLightningAddress(address: String)throws  {try rustCallWithError
     )
 }
 }
-public func recoverLightningNode(backendUrl: String, seed: Data, localPersistencePath: String, fileLoggingLevel: Level?)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
+public func recoverLightningNode(backendUrl: String, seed: Data, localPersistencePath: String, fileLoggingLevel: Level?, allowExternalRecovery: Bool)throws  {try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_func_recover_lightning_node(
         FfiConverterString.lower(backendUrl),
         FfiConverterData.lower(seed),
         FfiConverterString.lower(localPersistencePath),
-        FfiConverterOptionTypeLevel.lower(fileLoggingLevel),$0
+        FfiConverterOptionTypeLevel.lower(fileLoggingLevel),
+        FfiConverterBool.lower(allowExternalRecovery),$0
     )
 }
 }
@@ -12047,7 +12114,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_func_parse_lightning_address() != 40400) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 64552) {
+    if (uniffi_uniffi_lipalightninglib_checksum_func_recover_lightning_node() != 36854) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_func_words_by_prefix() != 18339) {
@@ -12155,7 +12222,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_bolt11() != 3635) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_calculate_lsp_fee_for_amount() != 58652) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_calculate_lsp_fee_for_amount() != 13847) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightning_determine_max_routing_fee_mode() != 2981) {
@@ -12440,7 +12507,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_reverseswap_prepare_clear_wallet() != 16256) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_calculate_lsp_fee_for_amount() != 29142) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_calculate_lsp_fee_for_amount() != 61544) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_create() != 19186) {
