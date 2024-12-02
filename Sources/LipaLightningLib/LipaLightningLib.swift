@@ -1460,7 +1460,7 @@ public protocol FiatTopupProtocol : AnyObject {
     
     func queryTcStatus() throws  -> TermsAndConditionsStatus
     
-    func register(email: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
+    func register(email: String?, referralCode: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
     
     func requestCollection(offer: OfferInfo) throws  -> String
     
@@ -1548,10 +1548,11 @@ open func queryTcStatus()throws  -> TermsAndConditionsStatus {
 })
 }
     
-open func register(email: String?, userIban: String, userCurrency: String)throws  -> FiatTopupInfo {
+open func register(email: String?, referralCode: String?, userIban: String, userCurrency: String)throws  -> FiatTopupInfo {
     return try  FfiConverterTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_fiattopup_register(self.uniffiClonePointer(),
         FfiConverterOptionString.lower(email),
+        FfiConverterOptionString.lower(referralCode),
         FfiConverterString.lower(userIban),
         FfiConverterString.lower(userCurrency),$0
     )
@@ -4978,10 +4979,11 @@ public struct LightningNodeConfig {
     public var breezSdkConfig: BreezSdkConfig
     public var maxRoutingFeeConfig: MaxRoutingFeeConfig
     public var receiveLimitsConfig: ReceiveLimitsConfig
+    public var topupReferralCodeMaxLength: UInt32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(seed: Data, defaultFiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig) {
+    public init(seed: Data, defaultFiatCurrency: String, localPersistencePath: String, timezoneConfig: TzConfig, fileLoggingLevel: Level?, phoneNumberAllowedCountriesIso31661Alpha2: [String], remoteServicesConfig: RemoteServicesConfig, breezSdkConfig: BreezSdkConfig, maxRoutingFeeConfig: MaxRoutingFeeConfig, receiveLimitsConfig: ReceiveLimitsConfig, topupReferralCodeMaxLength: UInt32) {
         self.seed = seed
         self.defaultFiatCurrency = defaultFiatCurrency
         self.localPersistencePath = localPersistencePath
@@ -4992,6 +4994,7 @@ public struct LightningNodeConfig {
         self.breezSdkConfig = breezSdkConfig
         self.maxRoutingFeeConfig = maxRoutingFeeConfig
         self.receiveLimitsConfig = receiveLimitsConfig
+        self.topupReferralCodeMaxLength = topupReferralCodeMaxLength
     }
 }
 
@@ -5029,6 +5032,9 @@ extension LightningNodeConfig: Equatable, Hashable {
         if lhs.receiveLimitsConfig != rhs.receiveLimitsConfig {
             return false
         }
+        if lhs.topupReferralCodeMaxLength != rhs.topupReferralCodeMaxLength {
+            return false
+        }
         return true
     }
 
@@ -5043,6 +5049,7 @@ extension LightningNodeConfig: Equatable, Hashable {
         hasher.combine(breezSdkConfig)
         hasher.combine(maxRoutingFeeConfig)
         hasher.combine(receiveLimitsConfig)
+        hasher.combine(topupReferralCodeMaxLength)
     }
 }
 
@@ -5063,7 +5070,8 @@ public struct FfiConverterTypeLightningNodeConfig: FfiConverterRustBuffer {
                 remoteServicesConfig: FfiConverterTypeRemoteServicesConfig.read(from: &buf), 
                 breezSdkConfig: FfiConverterTypeBreezSdkConfig.read(from: &buf), 
                 maxRoutingFeeConfig: FfiConverterTypeMaxRoutingFeeConfig.read(from: &buf), 
-                receiveLimitsConfig: FfiConverterTypeReceiveLimitsConfig.read(from: &buf)
+                receiveLimitsConfig: FfiConverterTypeReceiveLimitsConfig.read(from: &buf), 
+                topupReferralCodeMaxLength: FfiConverterUInt32.read(from: &buf)
         )
     }
 
@@ -5078,6 +5086,7 @@ public struct FfiConverterTypeLightningNodeConfig: FfiConverterRustBuffer {
         FfiConverterTypeBreezSdkConfig.write(value.breezSdkConfig, into: &buf)
         FfiConverterTypeMaxRoutingFeeConfig.write(value.maxRoutingFeeConfig, into: &buf)
         FfiConverterTypeReceiveLimitsConfig.write(value.receiveLimitsConfig, into: &buf)
+        FfiConverterUInt32.write(value.topupReferralCodeMaxLength, into: &buf)
     }
 }
 
@@ -12210,7 +12219,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_query_tc_status() != 17404) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_register() != 17799) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_register() != 15159) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_request_collection() != 4275) {
