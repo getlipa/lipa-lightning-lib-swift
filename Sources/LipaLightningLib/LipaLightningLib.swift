@@ -1456,11 +1456,11 @@ public protocol FiatTopupProtocol : AnyObject {
     
     func calculatePayoutFee(offer: OfferInfo) throws  -> Amount
     
-    func getInfo() throws  -> FiatTopupInfo?
+    func getInfo() throws  -> FiatTopupSetupInfo?
     
     func queryTcStatus() throws  -> TermsAndConditionsStatus
     
-    func register(email: String?, referralCode: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
+    func register(email: String?, userIban: String, userCurrency: String, provider: String, referralCode: String?) throws  -> FiatTopupSetupInfo
     
     func requestCollection(offer: OfferInfo) throws  -> String
     
@@ -1534,8 +1534,8 @@ open func calculatePayoutFee(offer: OfferInfo)throws  -> Amount {
 })
 }
     
-open func getInfo()throws  -> FiatTopupInfo? {
-    return try  FfiConverterOptionTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func getInfo()throws  -> FiatTopupSetupInfo? {
+    return try  FfiConverterOptionTypeFiatTopupSetupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_fiattopup_get_info(self.uniffiClonePointer(),$0
     )
 })
@@ -1548,13 +1548,14 @@ open func queryTcStatus()throws  -> TermsAndConditionsStatus {
 })
 }
     
-open func register(email: String?, referralCode: String?, userIban: String, userCurrency: String)throws  -> FiatTopupInfo {
-    return try  FfiConverterTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func register(email: String?, userIban: String, userCurrency: String, provider: String, referralCode: String?)throws  -> FiatTopupSetupInfo {
+    return try  FfiConverterTypeFiatTopupSetupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_fiattopup_register(self.uniffiClonePointer(),
         FfiConverterOptionString.lower(email),
-        FfiConverterOptionString.lower(referralCode),
         FfiConverterString.lower(userIban),
-        FfiConverterString.lower(userCurrency),$0
+        FfiConverterString.lower(userCurrency),
+        FfiConverterString.lower(provider),
+        FfiConverterOptionString.lower(referralCode),$0
     )
 })
 }
@@ -2052,8 +2053,6 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func queryVerifiedPhoneNumber() throws  -> String?
     
-    func registerFiatTopup(email: String?, userIban: String, userCurrency: String) throws  -> FiatTopupInfo
-    
     func registerLightningAddress() throws  -> String
     
     func registerNotificationToken(notificationToken: String, languageIso6391: String, countryIso31661Alpha2: String) throws 
@@ -2066,7 +2065,7 @@ public protocol LightningNodeProtocol : AnyObject {
     
     func resolveFailedSwap(resolveFailedSwapInfo: ResolveFailedSwapInfo) throws  -> String
     
-    func retrieveLatestFiatTopupInfo() throws  -> FiatTopupInfo?
+    func retrieveLatestFiatTopupInfo() throws  -> FiatTopupSetupInfo?
     
     func setAnalyticsConfig(config: AnalyticsConfig) throws 
     
@@ -2573,16 +2572,6 @@ open func queryVerifiedPhoneNumber()throws  -> String? {
 })
 }
     
-open func registerFiatTopup(email: String?, userIban: String, userCurrency: String)throws  -> FiatTopupInfo {
-    return try  FfiConverterTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_lightningnode_register_fiat_topup(self.uniffiClonePointer(),
-        FfiConverterOptionString.lower(email),
-        FfiConverterString.lower(userIban),
-        FfiConverterString.lower(userCurrency),$0
-    )
-})
-}
-    
 open func registerLightningAddress()throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_register_lightning_address(self.uniffiClonePointer(),$0
@@ -2628,8 +2617,8 @@ open func resolveFailedSwap(resolveFailedSwapInfo: ResolveFailedSwapInfo)throws 
 })
 }
     
-open func retrieveLatestFiatTopupInfo()throws  -> FiatTopupInfo? {
-    return try  FfiConverterOptionTypeFiatTopupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+open func retrieveLatestFiatTopupInfo()throws  -> FiatTopupSetupInfo? {
+    return try  FfiConverterOptionTypeFiatTopupSetupInfo.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_lightningnode_retrieve_latest_fiat_topup_info(self.uniffiClonePointer(),$0
     )
 })
@@ -3343,6 +3332,8 @@ public protocol SwapProtocol : AnyObject {
     
     func determineResolvingFees(failedSwapInfo: FailedSwapInfo) throws  -> OnchainResolvingFees?
     
+    func getLspFee() throws  -> LspFee
+    
     func prepareSweep(failedSwapInfo: FailedSwapInfo, destination: BitcoinAddressData) throws  -> SweepFailedSwapInfo
     
     func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?) throws  -> String
@@ -3421,6 +3412,13 @@ open func determineResolvingFees(failedSwapInfo: FailedSwapInfo)throws  -> Oncha
     return try  FfiConverterOptionTypeOnchainResolvingFees.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_swap_determine_resolving_fees(self.uniffiClonePointer(),
         FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),$0
+    )
+})
+}
+    
+open func getLspFee()throws  -> LspFee {
+    return try  FfiConverterTypeLspFee.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
+    uniffi_uniffi_lipalightninglib_fn_method_swap_get_lsp_fee(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -4446,7 +4444,7 @@ public func FfiConverterTypeFailedSwapInfo_lower(_ value: FailedSwapInfo) -> Rus
 }
 
 
-public struct FiatTopupInfo {
+public struct FiatTopupSetupInfo {
     public var orderId: String
     public var debitorIban: String
     public var creditorReference: String
@@ -4488,8 +4486,8 @@ public struct FiatTopupInfo {
 
 
 
-extension FiatTopupInfo: Equatable, Hashable {
-    public static func ==(lhs: FiatTopupInfo, rhs: FiatTopupInfo) -> Bool {
+extension FiatTopupSetupInfo: Equatable, Hashable {
+    public static func ==(lhs: FiatTopupSetupInfo, rhs: FiatTopupSetupInfo) -> Bool {
         if lhs.orderId != rhs.orderId {
             return false
         }
@@ -4565,10 +4563,10 @@ extension FiatTopupInfo: Equatable, Hashable {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopupInfo {
+public struct FfiConverterTypeFiatTopupSetupInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FiatTopupSetupInfo {
         return
-            try FiatTopupInfo(
+            try FiatTopupSetupInfo(
                 orderId: FfiConverterString.read(from: &buf), 
                 debitorIban: FfiConverterString.read(from: &buf), 
                 creditorReference: FfiConverterString.read(from: &buf), 
@@ -4588,7 +4586,7 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
         )
     }
 
-    public static func write(_ value: FiatTopupInfo, into buf: inout [UInt8]) {
+    public static func write(_ value: FiatTopupSetupInfo, into buf: inout [UInt8]) {
         FfiConverterString.write(value.orderId, into: &buf)
         FfiConverterString.write(value.debitorIban, into: &buf)
         FfiConverterString.write(value.creditorReference, into: &buf)
@@ -4612,15 +4610,15 @@ public struct FfiConverterTypeFiatTopupInfo: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeFiatTopupInfo_lift(_ buf: RustBuffer) throws -> FiatTopupInfo {
-    return try FfiConverterTypeFiatTopupInfo.lift(buf)
+public func FfiConverterTypeFiatTopupSetupInfo_lift(_ buf: RustBuffer) throws -> FiatTopupSetupInfo {
+    return try FfiConverterTypeFiatTopupSetupInfo.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeFiatTopupInfo_lower(_ value: FiatTopupInfo) -> RustBuffer {
-    return FfiConverterTypeFiatTopupInfo.lower(value)
+public func FfiConverterTypeFiatTopupSetupInfo_lower(_ value: FiatTopupSetupInfo) -> RustBuffer {
+    return FfiConverterTypeFiatTopupSetupInfo.lower(value)
 }
 
 
@@ -11613,8 +11611,8 @@ fileprivate struct FfiConverterOptionTypeExchangeRate: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeFiatTopupInfo: FfiConverterRustBuffer {
-    typealias SwiftType = FiatTopupInfo?
+fileprivate struct FfiConverterOptionTypeFiatTopupSetupInfo: FfiConverterRustBuffer {
+    typealias SwiftType = FiatTopupSetupInfo?
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
         guard let value = value else {
@@ -11622,13 +11620,13 @@ fileprivate struct FfiConverterOptionTypeFiatTopupInfo: FfiConverterRustBuffer {
             return
         }
         writeInt(&buf, Int8(1))
-        FfiConverterTypeFiatTopupInfo.write(value, into: &buf)
+        FfiConverterTypeFiatTopupSetupInfo.write(value, into: &buf)
     }
 
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
-        case 1: return try FfiConverterTypeFiatTopupInfo.read(from: &buf)
+        case 1: return try FfiConverterTypeFiatTopupSetupInfo.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -12213,13 +12211,13 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_calculate_payout_fee() != 23167) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_get_info() != 62428) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_get_info() != 57322) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_query_tc_status() != 17404) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_register() != 15159) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_register() != 60071) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_fiattopup_request_collection() != 4275) {
@@ -12426,9 +12424,6 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_query_verified_phone_number() != 38376) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_fiat_topup() != 12958) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_register_lightning_address() != 46966) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -12447,7 +12442,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_resolve_failed_swap() != 11475) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_retrieve_latest_fiat_topup_info() != 55765) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_retrieve_latest_fiat_topup_info() != 20131) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_lightningnode_set_analytics_config() != 38927) {
@@ -12523,6 +12518,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_determine_resolving_fees() != 43015) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_get_lsp_fee() != 28002) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_prepare_sweep() != 7973) {
