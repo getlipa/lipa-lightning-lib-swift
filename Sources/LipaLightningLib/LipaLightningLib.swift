@@ -1112,7 +1112,7 @@ public protocol ChannelCloseProtocol : AnyObject {
     
     func prepareSweep(destination: BitcoinAddressData) throws  -> SweepChannelCloseInfo
     
-    func swap(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?) throws  -> String
+    func swap(satsPerVbyte: UInt32) throws  -> String
     
     func sweep(sweepInfo: SweepChannelCloseInfo) throws  -> String
     
@@ -1183,11 +1183,10 @@ open func prepareSweep(destination: BitcoinAddressData)throws  -> SweepChannelCl
 })
 }
     
-open func swap(satsPerVbyte: UInt32, lspFeeParams: OpeningFeeParams?)throws  -> String {
+open func swap(satsPerVbyte: UInt32)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeSweepError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_channelclose_swap(self.uniffiClonePointer(),
-        FfiConverterUInt32.lower(satsPerVbyte),
-        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
+        FfiConverterUInt32.lower(satsPerVbyte),$0
     )
 })
 }
@@ -3328,7 +3327,7 @@ public protocol SwapProtocol : AnyObject {
     
     func calculateLspFeeForAmount(amountSat: UInt64) throws  -> CalculateLspFeeResponseV2
     
-    func create(lspFeeParams: OpeningFeeParams?) throws  -> SwapAddressInfo
+    func create() throws  -> SwapAddressInfo
     
     func determineResolvingFees(failedSwapInfo: FailedSwapInfo) throws  -> OnchainResolvingFees?
     
@@ -3336,7 +3335,7 @@ public protocol SwapProtocol : AnyObject {
     
     func prepareSweep(failedSwapInfo: FailedSwapInfo, destination: BitcoinAddressData) throws  -> SweepFailedSwapInfo
     
-    func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?) throws  -> String
+    func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32) throws  -> String
     
     func sweep(sweepFailedSwapInfo: SweepFailedSwapInfo) throws  -> String
     
@@ -3400,10 +3399,9 @@ open func calculateLspFeeForAmount(amountSat: UInt64)throws  -> CalculateLspFeeR
 })
 }
     
-open func create(lspFeeParams: OpeningFeeParams?)throws  -> SwapAddressInfo {
+open func create()throws  -> SwapAddressInfo {
     return try  FfiConverterTypeSwapAddressInfo.lift(try rustCallWithError(FfiConverterTypeSwapError.lift) {
-    uniffi_uniffi_lipalightninglib_fn_method_swap_create(self.uniffiClonePointer(),
-        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParams),$0
+    uniffi_uniffi_lipalightninglib_fn_method_swap_create(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -3432,12 +3430,11 @@ open func prepareSweep(failedSwapInfo: FailedSwapInfo, destination: BitcoinAddre
 })
 }
     
-open func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32, lspFeeParam: OpeningFeeParams?)throws  -> String {
+open func swap(failedSwapInfo: FailedSwapInfo, satsPerVbyte: UInt32)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeLnError.lift) {
     uniffi_uniffi_lipalightninglib_fn_method_swap_swap(self.uniffiClonePointer(),
         FfiConverterTypeFailedSwapInfo.lower(failedSwapInfo),
-        FfiConverterUInt32.lower(satsPerVbyte),
-        FfiConverterOptionTypeOpeningFeeParams.lower(lspFeeParam),$0
+        FfiConverterUInt32.lower(satsPerVbyte),$0
     )
 })
 }
@@ -12172,7 +12169,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_prepare_sweep() != 44583) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_swap() != 13343) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_swap() != 47042) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_channelclose_sweep() != 3534) {
@@ -12514,7 +12511,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_calculate_lsp_fee_for_amount() != 61544) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_create() != 19186) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_create() != 14616) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_determine_resolving_fees() != 43015) {
@@ -12526,7 +12523,7 @@ private var initializationResult: InitializationResult = {
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_prepare_sweep() != 7973) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_swap() != 22862) {
+    if (uniffi_uniffi_lipalightninglib_checksum_method_swap_swap() != 51446) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_swap_sweep() != 44251) {
