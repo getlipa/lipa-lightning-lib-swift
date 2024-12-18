@@ -11213,6 +11213,10 @@ public protocol EventsCallback : AnyObject {
     
     func reverseSwapSent(reverseSwapId: String) 
     
+    func reverseSwapSettled(reverseSwapId: String) 
+    
+    func reverseSwapCancelled(reverseSwapId: String) 
+    
     func breezHealthStatusChangedTo(status: BreezHealthCheckStatus) 
     
     func synced() 
@@ -11369,6 +11373,54 @@ fileprivate struct UniffiCallbackInterfaceEventsCallback {
                     throw UniffiInternalError.unexpectedStaleHandle
                 }
                 return uniffiObj.reverseSwapSent(
+                     reverseSwapId: try FfiConverterString.lift(reverseSwapId)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        reverseSwapSettled: { (
+            uniffiHandle: UInt64,
+            reverseSwapId: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterCallbackInterfaceEventsCallback.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.reverseSwapSettled(
+                     reverseSwapId: try FfiConverterString.lift(reverseSwapId)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        reverseSwapCancelled: { (
+            uniffiHandle: UInt64,
+            reverseSwapId: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterCallbackInterfaceEventsCallback.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.reverseSwapCancelled(
                      reverseSwapId: try FfiConverterString.lift(reverseSwapId)
                 )
             }
@@ -12569,6 +12621,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_reverse_swap_sent() != 61435) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_reverse_swap_settled() != 40233) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_reverse_swap_cancelled() != 4480) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_uniffi_lipalightninglib_checksum_method_eventscallback_breez_health_status_changed_to() != 40320) {
