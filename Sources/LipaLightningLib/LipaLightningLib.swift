@@ -5847,8 +5847,122 @@ public func FfiConverterTypeNotificationToggles_lower(_ value: NotificationToggl
 }
 
 
+public struct Offer {
+    public var id: String
+    public var exchangeRate: ExchangeRate
+    public var topupValueMinorUnits: UInt64
+    public var topupValueSats: UInt64?
+    public var exchangeFeeMinorUnits: UInt64
+    public var exchangeFeeRatePermyriad: UInt16
+    public var lightningPayoutFee: Amount?
+    public var error: PocketOfferError?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, topupValueSats: UInt64?, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, lightningPayoutFee: Amount?, error: PocketOfferError?) {
+        self.id = id
+        self.exchangeRate = exchangeRate
+        self.topupValueMinorUnits = topupValueMinorUnits
+        self.topupValueSats = topupValueSats
+        self.exchangeFeeMinorUnits = exchangeFeeMinorUnits
+        self.exchangeFeeRatePermyriad = exchangeFeeRatePermyriad
+        self.lightningPayoutFee = lightningPayoutFee
+        self.error = error
+    }
+}
+
+
+
+extension Offer: Equatable, Hashable {
+    public static func ==(lhs: Offer, rhs: Offer) -> Bool {
+        if lhs.id != rhs.id {
+            return false
+        }
+        if lhs.exchangeRate != rhs.exchangeRate {
+            return false
+        }
+        if lhs.topupValueMinorUnits != rhs.topupValueMinorUnits {
+            return false
+        }
+        if lhs.topupValueSats != rhs.topupValueSats {
+            return false
+        }
+        if lhs.exchangeFeeMinorUnits != rhs.exchangeFeeMinorUnits {
+            return false
+        }
+        if lhs.exchangeFeeRatePermyriad != rhs.exchangeFeeRatePermyriad {
+            return false
+        }
+        if lhs.lightningPayoutFee != rhs.lightningPayoutFee {
+            return false
+        }
+        if lhs.error != rhs.error {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(exchangeRate)
+        hasher.combine(topupValueMinorUnits)
+        hasher.combine(topupValueSats)
+        hasher.combine(exchangeFeeMinorUnits)
+        hasher.combine(exchangeFeeRatePermyriad)
+        hasher.combine(lightningPayoutFee)
+        hasher.combine(error)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOffer: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Offer {
+        return
+            try Offer(
+                id: FfiConverterString.read(from: &buf), 
+                exchangeRate: FfiConverterTypeExchangeRate.read(from: &buf), 
+                topupValueMinorUnits: FfiConverterUInt64.read(from: &buf), 
+                topupValueSats: FfiConverterOptionUInt64.read(from: &buf), 
+                exchangeFeeMinorUnits: FfiConverterUInt64.read(from: &buf), 
+                exchangeFeeRatePermyriad: FfiConverterUInt16.read(from: &buf), 
+                lightningPayoutFee: FfiConverterOptionTypeAmount.read(from: &buf), 
+                error: FfiConverterOptionTypePocketOfferError.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Offer, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.id, into: &buf)
+        FfiConverterTypeExchangeRate.write(value.exchangeRate, into: &buf)
+        FfiConverterUInt64.write(value.topupValueMinorUnits, into: &buf)
+        FfiConverterOptionUInt64.write(value.topupValueSats, into: &buf)
+        FfiConverterUInt64.write(value.exchangeFeeMinorUnits, into: &buf)
+        FfiConverterUInt16.write(value.exchangeFeeRatePermyriad, into: &buf)
+        FfiConverterOptionTypeAmount.write(value.lightningPayoutFee, into: &buf)
+        FfiConverterOptionTypePocketOfferError.write(value.error, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOffer_lift(_ buf: RustBuffer) throws -> Offer {
+    return try FfiConverterTypeOffer.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOffer_lower(_ value: Offer) -> RustBuffer {
+    return FfiConverterTypeOffer.lower(value)
+}
+
+
 public struct OfferInfo {
-    public var offerKind: OfferKind
+    public var offer: Offer
     public var amount: Amount
     public var lnurlw: String?
     public var createdAt: Date
@@ -5857,8 +5971,8 @@ public struct OfferInfo {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(offerKind: OfferKind, amount: Amount, lnurlw: String?, createdAt: Date, expiresAt: Date?, status: OfferStatus) {
-        self.offerKind = offerKind
+    public init(offer: Offer, amount: Amount, lnurlw: String?, createdAt: Date, expiresAt: Date?, status: OfferStatus) {
+        self.offer = offer
         self.amount = amount
         self.lnurlw = lnurlw
         self.createdAt = createdAt
@@ -5871,7 +5985,7 @@ public struct OfferInfo {
 
 extension OfferInfo: Equatable, Hashable {
     public static func ==(lhs: OfferInfo, rhs: OfferInfo) -> Bool {
-        if lhs.offerKind != rhs.offerKind {
+        if lhs.offer != rhs.offer {
             return false
         }
         if lhs.amount != rhs.amount {
@@ -5893,7 +6007,7 @@ extension OfferInfo: Equatable, Hashable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(offerKind)
+        hasher.combine(offer)
         hasher.combine(amount)
         hasher.combine(lnurlw)
         hasher.combine(createdAt)
@@ -5910,7 +6024,7 @@ public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OfferInfo {
         return
             try OfferInfo(
-                offerKind: FfiConverterTypeOfferKind.read(from: &buf), 
+                offer: FfiConverterTypeOffer.read(from: &buf), 
                 amount: FfiConverterTypeAmount.read(from: &buf), 
                 lnurlw: FfiConverterOptionString.read(from: &buf), 
                 createdAt: FfiConverterTimestamp.read(from: &buf), 
@@ -5920,7 +6034,7 @@ public struct FfiConverterTypeOfferInfo: FfiConverterRustBuffer {
     }
 
     public static func write(_ value: OfferInfo, into buf: inout [UInt8]) {
-        FfiConverterTypeOfferKind.write(value.offerKind, into: &buf)
+        FfiConverterTypeOffer.write(value.offer, into: &buf)
         FfiConverterTypeAmount.write(value.amount, into: &buf)
         FfiConverterOptionString.write(value.lnurlw, into: &buf)
         FfiConverterTimestamp.write(value.createdAt, into: &buf)
@@ -7821,7 +7935,7 @@ public enum Activity {
     )
     case outgoingPayment(outgoingPaymentInfo: OutgoingPaymentInfo
     )
-    case offerClaim(incomingPaymentInfo: IncomingPaymentInfo, offerKind: OfferKind
+    case offerClaim(incomingPaymentInfo: IncomingPaymentInfo, offer: Offer
     )
     case swap(incomingPaymentInfo: IncomingPaymentInfo?, swapInfo: SwapInfo
     )
@@ -7848,7 +7962,7 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         case 2: return .outgoingPayment(outgoingPaymentInfo: try FfiConverterTypeOutgoingPaymentInfo.read(from: &buf)
         )
         
-        case 3: return .offerClaim(incomingPaymentInfo: try FfiConverterTypeIncomingPaymentInfo.read(from: &buf), offerKind: try FfiConverterTypeOfferKind.read(from: &buf)
+        case 3: return .offerClaim(incomingPaymentInfo: try FfiConverterTypeIncomingPaymentInfo.read(from: &buf), offer: try FfiConverterTypeOffer.read(from: &buf)
         )
         
         case 4: return .swap(incomingPaymentInfo: try FfiConverterOptionTypeIncomingPaymentInfo.read(from: &buf), swapInfo: try FfiConverterTypeSwapInfo.read(from: &buf)
@@ -7878,10 +7992,10 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
             FfiConverterTypeOutgoingPaymentInfo.write(outgoingPaymentInfo, into: &buf)
             
         
-        case let .offerClaim(incomingPaymentInfo,offerKind):
+        case let .offerClaim(incomingPaymentInfo,offer):
             writeInt(&buf, Int32(3))
             FfiConverterTypeIncomingPaymentInfo.write(incomingPaymentInfo, into: &buf)
-            FfiConverterTypeOfferKind.write(offerKind, into: &buf)
+            FfiConverterTypeOffer.write(offer, into: &buf)
             
         
         case let .swap(incomingPaymentInfo,swapInfo):
@@ -9234,6 +9348,7 @@ public enum Notification {
     )
     case onchainPaymentSwappedIn(amountSat: UInt64, paymentHash: String
     )
+    case onchainPaymentSwappedOut
     case lnurlInvoiceCreated(amountSat: UInt64
     )
 }
@@ -9255,7 +9370,9 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
         case 2: return .onchainPaymentSwappedIn(amountSat: try FfiConverterUInt64.read(from: &buf), paymentHash: try FfiConverterString.read(from: &buf)
         )
         
-        case 3: return .lnurlInvoiceCreated(amountSat: try FfiConverterUInt64.read(from: &buf)
+        case 3: return .onchainPaymentSwappedOut
+        
+        case 4: return .lnurlInvoiceCreated(amountSat: try FfiConverterUInt64.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -9278,8 +9395,12 @@ public struct FfiConverterTypeNotification: FfiConverterRustBuffer {
             FfiConverterString.write(paymentHash, into: &buf)
             
         
-        case let .lnurlInvoiceCreated(amountSat):
+        case .onchainPaymentSwappedOut:
             writeInt(&buf, Int32(3))
+        
+        
+        case let .lnurlInvoiceCreated(amountSat):
+            writeInt(&buf, Int32(4))
             FfiConverterUInt64.write(amountSat, into: &buf)
             
         }
@@ -9473,73 +9594,6 @@ public func FfiConverterTypeNotificationHandlingErrorCode_lower(_ value: Notific
 
 
 extension NotificationHandlingErrorCode: Equatable, Hashable {}
-
-
-
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-
-public enum OfferKind {
-    
-    case pocket(id: String, exchangeRate: ExchangeRate, topupValueMinorUnits: UInt64, topupValueSats: UInt64?, exchangeFeeMinorUnits: UInt64, exchangeFeeRatePermyriad: UInt16, lightningPayoutFee: Amount?, error: PocketOfferError?
-    )
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeOfferKind: FfiConverterRustBuffer {
-    typealias SwiftType = OfferKind
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OfferKind {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .pocket(id: try FfiConverterString.read(from: &buf), exchangeRate: try FfiConverterTypeExchangeRate.read(from: &buf), topupValueMinorUnits: try FfiConverterUInt64.read(from: &buf), topupValueSats: try FfiConverterOptionUInt64.read(from: &buf), exchangeFeeMinorUnits: try FfiConverterUInt64.read(from: &buf), exchangeFeeRatePermyriad: try FfiConverterUInt16.read(from: &buf), lightningPayoutFee: try FfiConverterOptionTypeAmount.read(from: &buf), error: try FfiConverterOptionTypePocketOfferError.read(from: &buf)
-        )
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: OfferKind, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case let .pocket(id,exchangeRate,topupValueMinorUnits,topupValueSats,exchangeFeeMinorUnits,exchangeFeeRatePermyriad,lightningPayoutFee,error):
-            writeInt(&buf, Int32(1))
-            FfiConverterString.write(id, into: &buf)
-            FfiConverterTypeExchangeRate.write(exchangeRate, into: &buf)
-            FfiConverterUInt64.write(topupValueMinorUnits, into: &buf)
-            FfiConverterOptionUInt64.write(topupValueSats, into: &buf)
-            FfiConverterUInt64.write(exchangeFeeMinorUnits, into: &buf)
-            FfiConverterUInt16.write(exchangeFeeRatePermyriad, into: &buf)
-            FfiConverterOptionTypeAmount.write(lightningPayoutFee, into: &buf)
-            FfiConverterOptionTypePocketOfferError.write(error, into: &buf)
-            
-        }
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeOfferKind_lift(_ buf: RustBuffer) throws -> OfferKind {
-    return try FfiConverterTypeOfferKind.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeOfferKind_lower(_ value: OfferKind) -> RustBuffer {
-    return FfiConverterTypeOfferKind.lower(value)
-}
-
-
-
-extension OfferKind: Equatable, Hashable {}
 
 
 
